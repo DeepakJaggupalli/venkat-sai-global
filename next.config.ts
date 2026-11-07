@@ -31,8 +31,9 @@ const s3PublicHost = process.env.STORAGE_PUBLIC_HOST;
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // Native / Node-only packages must not be bundled.
-  serverExternalPackages: ["@node-rs/argon2", "sharp", "pg", "nodemailer", "qrcode", "sanitize-html"],
+  // Native / Node-only packages must not be bundled. sanitize-html is deliberately bundled: it is
+  // CommonJS but depends on the ESM-only htmlparser2 12, which the Vercel runtime refuses to require().
+  serverExternalPackages: ["@node-rs/argon2", "sharp", "pg", "nodemailer", "qrcode"],
   experimental: {
     // Enables forbidden() / unauthorized() from next/navigation.
     authInterrupts: true,
