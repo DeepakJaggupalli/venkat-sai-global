@@ -59,7 +59,6 @@ export default async function CandidateSearchPage({ searchParams }: { searchPara
       <PageHeader
         title="Find candidates"
         description="Search people who chose to be discoverable by employers. Profiles stay masked until a candidate applies to your job or you unlock their contact details."
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Find candidates" }]}
         actions={canUseLists ? [{ label: "Talent lists", href: "/employer/lists", variant: "outline" }] : undefined}
       />
 

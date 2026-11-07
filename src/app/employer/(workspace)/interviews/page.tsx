@@ -86,7 +86,6 @@ export default async function InterviewsPage({ searchParams }: { searchParams: P
       <PageHeader
         title="Interviews"
         description={`Times are shown in each interview's own time zone, with yours (${tz}) where different.`}
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Interviews" }]}
         actions={orgCan(ctx, "employer.pipeline.view") ? [{ label: "Schedule from the pipeline", href: "/employer/pipeline", variant: "outline" }] : undefined}
       />
       <LinkTabs

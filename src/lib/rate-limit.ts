@@ -15,7 +15,16 @@ export type RateLimitResult = { allowed: boolean; remaining: number; resetAt: Da
  * Suggested keys: "login:<identifier>", "login-ip:<ipHash>", "otp:send:<target>",
  * "otp:verify:<target>", "enquiry:<ipHash>", "collect:<ipHash>".
  */
+/**
+ * Local end-to-end runs only: many browser tests share 127.0.0.1, so per-IP limits would block them.
+ * Never effective in a production build or on Vercel, whatever the environment says.
+ */
+function rateLimitsDisabledForE2E(): boolean {
+  return process.env.E2E_DISABLE_RATE_LIMITS === "1" && process.env.NODE_ENV !== "production" && !process.env.VERCEL;
+}
+
 export async function rateLimit(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+  if (rateLimitsDisabledForE2E()) return { allowed: true, remaining: limit, resetAt: new Date(Date.now() + windowSeconds * 1000), count: 0 };
   const interval = `${Math.max(1, Math.floor(windowSeconds))} seconds`;
   const result = await db.execute<{ count: number; expires_at: Date | string }>(sql`
     insert into rate_limit_buckets (key, count, window_started_at, expires_at)

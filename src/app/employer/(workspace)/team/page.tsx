@@ -13,6 +13,7 @@ import { listInvitations, listMembers, listOrgRoles } from "@/modules/organizati
 import { InviteForm } from "./_components/invite-form";
 import { RolesManager, type PermissionGroup } from "./_components/roles-manager";
 import { PendingInvitations, TeamMembers } from "./_components/team-members";
+import { seatsNote } from "./_lib/seats";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -43,15 +44,14 @@ export default async function EmployerTeamPage() {
   }
   const permissionLabels = Object.fromEntries(EMPLOYER_PERMISSIONS.map((p) => [p.key, p.label]));
   const pending = invitations.filter((i) => i.status === "pending" || i.status === "expired");
-  const seatsNote =
-    seats && seats.limit !== null ? `${seats.used} of ${seats.limit} seats in use on your plan (active members and pending invitations).${seats.allowed ? "" : ` ${seats.reason ?? ""}`}` : null;
+  const seatLine = seatsNote(seats, invitations.filter((i) => i.status === "pending").length);
 
   return (
     <div className="space-y-8">
       <PageHeader title="Team" description="Invite colleagues, give them the right role and manage access to this workspace." />
 
       <SectionCard title="Invite a team member" description="Invitations are valid for a limited time and can only be accepted by the invited email address.">
-        {roleOptions.length ? <InviteForm roleOptions={roleOptions} seatsNote={seatsNote} /> : <p className="text-sm text-muted-foreground">Your role cannot grant any roles.</p>}
+        {roleOptions.length ? <InviteForm roleOptions={roleOptions} seatsNote={seatLine} /> : <p className="text-sm text-muted-foreground">Your role cannot grant any roles.</p>}
       </SectionCard>
 
       <SectionCard title={`Members (${members.length})`} flush>

@@ -8,10 +8,10 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { getLocale, getT } from "@/i18n/server";
 import { parsePage, type SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listSavedJobs } from "@/modules/jobs/saved-alerts-service";
 
 import { ClearUnavailableButton } from "./clear-unavailable-button";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 type PageProps = { searchParams: Promise<SearchParams> };
 
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Saved jobs that are still open, newest saved first; closed ones are counted and can be cleared. */
 export default async function SavedJobsPage({ searchParams }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const sp = await searchParams;
   const [t, locale] = await Promise.all([getT("talent-jobs"), getLocale()]);
   const result = await listSavedJobs(user, parsePage(sp, { defaultSize: 20, maxSize: 50 }), { candidateId: candidate.id });

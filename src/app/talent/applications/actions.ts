@@ -7,6 +7,8 @@ import { requireCandidate } from "@/modules/candidates/guard";
 import { respondToOfferSchema, submitChecklistItemSchema, withdrawApplicationSchema } from "@/modules/recruitment/schemas";
 import { asCandidate, respondToOffer, submitChecklistItem, withdrawApplication } from "@/modules/recruitment/service";
 
+import { requireConsentedCandidate } from "../_lib/guard";
+
 /*
  * People Portal application actions. Each re-authorises the candidate and passes a candidate actor, so
  * the recruitment module scopes every id to the caller's own applications, offers and checklist items.
@@ -27,7 +29,8 @@ export const withdrawAction = createAction(withdrawApplicationSchema, async (inp
 });
 
 export const respondOfferAction = createAction(respondToOfferSchema, async (input) => {
-  const session = await requireCandidate();
+  // Declining is always allowed; accepting (and countersigning) needs guardian consent for a minor.
+  const session = input.response === "accept" ? await requireConsentedCandidate() : await requireCandidate();
   await respondToOffer(asCandidate(session), input);
   refresh();
   revalidatePath("/talent/applications", "layout");
@@ -35,7 +38,7 @@ export const respondOfferAction = createAction(respondToOfferSchema, async (inpu
 });
 
 export const submitChecklistAction = createAction(submitChecklistItemSchema, async (input) => {
-  const session = await requireCandidate();
+  const session = await requireConsentedCandidate();
   await submitChecklistItem(asCandidate(session), input);
   revalidatePath("/talent/applications", "layout");
   return ok();

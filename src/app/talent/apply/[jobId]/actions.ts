@@ -5,9 +5,10 @@ import { z } from "zod";
 
 import { createFormAction, ok } from "@/lib/actions";
 import { toMinorUnits } from "@/lib/format";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { candidateApplyFormSchema } from "@/modules/recruitment/schemas";
 import { asCandidate, createApplication } from "@/modules/recruitment/service";
+
+import { requireConsentedCandidate } from "../../_lib/guard";
 
 const checked = (message: string) => z.preprocess((v) => v === true || v === "on" || v === "true" || v === "1", z.literal(true, { error: message }));
 
@@ -25,11 +26,12 @@ const applyFormSchema = candidateApplyFormSchema.and(
 /**
  * Submit an application through the recruitment module. It enforces every rule: job open and on-platform,
  * one application per job (re-apply after withdrawing), required screening answers, minors refused for
- * overseas jobs (`minor_overseas`), knockout answers only flagged for review — never rejected here.
+ * overseas jobs (`minor_overseas`), knockout answers only flagged for review — never rejected here. A minor
+ * without guardian consent is refused before that (`guardian_consent_required`).
  * The candidate is never charged.
  */
 export const submitApplicationAction = createFormAction(applyFormSchema, async (input) => {
-  const session = await requireCandidate();
+  const session = await requireConsentedCandidate();
   const expectedSalary =
     input.expectedSalaryAmount !== undefined && input.expectedSalaryCurrency && input.expectedSalaryPeriod
       ? { amountMinor: toMinorUnits(input.expectedSalaryAmount, input.expectedSalaryCurrency), currency: input.expectedSalaryCurrency, period: input.expectedSalaryPeriod }

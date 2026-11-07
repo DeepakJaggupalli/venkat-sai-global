@@ -60,7 +60,6 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
       <PageHeader
         title="Offers and placements"
         description="Offers you have drafted or sent, and the people who accepted them. Candidates are never charged for an offer, visa processing or joining."
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Offers and placements" }]}
       />
       <LinkTabs
         label="Offers and placements"

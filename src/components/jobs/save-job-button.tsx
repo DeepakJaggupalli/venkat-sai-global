@@ -2,6 +2,7 @@
 
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ type SaveJobButtonProps = {
  */
 export function SaveJobButton({ jobId, jobTitle, initialSaved, signedIn, returnTo, variant = "icon", className, onChange }: SaveJobButtonProps) {
   const t = useT("talent-jobs");
+  const router = useRouter();
   const [saved, setSaved] = useState(Boolean(initialSaved));
   const [pending, startTransition] = useTransition();
   const label = saved ? t("save.remove", { title: jobTitle }) : t("save.add", { title: jobTitle });
@@ -54,6 +56,11 @@ export function SaveJobButton({ jobId, jobTitle, initialSaved, signedIn, returnT
     startTransition(async () => {
       const result = next ? await saveJobBookmarkAction({ jobId }) : await unsaveJobBookmarkAction({ jobId });
       if (!result.ok) {
+        // A child without a guardian's consent is refused (DPDP Act s.9): say why and where to fix it.
+        if (result.code === "guardian_consent_required") {
+          toast.error(t("save.guardianRequired"), { action: { label: t("save.guardianAction"), onClick: () => router.push("/talent/onboarding") } });
+          return;
+        }
         toast.error(next ? t("save.errorSave") : t("save.errorRemove"));
         return;
       }

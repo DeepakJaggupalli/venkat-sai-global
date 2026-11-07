@@ -4,6 +4,7 @@ import { BadgeCheck, Plus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { FormErrorAlert, FormField } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { LanguageSelect, SimpleSelect } from "@/components/shared/selects";
 import { SkillPicker } from "@/components/shared/skill-picker";
 import type { SelectOption } from "@/components/shared/types";
@@ -41,7 +42,7 @@ export function SkillsForm({ action, skills }: { action: FormAction; skills: Can
     });
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate>
       <FormErrorAlert state={state} />
       <input type="hidden" name="skills:json" value={JSON.stringify(payload)} />
       <FormField label={t("skills.add")} hint={t("skills.addHint")}>
@@ -109,7 +110,7 @@ export function LanguagesForm({ action, languages, options }: { action: FormActi
   const payload = rows.filter((r) => r.languageCode).map((r) => ({ languageCode: r.languageCode, proficiency: r.proficiency, canRead: r.canRead, canWrite: r.canWrite, canSpeak: r.canSpeak }));
   const update = (key: number, patch: Partial<LanguageDraft>) => setRows((all) => all.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate>
       <FormErrorAlert state={state} />
       <input type="hidden" name="languages:json" value={JSON.stringify(payload)} />
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("languages.empty")}</p> : null}

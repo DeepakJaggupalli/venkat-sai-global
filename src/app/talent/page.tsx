@@ -15,7 +15,6 @@ import { getLocale, getT } from "@/i18n/server";
 import { env } from "@/lib/env";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { logger } from "@/lib/logger";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { getCandidateDashboardSummary } from "@/modules/candidates/queries";
 import { getRecommendedJobs } from "@/modules/jobs/recommendations";
 import { listSavedJobs } from "@/modules/jobs/saved-alerts-service";
@@ -28,6 +27,7 @@ import { listPublicCourses } from "@/modules/training/queries";
 
 import { countOwnApplicationsByStatus, countOwnSkills } from "./applications/_lib/queries";
 import { stageLabel, stageTone } from "./applications/_lib/stage";
+import { requireOnboardedCandidate } from "./_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("common");
@@ -65,7 +65,7 @@ const STATUS_ORDER = ["active", "hired", "rejected", "withdrawn", "closed"] as c
  * verification, notifications and open support requests. Live data only; every block has an honest empty state.
  */
 export default async function TalentDashboardPage() {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   const { user, candidate } = session;
   const actor = asCandidate(session);
   const [t, tj, locale] = await Promise.all([getT("talent-dashboard"), getT("talent-jobs"), getLocale()]);

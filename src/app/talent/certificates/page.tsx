@@ -12,12 +12,12 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { certificateTone, intlLocale, verificationPath, type CertificateDisplayState } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
 import { absoluteUrl } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { getFiles, toFileSummary } from "@/modules/files";
 import { certificateLapsesAt, listCandidateCertificates } from "@/modules/training/certificates";
 import type { CandidateCertificateItem } from "@/modules/training/types";
 
 import { VisibilityToggle } from "./visibility-toggle";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("talent-training");
@@ -32,7 +32,7 @@ function displayState(cert: CandidateCertificateItem, now: Date): CertificateDis
 
 /** The candidate's certificates: issuer type, status, verification code and share link, public check switch, download. */
 export default async function CertificatesPage() {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const [t, locale, certificates] = await Promise.all([
     getT("talent-training"),
     getLocale(),

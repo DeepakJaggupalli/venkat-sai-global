@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState, type ReactNode } from "react";
 
 import { FormErrorAlert, FormField, SubmitButton, useActionToast, type FieldControlProps } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { RichTextEditor } from "@/components/shared/rich-text/rich-text-editor";
 import { SearchableSelect, SimpleSelect } from "@/components/shared/selects";
@@ -15,10 +16,14 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult, ActionState } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 
+import { useCloseActionDialog } from "./action-dialog";
+
 /**
  * Declarative Command Centre form. Server pages describe the fields (serialisable specs) and pass a
  * Server Action built with createFormAction; this component wires useActionState, inline field errors,
  * the form-level alert, the success toast and a refresh. Keeps dozens of small staff forms consistent.
+ * React resets a `<form action>` after every submission; after a failed one the reset is cancelled so staff
+ * keep what they typed next to the field errors. Successful submissions reset to the defaults as before.
  */
 export type AdminFieldSpec = {
   name: string;
@@ -75,9 +80,11 @@ export function ActionForm<T>({
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState<ActionState<T>, FormData>(action, null);
+  const closeDialog = useCloseActionDialog();
   useActionToast(state, {
     onSuccess: (result) => {
       if (resetOnSuccess) formRef.current?.reset();
+      closeDialog?.();
       const data = (result as { data?: unknown } | null)?.data;
       const id = data && typeof data === "object" && "id" in data ? String((data as { id: unknown }).id) : null;
       if (successHref) router.push(id ? successHref.replace("{id}", id) : successHref);
@@ -88,7 +95,18 @@ export function ActionForm<T>({
   const fieldLabels = Object.fromEntries(fields.map((f) => [f.name, f.label]));
 
   return (
-    <form ref={formRef} action={formAction} noValidate className={cn("space-y-4", className)} data-testid={testId}>
+    <form
+      ref={formRef}
+      action={formAction}
+      // React commits the new state (this attribute) before it resets the form, so the handler sees the result.
+      data-failed={state && !state.ok ? "true" : undefined}
+      onResetCapture={(event) => {
+        if (event.currentTarget.dataset.failed === "true") keepFormValues(event);
+      }}
+      noValidate
+      className={cn("space-y-4", className)}
+      data-testid={testId}
+    >
       {intro}
       <FormErrorAlert state={state} fieldLabels={fields.length > 3 ? fieldLabels : undefined} />
       {hidden

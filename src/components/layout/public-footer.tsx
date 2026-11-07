@@ -157,7 +157,8 @@ export function PublicFooter({
 
       <div className="relative mx-auto grid max-w-[96rem] gap-12 px-4 pt-16 pb-12 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pt-20">
         <div className="lg:col-span-4">
-          <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex rounded-md">
+          <Link href="/" className="inline-flex rounded-md">
+            <span className="sr-only">{`${BRAND.name} home`}</span>
             <Logo variant="onDark" decorative className="h-10 w-auto" />
           </Link>
           <p className="mt-6 max-w-sm text-[15px] leading-7 text-white/75">{BRAND.promise}</p>

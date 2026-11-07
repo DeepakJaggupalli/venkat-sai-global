@@ -64,7 +64,9 @@ export function PortalTopbar({
           </Button>
         </SheetTrigger>
 
-        <Link href={homeHref} aria-label={homeLabel} className="flex min-w-0 items-center gap-2.5 rounded-md lg:hidden">
+        <Link href={homeHref} className="flex min-w-0 items-center gap-2.5 rounded-md lg:hidden">
+          {/* Name from content, not aria-label: the brand and portal names are visible text (WCAG 2.5.3 label in name). */}
+          <span className="sr-only">{homeLabel}</span>
           <LogoMark decorative className="size-8" />
           {/* The People Portal also fits a language switcher, so its name text waits for 400px. */}
           <span aria-hidden className={cn("min-w-0 flex-col leading-tight", translate ? "hidden min-[400px]:flex" : "flex")}>

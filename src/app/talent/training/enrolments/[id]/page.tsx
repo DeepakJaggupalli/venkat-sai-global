@@ -13,12 +13,12 @@ import { FeePaymentNote } from "@/components/training/fee-payment-note";
 import { attendanceValue, canWithdrawEnrolment, enrolmentTone, intlLocale, isFinalResult, joinPlace, regionName, resultTone } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
 import { sp, type SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listPublishedScoresForEnrolment } from "@/modules/training/grading";
 import { listCandidateEnrolments } from "@/modules/training/queries";
 
 import { batchOrganizationId, feePaymentInfo } from "../../_lib/queries";
 import { WithdrawButton } from "./withdraw-button";
+import { requireOnboardedCandidate } from "../../../_lib/guard";
 
 type PageProps = { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> };
 
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** One of the learner's enrolments: status, schedule, attendance, published scores, result, fee and withdrawal. */
 export default async function EnrolmentPage({ params, searchParams }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const [t, locale, enrolments] = await Promise.all([
     getT("talent-training"),

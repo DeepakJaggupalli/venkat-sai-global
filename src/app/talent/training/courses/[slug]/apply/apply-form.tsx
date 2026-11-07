@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useId } from "react";
+import { useActionState, useCallback, useEffect, useId } from "react";
 
 import { FormErrorAlert, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { useT } from "@/i18n/client";
 import { track } from "@/modules/analytics/client";
 
@@ -25,25 +26,33 @@ export function ApplyForm({ batchId, courseId, providerName, waitlist }: ApplyFo
   const t = useT("talent-training");
   const router = useRouter();
   const id = useId();
-  const [state, formAction] = useActionState(applyToBatchFormAction, null);
+  // Success is confirmed (translated) on the enrolment page; the module's own message is English-only.
+  // Navigate from the action itself, not from an effect on `state`: the action revalidates the training
+  // pages, and the refreshed apply page shows "already applied" instead of this form, so an effect never ran
+  // and the candidate was left on the apply page.
+  const submit = useCallback<typeof applyToBatchFormAction>(
+    async (prev, formData) => {
+      const result = await applyToBatchFormAction(prev, formData);
+      if (result.ok) {
+        track("course_enrolment_completed", { courseId, status: result.data?.status ?? null });
+        router.push(result.data?.id ? `/talent/training/enrolments/${result.data.id}?applied=1` : "/talent/training");
+      }
+      return result;
+    },
+    [courseId, router],
+  );
+  const [state, formAction] = useActionState(submit, null);
 
   useEffect(() => {
     track("course_enrolment_started", { courseId });
   }, [courseId]);
-
-  // Success is confirmed (translated) on the enrolment page; the module's own message is English-only.
-  useEffect(() => {
-    if (!state?.ok) return;
-    track("course_enrolment_completed", { courseId, status: state.data?.status ?? null });
-    router.push(state.data?.id ? `/talent/training/enrolments/${state.data.id}?applied=1` : "/talent/training");
-  }, [state, courseId, router]);
 
   const errors = state && !state.ok ? state.fieldErrors : undefined;
   const sharingError = errors?.acknowledgeContactSharing ? t("apply.errors.contactSharing") : null;
   const declarationError = errors?.declaration ? t("apply.errors.declaration") : null;
 
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="apply-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="apply-form">
       <FormErrorAlert state={state} title={t("apply.formError")} />
       <input type="hidden" name="batchId" value={batchId} />
 

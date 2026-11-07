@@ -58,7 +58,7 @@ export default async function CompareCandidatesPage({ searchParams }: { searchPa
       {views.length < 2 ? (
         <EmptyState title="Choose at least two candidates" description="Tick “Compare” on up to four candidates in search, then select Compare." primaryAction={{ label: "Go to search", href: "/employer/candidates" }} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <div className="relative overflow-x-auto rounded-xl border bg-card">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <caption className="sr-only">Candidate comparison</caption>
             <thead className="bg-surface-subtle">

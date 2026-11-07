@@ -42,7 +42,6 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       <PageHeader
         title="Recruitment reports"
         description="Live figures from your own jobs and the applications shared with you. Dates filter by application, interview or placement date."
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Reports" }]}
         actions={<ExportLink href={exportHref("jobs")} label="Export jobs CSV" report="jobs" />}
       />
       <FilterBar paramKeys={["from", "to", "jobId"]}>

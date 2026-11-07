@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useId } from "react";
 
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -89,7 +90,7 @@ export function AlertForm({ draft, categories, countries, currencies, allowOvers
   const channelOptions = CHANNELS.map((c) => ({ value: c, label: enumLabel(t, "alertChannel", c) }));
 
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="alert-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="alert-form">
       {draft.id ? <input type="hidden" name="id" value={draft.id} /> : null}
       <input type="hidden" name="isActive" value={draft.isActive ? "true" : "false"} />
       <FormErrorAlert state={state} title={t("form.fixErrors")} />

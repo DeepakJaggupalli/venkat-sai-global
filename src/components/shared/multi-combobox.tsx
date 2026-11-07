@@ -40,6 +40,8 @@ export type MultiComboboxProps = {
   "aria-invalid"?: boolean | "true" | "false";
   "aria-required"?: boolean | "true" | "false";
   "aria-label"?: string;
+  /** The trigger is a combobox, which is not named by its text: pass a label via id/htmlFor, aria-label or this. */
+  "aria-labelledby"?: string;
   required?: boolean;
   className?: string;
 };
@@ -161,6 +163,7 @@ export function MultiCombobox({
             role="combobox"
             aria-expanded={open}
             aria-label={aria["aria-label"]}
+            aria-labelledby={aria["aria-labelledby"]}
             aria-describedby={aria["aria-describedby"]}
             aria-invalid={aria["aria-invalid"]}
             aria-required={aria["aria-required"] ?? (required || undefined)}

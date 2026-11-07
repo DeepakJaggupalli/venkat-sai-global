@@ -29,6 +29,11 @@ const securityHeaders = [
 const s3PublicHost = process.env.STORAGE_PUBLIC_HOST;
 
 const nextConfig: NextConfig = {
+  // Local end-to-end runs start several dev servers side by side, each with its own build folder.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
+  // Dev server only: those servers are reached at http://127.0.0.1:<port>. Next.js blocks its dev resources
+  // (/_next/hmr) for origins other than localhost, and without that socket the client never hydrates.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   poweredByHeader: false,
   reactStrictMode: true,
   // Native / Node-only packages must not be bundled. sanitize-html is deliberately bundled: it is

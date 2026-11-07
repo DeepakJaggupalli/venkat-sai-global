@@ -9,6 +9,8 @@ import { requireCandidate } from "@/modules/candidates/guard";
 import { applyToBatchAction, withdrawEnrolmentAction } from "@/modules/training/candidate-actions";
 import { applyToBatchSchema } from "@/modules/training/schemas";
 
+import { requireConsentedCandidate } from "../_lib/guard";
+
 /**
  * People Portal enrolment actions. They add the portal's declaration check and refresh every training page,
  * then delegate to the training module's actions (feature flag, rate limit, ownership and seat rules live there).
@@ -19,7 +21,8 @@ const applyFormSchema = applyToBatchSchema.extend({
 });
 
 export const applyToBatchFormAction = createFormAction(applyFormSchema, async (_input, formData) => {
-  await requireCandidate();
+  // Applying shares the candidate's contact details with the institution: a minor needs guardian consent.
+  await requireConsentedCandidate();
   const result = await applyToBatchAction(null, formData);
   if (result.ok) revalidatePath("/talent/training", "layout");
   return result;

@@ -33,6 +33,8 @@ export type DrawerData = {
   timeZones: SelectOption[];
   me: Me;
   offerOptions: OfferFormOptions;
+  /** The job's advertised pay terms and place: offer defaults when the candidate stated no expected salary. */
+  jobTerms?: { salaryCurrency: string | null; salaryPeriod: string | null; countryCode: string | null; city: string | null };
 };
 
 const PERIOD: Record<string, string> = { hour: "per hour", day: "per day", week: "per week", month: "per month", year: "per year", project: "per project" };
@@ -57,14 +59,17 @@ export function ApplicationDrawer({ data, closeHref }: { data: DrawerData; close
   const openOffer = detail.offers.find((o) => o.status === "draft" || o.status === "issued");
   const isOpen = app.status === "active";
   const nextRound = detail.interviews.filter((i) => i.status !== "cancelled").length + 1;
+  // A salary needs a currency and a period: start from the candidate's expectation, else the job's own terms
+  // (never an assumed currency).
+  const expected = app.expectedSalary;
   const offerDefaults = {
     jobTitle: detail.job.title,
-    salaryMinor: app.expectedSalary?.amountMinor ?? null,
-    salaryCurrency: app.expectedSalary?.currency ?? null,
-    salaryPeriod: app.expectedSalary?.period ?? null,
+    salaryMinor: expected?.amountMinor ?? null,
+    salaryCurrency: expected?.currency ?? data.jobTerms?.salaryCurrency ?? null,
+    salaryPeriod: expected?.period ?? data.jobTerms?.salaryPeriod ?? null,
     benefits: null,
-    countryCode: null,
-    workLocation: null,
+    countryCode: data.jobTerms?.countryCode ?? null,
+    workLocation: data.jobTerms?.city ?? null,
     startDate: null,
     contractDurationMonths: null,
     offerFile: null,

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues, resetFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import type { SelectOption } from "@/components/shared/types";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +21,7 @@ export function VisibilityForm({ action, visibility, isOpenToWork }: { action: F
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action, { successMessage: ta("toast.saved") });
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="privacy-visibility">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="privacy-visibility">
       <FormErrorAlert state={state} />
       <RadioCards
         name="visibility"
@@ -58,7 +59,7 @@ export function DisclosureForm({
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action, { successMessage: ta("toast.saved") });
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="privacy-disclosure">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="privacy-disclosure">
       <FormErrorAlert state={state} />
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold">{ta("disclosure.legend")}</legend>
@@ -104,7 +105,7 @@ export function ConsentsForm({ action, rows, minor }: { action: FormAction; rows
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action, { successMessage: ta("toast.saved") });
   return (
-    <form action={formAction} className="space-y-4" noValidate data-testid="privacy-consents">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate data-testid="privacy-consents">
       <FormErrorAlert state={state} />
       <ul className="divide-y rounded-lg border">
         {rows
@@ -140,13 +141,21 @@ export function DataRequestForm({ action, kind }: { action: FormAction<{ code: s
   const ta = useT("talent-account");
   const { t } = useTalentMessages();
   const [created, setCreated] = useState<string | null>(null);
-  const [raw, formAction] = useTalentForm(action, { successMessage: ta("requests.toast"), onSuccess: (result) => setCreated(result.ok ? (result.data?.code ?? null) : null) });
+  const formRef = useRef<HTMLFormElement>(null);
+  const [raw, formAction] = useTalentForm(action, {
+    successMessage: ta("requests.toast"),
+    onSuccess: (result) => {
+      setCreated(result.ok ? (result.data?.code ?? null) : null);
+      // The request is sent: start the next one empty (the form otherwise keeps what was typed).
+      resetFormValues(formRef.current);
+    },
+  });
   const state: ActionState<{ code: string }> =
     raw && !raw.ok && raw.fieldErrors?.understood
         ? { ...raw, fieldErrors: { ...raw.fieldErrors, understood: [ta("requests.confirmRequired")] } }
         : raw;
   return (
-    <form action={formAction} className="space-y-4" noValidate data-testid={`privacy-request-${kind}`}>
+    <form ref={formRef} action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate data-testid={`privacy-request-${kind}`}>
       <FormErrorAlert state={state} />
       {kind === "correction" ? (
         <FormField label={ta("requests.correction.details")} name="details" required state={state} hint={ta("requests.correction.hint")}>

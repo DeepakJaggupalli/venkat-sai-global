@@ -8,6 +8,13 @@ import type { ActionResult, ActionState } from "@/lib/actions";
 import { isNavigationError } from "@/components/shared/form";
 
 const GENERIC = "Something went wrong. Please try again.";
+const FIELD_ERRORS = "Please correct the highlighted fields.";
+
+/** createAction() reports schema failures as "Invalid request."; in a form, point people at the fields instead. */
+function forForm<T>(result: ActionResult<T>): ActionResult<T> {
+  if (result.ok || result.error !== "Invalid request." || !result.fieldErrors || Object.keys(result.fieldErrors).length === 0) return result;
+  return { ...result, error: FIELD_ERRORS };
+}
 
 /**
  * Runs a programmatic Server Action (createAction) from a client form or button and keeps the last
@@ -30,7 +37,7 @@ export function useRunAction<TInput, TResult>(
         startTransition(async () => {
           let result: ActionResult<TResult>;
           try {
-            result = await action(input);
+            result = forForm(await action(input));
           } catch (err) {
             if (isNavigationError(err)) throw err;
             result = { ok: false, error: GENERIC };

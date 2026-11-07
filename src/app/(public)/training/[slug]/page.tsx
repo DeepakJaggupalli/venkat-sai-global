@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/public/json-ld";
 import { Breadcrumbs } from "@/components/public/page-hero";
 import { TrackEvent } from "@/components/public/track-event";
 import { CourseDetail } from "@/components/training/course-detail";
 import { TrainingI18n } from "@/components/training/training-i18n";
 import { courseApplyPath, OPEN_ENROLMENT_STATUSES } from "@/components/training/training-rules";
+import { BRAND } from "@/config/site";
 import { getT } from "@/i18n/server";
+import { absoluteUrl } from "@/lib/env";
 import { getCandidateByUserId } from "@/modules/candidates/guard";
 import { getCurrentUser } from "@/modules/identity/session";
 import { getPublicCourse, listCandidateEnrolments } from "@/modules/training/queries";
@@ -31,9 +34,19 @@ export default async function PublicCoursePage({ params }: PageProps) {
   const enrolments = user && candidate ? await listCandidateEnrolments({ userId: user.id, candidateId: candidate.id, displayName: user.displayName }) : [];
   const enrolledBatchIds = enrolments.filter((e) => OPEN_ENROLMENT_STATUSES.includes(e.status)).map((e) => e.batchId);
   const providerName = course.provider.kind === "institution" ? course.provider.name : t("provider.venkatSai");
+  // schema.org Course: only facts the page itself shows (no ratings, prices or accreditation claims).
+  const courseJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.summary ?? course.title,
+    url: absoluteUrl(`/training/${course.slug}`),
+    provider: { "@type": "Organization", name: course.provider.kind === "institution" ? course.provider.name : BRAND.name },
+  };
 
   return (
     <TrainingI18n className="bg-surface-subtle">
+      <JsonLd data={courseJsonLd} />
       <TrackEvent name="course_viewed" props={{ courseId: course.id, category: course.category, surface: "public" }} />
       <section className="border-b bg-navy text-white">
         <div className="container-page py-8 sm:py-10">

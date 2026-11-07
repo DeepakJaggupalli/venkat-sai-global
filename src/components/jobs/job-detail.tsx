@@ -84,14 +84,15 @@ function Facts({ items }: { items: { key: string; label: string; value: ReactNod
   return (
     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
       {items.map((item) => (
-        <div key={item.key} className="flex min-w-0 items-start gap-2.5">
-          <span aria-hidden="true" className="mt-0.5 text-muted-foreground [&_svg]:size-4">
-            {item.icon}
-          </span>
-          <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">{item.label}</dt>
-            <dd className="text-sm font-medium break-words text-foreground">{item.value}</dd>
-          </div>
+        // dt/dd must be direct children of the dl's div wrapper (axe definition-list), so the icon sits inside the dt.
+        <div key={item.key} className="relative min-w-0 pl-6.5">
+          <dt className="text-xs text-muted-foreground">
+            <span aria-hidden="true" className="absolute top-0.5 left-0 text-muted-foreground [&_svg]:size-4">
+              {item.icon}
+            </span>
+            {item.label}
+          </dt>
+          <dd className="text-sm font-medium break-words text-foreground">{item.value}</dd>
         </div>
       ))}
     </dl>

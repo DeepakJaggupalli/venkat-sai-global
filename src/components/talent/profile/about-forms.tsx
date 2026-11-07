@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { CountrySelect, CurrencySelect, SearchableSelect, SimpleSelect } from "@/components/shared/selects";
 import { TagInput } from "@/components/shared/tag-input";
@@ -49,7 +50,7 @@ export function PersonalForm({ action, defaults, countries, minor }: { action: F
   const [passport, setPassport] = useState(defaults.passportStatus ?? "");
   const hasNumber = passport === "valid" || passport === "expired";
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       <FieldGrid>
         <FormField label={t("field.legalName")} name="legalName" state={state} hint={t("field.legalName.hint")}>
@@ -140,7 +141,7 @@ export function ProfessionalForm({ action, defaults, industries }: { action: For
   const months = defaults.totalExperienceMonths;
   const suggested = defaults.suggestedExperienceMonths;
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       <FormField label={t("field.headline")} name="headline" state={state} hint={t("field.headline.hint")}>
         <Input defaultValue={defaults.headline ?? ""} maxLength={120} />
@@ -214,7 +215,7 @@ export function PreferencesForm({
   const close = useDialogClose();
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       <FormField label={t("field.preferredCategories")} name="preferredCategoryIds" state={state} hint={t("field.preferredCategories.hint")}>
         {(field) => (
@@ -285,7 +286,7 @@ export function LocationsForm({
   const payload = rows.filter((r) => r.countryCode).map(({ countryCode, stateRegion, city }) => ({ countryCode, stateRegion: stateRegion || undefined, city: city || undefined }));
   const update = (key: number, patch: Partial<LocationDraft>) => setRows((all) => all.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate>
       <FormErrorAlert state={state} />
       <input type="hidden" name="locations:json" value={JSON.stringify(payload)} />
       <p className="text-sm text-muted-foreground">{t("locations.hint")}</p>
@@ -339,7 +340,7 @@ export function ContactMethodForm({ action, value }: { action: FormAction; value
   const close = useDialogClose();
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate>
       <FormErrorAlert state={state} />
       <FormField label={t("field.contactMethod")} name="method" state={state} hint={t("field.contactMethod.hint")}>
         {(field) => (
@@ -375,7 +376,7 @@ export function FileRefForm({
   const close = useDialogClose();
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate>
       <FormErrorAlert state={state} />
       <FileUpload purpose={purpose} name="fileId" label={label} description={description} defaultFiles={file ? [file] : []} invalid={Boolean(state && !state.ok && state.fieldErrors?.fileId)} />
       <p className="text-sm text-muted-foreground">{t("files.removeHint")}</p>

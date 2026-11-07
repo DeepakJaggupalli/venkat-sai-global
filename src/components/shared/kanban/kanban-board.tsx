@@ -228,7 +228,9 @@ export function KanbanBoard<T extends KanbanItemBase>({
           },
         }}
       >
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0">
+        {/* `relative` makes this scroller the containing block of the columns' sr-only (absolute) labels, which
+            otherwise escape it and widen the whole page by the off-screen columns. */}
+        <div className="relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0">
           {columns.map((column) => {
             const list = columnItems(board, column.id);
             return (

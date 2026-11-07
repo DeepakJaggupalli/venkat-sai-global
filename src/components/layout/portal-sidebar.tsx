@@ -151,7 +151,9 @@ export function SidebarBrand({
   className?: string;
 }) {
   return (
-    <Link href={homeHref} aria-label={homeLabel} onNavigate={onNavigate} className={cn("flex min-w-0 items-center rounded-md", className)}>
+    <Link href={homeHref} onNavigate={onNavigate} className={cn("flex min-w-0 items-center rounded-md", className)}>
+      {/* Name from content, not aria-label: the logo's wordmark is visible text (WCAG 2.5.3 label in name). */}
+      <span className="sr-only">{homeLabel}</span>
       {collapsed ? <LogoMark decorative className="size-9" /> : <Logo decorative className="h-8 w-auto" />}
     </Link>
   );

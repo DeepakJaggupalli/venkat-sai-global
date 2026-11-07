@@ -5,12 +5,12 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { getLocale, getT } from "@/i18n/server";
 import { env } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listInterviewsForCandidate } from "@/modules/recruitment/queries";
 import { asCandidate } from "@/modules/recruitment/service";
 
 import { splitInterviews } from "./_lib/split";
 import { InterviewCard } from "./interview-card";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("talent-jobs");
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Upcoming interviews (soonest first) with responses and calendar files, then past and cancelled ones. */
 export default async function InterviewsPage() {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   const [t, locale, interviews] = await Promise.all([getT("talent-jobs"), getLocale(), listInterviewsForCandidate(asCandidate(session), {})]);
   const viewerTimeZone = session.user.timezone ?? env().DEFAULT_TIMEZONE;
   const { upcoming, past } = splitInterviews(interviews);

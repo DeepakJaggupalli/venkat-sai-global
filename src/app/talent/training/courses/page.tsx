@@ -5,7 +5,7 @@ import { catalogueFilterOptions, loadCatalogue, parseCatalogueParams } from "@/c
 import { CourseCatalogue } from "@/components/training/course-catalogue";
 import { getLocale, getT } from "@/i18n/server";
 import { parsePage, type SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
+import { requireOnboardedCandidate } from "../../_lib/guard";
 
 type PageProps = { searchParams: Promise<SearchParams> };
 
@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Course discovery inside the People Portal (same catalogue as the public site; links stay in the portal). */
 export default async function TalentCoursesPage({ searchParams }: PageProps) {
-  await requireCandidate();
+  await requireOnboardedCandidate();
   const sp = await searchParams;
   const [t, locale] = await Promise.all([getT("talent-training"), getLocale()]);
   const query = parseCatalogueParams(sp);

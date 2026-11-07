@@ -34,10 +34,8 @@ export function InviteForm({ roleOptions, seatsNote }: { roleOptions: SelectOpti
           Send invitation
         </SubmitButton>
       </div>
+      {/* Success is announced by the toast (useActionToast); a second live region here would repeat it. */}
       {seatsNote ? <p className="text-sm text-muted-foreground">{seatsNote}</p> : null}
-      <p className="sr-only" aria-live="polite">
-        {state?.ok ? state.message : ""}
-      </p>
     </form>
   );
 }

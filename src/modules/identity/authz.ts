@@ -124,9 +124,11 @@ export const getOrgContext = cache(async <T extends OrgType>(orgType: T): Promis
         isNull(organizations.deletedAt),
       ),
     )
+    // No constant fallback term: PostgreSQL reads a bare integer in ORDER BY as a column position
+    // ("ORDER BY 0" is an error), which broke every portal visit before an organisation was chosen.
     .orderBy(
-      preferredOrgId ? sql`case when ${organizations.id} = ${preferredOrgId} then 0 else 1 end` : sql`0`,
-      desc(organizationMembers.lastActiveAt),
+      ...(preferredOrgId ? [sql`case when ${organizations.id} = ${preferredOrgId} then 0 else 1 end`] : []),
+      sql`${organizationMembers.lastActiveAt} desc nulls last`,
       desc(organizationMembers.createdAt),
     )
     .limit(1);

@@ -10,11 +10,11 @@ import { PageHeader } from "@/components/shared/page-header";
 import { getLocale, getT } from "@/i18n/server";
 import { withParams, type SearchParams } from "@/lib/http";
 import { logger } from "@/lib/logger";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { getRecommendedJobs } from "@/modules/jobs/recommendations";
 import { parseJobSearchParams } from "@/modules/jobs/schemas";
 import { searchJobs } from "@/modules/jobs/search";
 import type { RecommendedJob } from "@/modules/jobs/types";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 type PageProps = { searchParams: Promise<SearchParams> };
 
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * search into an alert.
  */
 export default async function TalentJobsPage({ searchParams }: PageProps) {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   const sp = await searchParams;
   const { user, candidate } = session;
   const [t, locale, options] = await Promise.all([getT("talent-jobs"), getLocale(), loadJobFilterOptions()]);

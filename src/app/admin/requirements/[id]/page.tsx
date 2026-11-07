@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Briefcase, ExternalLink, MessageSquare } from "lucide-react";
 
 import { ActionButton } from "@/components/admin/action-button";
+import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm, type AdminFieldSpec } from "@/components/admin/action-form";
 import { AssignSelect } from "@/components/admin/assign-select";
 import { InternalNotesPanel } from "@/components/admin/internal-notes";
@@ -138,9 +139,9 @@ export default async function RequirementDetailPage({ params }: { params: Params
             flush
             action={
               canManage ? (
-                <ResponsiveDialog title="Add a role" size="lg" trigger={<Button size="sm" variant="outline">Add role</Button>}>
+                <ActionDialog title="Add a role" size="lg" trigger={<Button size="sm" variant="outline">Add role</Button>}>
                   <ActionForm action={saveRequirementLineFormAction} hidden={{ requirementId: r.id }} columns={2} fields={lineFields(null, currencies)} submitLabel="Add role" resetOnSuccess />
-                </ResponsiveDialog>
+                </ActionDialog>
               ) : undefined
             }
           >

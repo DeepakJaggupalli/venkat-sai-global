@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +34,7 @@ export function CareerRequestForm({ action, service }: { action: RequestAction; 
     );
   }
   return (
-    <form action={formAction} className="space-y-4" noValidate data-testid={`career-request-${service}`}>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate data-testid={`career-request-${service}`}>
       <FormErrorAlert state={state} />
       <input type="hidden" name="service" value={service} />
       <FormField label={ta("career.request.message")} name="message" required state={state} hint={ta(`career.request.${service}.hint`)}>

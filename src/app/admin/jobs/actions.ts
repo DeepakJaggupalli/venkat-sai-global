@@ -8,9 +8,9 @@ import { f } from "@/lib/validation";
 import { decideApproval, getOpenApprovalForEntity } from "@/modules/approvals/service";
 import { requireStaff, type StaffContext } from "@/modules/identity/authz";
 import { MANUAL_CLOSE_REASONS, PROMOTION_TYPE_OPTIONS } from "@/modules/jobs/constants";
-import { dateOnly } from "@/modules/jobs/schemas";
-import { closeJob, extendJob, featureJob, pauseJob, publishJob, resumeJob } from "@/modules/jobs/service";
-import { createStaffTask } from "@/modules/operations/service";
+import { dateOnly, jobFormSchema } from "@/modules/jobs/schemas";
+import { closeJob, createJob, extendJob, featureJob, pauseJob, publishJob, resumeJob } from "@/modules/jobs/service";
+import { createStaffTask, linkRequirementLineToJob } from "@/modules/operations/service";
 
 /**
  * Command Centre bulk job operations. Each job is processed independently through the module services
@@ -126,3 +126,24 @@ export const assignJobRecruiterAction = createFormAction(
     return ok(undefined, "Recruiter assigned");
   },
 );
+
+/**
+ * "Create job" from a requirement role: saves the draft and links it to that role, so staff do not have to
+ * return to the requirement and link it by hand. The operations service checks the link (same requirement,
+ * same employer or Venkat Sai-managed); if it fails the draft is kept and the message says so.
+ */
+export const createJobFromRequirementLineAction = createFormAction(jobFormSchema, async (input, formData) => {
+  const ctx = await requireStaff(["jobs.manage", "requirements.manage"]);
+  const lineId = z.uuid().safeParse(formData.get("requirementLineId")).data;
+  if (!lineId || !input.requirementId) throw new ActionError("Open this form from a requirement role.");
+  const job = await createJob({ kind: "staff", ctx }, input);
+  revalidatePath("/admin/jobs");
+  revalidatePath(`/admin/requirements/${input.requirementId}`);
+  try {
+    await linkRequirementLineToJob(ctx, lineId, job.id);
+  } catch (err) {
+    if (err instanceof ActionError) return ok({ id: job.id, sentForReview: false }, `Draft saved, but it could not be linked to the role: ${err.message}`);
+    throw err;
+  }
+  return ok({ id: job.id, sentForReview: false }, "Draft saved and linked to the role");
+});

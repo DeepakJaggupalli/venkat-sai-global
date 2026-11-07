@@ -103,5 +103,9 @@
   "next.add_passport_status": "अपने पासपोर्ट की स्थिति जोड़ें",
   "next.fix_rejected_documents": "ध्यान देने वाले दस्तावेज़ ठीक करें",
   "next.submit_documents_for_verification": "अपने दस्तावेज़ सत्यापन के लिए भेजें",
-  "next.review_visibility": "देखें कि आपकी प्रोफ़ाइल कौन खोज सकता है"
+  "next.review_visibility": "देखें कि आपकी प्रोफ़ाइल कौन खोज सकता है",
+  "notFound.title": "हमें वह पेज नहीं मिला",
+  "notFound.description": "हो सकता है इसे हटा दिया गया हो, या यह किसी दूसरे खाते का हो। लिंक जाँचें, या अपने डैशबोर्ड से आगे बढ़ें।",
+  "notFound.dashboard": "मेरे डैशबोर्ड पर जाएँ",
+  "notFound.jobs": "नौकरियाँ खोजें"
 }

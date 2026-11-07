@@ -4,8 +4,6 @@ import { describe, expect, it } from "vitest";
 
 import type { OrgContext } from "@/modules/identity/authz";
 
-import { getSourcedCandidateContact, listPartnerCandidates, listPartnerMobilisations, listSubmittableCandidates } from "./queries";
-
 /**
  * Smoke test of the Partner Portal read models against an isolated database (SQL validity and
  * scoping to an organisation with no data). Run with
@@ -27,7 +25,11 @@ function partnerCtx(permissions: string[]): OrgContext<"recruitment_partner"> {
   };
 }
 
-describe.skipIf(!enabled)("partner portal queries", () => {
+describe.skipIf(!enabled)("partner portal queries", async () => {
+  // Imported lazily: loading the queries opens the database pool, which needs DATABASE_URL (skipped otherwise).
+  const { getSourcedCandidateContact, listPartnerCandidates, listPartnerMobilisations, listSubmittableCandidates } = enabled
+    ? await import("./queries")
+    : ({} as typeof import("./queries"));
   const ctx = partnerCtx(["partner.candidates.submit", "partner.documents.manage", "partner.submissions.view"]);
 
   it("lists an empty candidate pool for an organisation without candidates", async () => {

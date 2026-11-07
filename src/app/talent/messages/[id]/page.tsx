@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 
 import { MessageDetailView } from "@/components/messages/portal-messages";
 import { env } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 
 import { getMessagesT, getTalentMessagesLabels } from "../_lib/i18n";
+import { requireOnboardedCandidate } from "../../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getMessagesT();
@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function TalentConversationPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = await requireCandidate();
+  const { user } = await requireOnboardedCandidate();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const { labels, contextLabels, locale } = await getTalentMessagesLabels();

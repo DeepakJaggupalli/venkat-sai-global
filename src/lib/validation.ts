@@ -113,8 +113,9 @@ export const f = {
   enumOf: <const T extends readonly [string, ...string[]]>(values: T, message = "Choose a valid option") =>
     z.enum(values, { error: message }),
 
-  countryCode: () => z.string().trim().length(2, "Choose a country").toUpperCase(),
-  currencyCode: () => z.string().trim().length(3, "Choose a currency").toUpperCase(),
+  // `error` also covers a select left empty (the field is then missing from FormData, not "").
+  countryCode: () => z.string({ error: "Choose a country" }).trim().length(2, "Choose a country").toUpperCase(),
+  currencyCode: () => z.string({ error: "Choose a currency" }).trim().length(3, "Choose a currency").toUpperCase(),
 };
 
 /** Normalise an email address for storage / lookup. */

@@ -18,7 +18,7 @@ import { asEmployer } from "@/modules/recruitment/actors";
 import { getApplicationForEmployer, getPipelineBoard } from "@/modules/recruitment/queries";
 import type { EmployerApplicationDetail, PipelineBoard as Board } from "@/modules/recruitment/types";
 
-import { accessibleFileSummaries, loadOfferFormOptions, viewerTimeZone } from "../_lib/shared";
+import { accessibleFileSummaries, loadJobOfferTerms, loadOfferFormOptions, viewerTimeZone } from "../_lib/shared";
 
 export const metadata: Metadata = { title: "Job pipeline" };
 
@@ -58,7 +58,11 @@ export default async function JobPipelinePage({ params, searchParams }: { params
   const timeZone = viewerTimeZone(ctx);
   let drawer: DrawerData | null = null;
   if (detail) {
-    const [files, offerOptions] = await Promise.all([accessibleFileSummaries([detail.application.resumeFileId, ...detail.offers.map((o) => o.offerFileId)]), loadOfferFormOptions()]);
+    const [files, offerOptions, jobTerms] = await Promise.all([
+      accessibleFileSummaries([detail.application.resumeFileId, ...detail.offers.map((o) => o.offerFileId)]),
+      loadOfferFormOptions(),
+      loadJobOfferTerms(ctx, detail.job.id),
+    ]);
     drawer = {
       detail,
       resume: detail.application.resumeFileId ? (files[detail.application.resumeFileId] ?? null) : null,
@@ -70,6 +74,7 @@ export default async function JobPipelinePage({ params, searchParams }: { params
       timeZones: timeZoneOptions([timeZone]),
       me: { userId: ctx.user.id, name: ctx.user.displayName, email: ctx.user.email ?? null },
       offerOptions,
+      jobTerms,
     };
   }
 

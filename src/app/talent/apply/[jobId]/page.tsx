@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ProgressRing } from "@/components/shared/progress-ring";
 import { SectionCard } from "@/components/shared/section-card";
 import { getLocale, getT } from "@/i18n/server";
-import { requireCandidate } from "@/modules/candidates/guard";
+import { sp, type SearchParams } from "@/lib/http";
 import { isMinor } from "@/modules/candidates/profile-rules";
 import { getCandidateDashboardSummary } from "@/modules/candidates/queries";
 import { getFile, toFileSummary } from "@/modules/files";
@@ -20,9 +20,10 @@ import { countryOptions, currencyOptions } from "@/modules/taxonomy/queries";
 
 import { findOwnApplicationForJob } from "../../applications/_lib/queries";
 import { jobSlugById } from "./_lib/queries";
-import { ApplyForm } from "./apply-form";
+import { ApplyForm, Confirmation } from "./apply-form";
+import { requireOnboardedCandidate } from "../../_lib/guard";
 
-type PageProps = { params: Promise<{ jobId: string }> };
+type PageProps = { params: Promise<{ jobId: string }>; searchParams: Promise<SearchParams> };
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("talent-jobs");
@@ -34,8 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * (with gaps and links to fix them), resume, screening questions, cover letter, explicit consent and a
  * declaration. Free for candidates, always.
  */
-export default async function ApplyPage({ params }: PageProps) {
-  const session = await requireCandidate();
+export default async function ApplyPage({ params, searchParams }: PageProps) {
+  const session = await requireOnboardedCandidate();
   const { user, candidate } = session;
   const { jobId } = await params;
   const [t, td, locale] = await Promise.all([getT("talent-jobs"), getT("talent-dashboard"), getLocale()]);
@@ -60,6 +61,18 @@ export default async function ApplyPage({ params }: PageProps) {
   const breadcrumb = <PortalBreadcrumb items={[{ label: t("discover.title"), href: "/talent/jobs" }, { label: job.title, href: `/talent/jobs/${job.slug}` }, { label: t("apply.breadcrumb") }]} />;
   const existing = await findOwnApplicationForJob(candidate.id, job.id);
   const header = <PageHeader title={t("apply.title", { title: job.title })} description={t("apply.description")} backLink={{ href: `/talent/jobs/${job.slug}`, label: t("apply.backToJob") }} />;
+
+  // Straight after submitting, the form navigates here with the new application's id: confirm it, with its code.
+  const query = await searchParams;
+  if (existing && existing.status !== "withdrawn" && sp(query, "submitted") === existing.id) {
+    return (
+      <div className="space-y-6">
+        {breadcrumb}
+        {header}
+        <Confirmation result={{ id: existing.id, code: existing.code, reopened: sp(query, "again") === "1" }} jobTitle={job.title} />
+      </div>
+    );
+  }
 
   if (existing && existing.status !== "withdrawn") {
     return (

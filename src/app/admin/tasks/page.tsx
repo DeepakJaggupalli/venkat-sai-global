@@ -4,6 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { z } from "zod";
 
 import { ActionButton } from "@/components/admin/action-button";
+import { ActionDialog } from "@/components/admin/action-dialog";
 import { ActionForm } from "@/components/admin/action-form";
 import { AssignSelect } from "@/components/admin/assign-select";
 import { PRIORITY_OPTIONS, PriorityBadge } from "@/components/admin/priority-badge";
@@ -15,7 +16,6 @@ import { FilterBar, FilterSelect } from "@/components/shared/filters";
 import { LinkTabs } from "@/components/shared/link-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
-import { ResponsiveDialog } from "@/components/shared/responsive-dialog";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,7 @@ export default async function StaffTasksPage({ searchParams }: { searchParams: P
           </span>
         }
         actions={
-          <ResponsiveDialog
+          <ActionDialog
             title="New task"
             description="Tasks are internal. Assign one to a colleague or leave it with yourself."
             trigger={<Button data-testid="new-task">New task</Button>}
@@ -96,7 +96,7 @@ export default async function StaffTasksPage({ searchParams }: { searchParams: P
               pendingLabel="Creating…"
               resetOnSuccess
             />
-          </ResponsiveDialog>
+          </ActionDialog>
         }
       />
 

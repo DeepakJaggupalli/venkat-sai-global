@@ -12,11 +12,11 @@ import { getLocale, getT } from "@/i18n/server";
 import { env } from "@/lib/env";
 import { formatDate } from "@/lib/format";
 import { parsePage, sp as firstParam, type SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listApplicationsForCandidate } from "@/modules/recruitment/queries";
 import { asCandidate } from "@/modules/recruitment/service";
 
 import { stageLabel, stageTone } from "./_lib/stage";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 type PageProps = { searchParams: Promise<SearchParams> };
 
@@ -30,7 +30,7 @@ type View = (typeof VIEWS)[number];
 
 /** The candidate's applications: open / closed / all, each with its current stage in their language. */
 export default async function ApplicationsPage({ searchParams }: PageProps) {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   const params = await searchParams;
   const requested = firstParam(params, "status");
   const view: View = (VIEWS as readonly string[]).includes(requested ?? "") ? (requested as View) : "open";

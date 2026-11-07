@@ -10,8 +10,8 @@ import { AssessmentCard } from "@/components/training/assessment-card";
 import { groupAssessments, intlLocale, joinPlace } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
 import { env } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listCandidateSkillAssessments } from "@/modules/training/skill-assessments";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("talent-training");
@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Venkat Sai trade / skill tests: schedule and what to bring, published results and the skills they verified. */
 export default async function AssessmentsPage() {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const [t, locale, items] = await Promise.all([
     getT("talent-training"),
     getLocale(),

@@ -7,6 +7,7 @@ import { ActionError, createAction, createFormAction, ok } from "@/lib/actions";
 import { rateLimit } from "@/lib/rate-limit";
 import { getRequestMeta } from "@/lib/request";
 import { f } from "@/lib/validation";
+import { assertGuardianConsentIfMinor, requireCandidate } from "@/modules/candidates/guard";
 import { isFeatureEnabled } from "@/modules/settings";
 
 import { registerForCampusDrive, withdrawCampusDriveRegistration } from "./campus";
@@ -18,6 +19,11 @@ import { applyToBatchSchema, campusRegistrationSchema, verifyCertificateCodeSche
 
 /** Server Actions for candidates (People Portal) and the public certificate check. */
 
+/** Applying or registering shares a child's contact details with an institution or employer: refused until a guardian consents (DPDP Act s.9). */
+async function assertCandidateMayShare(): Promise<void> {
+  await assertGuardianConsentIfMinor((await requireCandidate()).candidate);
+}
+
 async function assertTrainingEnabled(): Promise<void> {
   if (!(await isFeatureEnabled("talent.training", { portal: "talent" }))) throw new ActionError("Training enrolment is not available at the moment.");
 }
@@ -25,6 +31,7 @@ async function assertTrainingEnabled(): Promise<void> {
 export const applyToBatchAction = createFormAction(applyToBatchSchema, async ({ batchId }) => {
   await assertTrainingEnabled();
   const candidate = await requireCandidateActor();
+  await assertCandidateMayShare();
   const limited = await rateLimit(`training-apply:${candidate.userId}`, 30, 24 * 60 * 60);
   if (!limited.allowed) throw new ActionError("You have sent many applications today. Please try again tomorrow.");
   const enrolment = await applyToBatch(candidate, batchId);
@@ -44,6 +51,7 @@ export const withdrawEnrolmentAction = createAction(z.object({ enrolmentId: f.uu
 
 export const registerForCampusDriveAction = createFormAction(campusRegistrationSchema, async ({ driveId, consentToShare }) => {
   const candidate = await requireCandidateActor();
+  await assertCandidateMayShare();
   const limited = await rateLimit(`campus-register:${candidate.userId}`, 30, 24 * 60 * 60);
   if (!limited.allowed) throw new ActionError("Too many registrations today. Please try again tomorrow.");
   await registerForCampusDrive(candidate, driveId, { consentToShare });

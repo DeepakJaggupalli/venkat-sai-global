@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { CourseDetail } from "@/components/training/course-detail";
 import { courseApplyPath, OPEN_ENROLMENT_STATUSES } from "@/components/training/training-rules";
 import { getT } from "@/i18n/server";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { getPublicCourse, listCandidateEnrolments } from "@/modules/training/queries";
 import { toIsoDate } from "@/modules/training/rules";
+import { requireOnboardedCandidate } from "../../../_lib/guard";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 /** Course page inside the People Portal; batch buttons open the enrolment flow. */
 export default async function TalentCoursePage({ params }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const { slug } = await params;
   const [t, course, enrolments] = await Promise.all([
     getT("talent-training"),

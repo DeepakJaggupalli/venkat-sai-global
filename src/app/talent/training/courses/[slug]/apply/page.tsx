@@ -11,13 +11,13 @@ import { FeePaymentNote } from "@/components/training/fee-payment-note";
 import { batchCta, intlLocale, OPEN_ENROLMENT_STATUSES } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
 import { sp, type SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { isFeatureEnabled } from "@/modules/settings";
 import { getPublicCourse, listCandidateEnrolments } from "@/modules/training/queries";
 import { toIsoDate } from "@/modules/training/rules";
 
 import { feePaymentInfo } from "../../../_lib/queries";
 import { ApplyForm } from "./apply-form";
+import { requireOnboardedCandidate } from "../../../../_lib/guard";
 
 type PageProps = { params: Promise<{ slug: string }>; searchParams: Promise<SearchParams> };
 
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Enrolment flow for one batch: batch summary, fee and how to pay, contact-sharing consent and declaration. */
 export default async function ApplyToBatchPage({ params, searchParams }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const [t, locale, course, enabled, payment] = await Promise.all([
     getT("talent-training"),

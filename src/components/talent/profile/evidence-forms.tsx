@@ -2,6 +2,7 @@
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { CountrySelect, SimpleSelect } from "@/components/shared/selects";
 import { TagInput } from "@/components/shared/tag-input";
 import type { SelectOption } from "@/components/shared/types";
@@ -32,7 +33,7 @@ export function CredentialForm({
   const close = useDialogClose();
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       <FieldGrid>
@@ -81,7 +82,7 @@ export function DocumentForm({ action, item, countries }: { action: FormAction; 
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   const fileInvalid = Boolean(state && !state.ok && state.fieldErrors?.fileId);
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       {item && item.verificationStatus !== "unverified" ? <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning-strong">{t("documents.editResets")}</p> : null}
@@ -140,7 +141,7 @@ export function PortfolioForm({ action, item }: { action: FormAction; item: Cand
   const close = useDialogClose();
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       <FormField label={t("field.portfolioTitle")} name="title" required state={state}>

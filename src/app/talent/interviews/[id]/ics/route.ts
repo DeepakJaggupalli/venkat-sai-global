@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { absoluteUrl } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listInterviewsForCandidate } from "@/modules/recruitment/queries";
 import { asCandidate } from "@/modules/recruitment/service";
 
 import { buildInterviewIcs } from "../../_lib/ics";
+import { requireOnboardedCandidate } from "../../../_lib/guard";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -14,7 +14,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * to the candidate, so another person's interview id is simply not found. Read-only (GET), no caching.
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   const { id } = await params;
   if (!UUID.test(id)) return new NextResponse("Not found", { status: 404 });
   const interviews = await listInterviewsForCandidate(asCandidate(session), {});

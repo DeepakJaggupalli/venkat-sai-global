@@ -5,9 +5,10 @@ import { z } from "zod";
 
 import { ActionError, createAction, createFormAction, ok } from "@/lib/actions";
 import { toMinorUnits } from "@/lib/format";
+import { assertGuardianConsentIfMinor, requireCandidate } from "@/modules/candidates/guard";
 import { requireOrgMember, requireStaff } from "@/modules/identity/authz";
 
-import { asEmployer, asPartner, asStaff } from "./actors";
+import { asCandidate, asEmployer, asPartner, asStaff } from "./actors";
 import { assignApplicationOwner, bulkTransitionApplications, createApplication, shareApplicationsWithEmployer, transitionApplication, updateApplicationReview, withdrawApplication } from "./applications";
 import { requireCandidateActor } from "./candidate-actor";
 import { cancelInterview, completeInterview, rescheduleInterview, respondToInterview, scheduleInterview, submitInterviewFeedback, updateInterviewParticipants } from "./interviews";
@@ -100,7 +101,10 @@ function revalidatePipelines(): void {
 // ---------------------------------------------------------------------------
 
 export const applyToJobAction = createFormAction(candidateApplyFormSchema, async (input) => {
-  const actor = await requireCandidateActor();
+  const session = await requireCandidate();
+  // Applying shares a child's profile with an employer: refused until a guardian consents (DPDP Act s.9).
+  await assertGuardianConsentIfMinor(session.candidate);
+  const actor = asCandidate(session);
   const expectedSalary =
     input.expectedSalaryAmount !== undefined && input.expectedSalaryCurrency && input.expectedSalaryPeriod
       ? { amountMinor: toMinorUnits(input.expectedSalaryAmount, input.expectedSalaryCurrency), currency: input.expectedSalaryCurrency, period: input.expectedSalaryPeriod }

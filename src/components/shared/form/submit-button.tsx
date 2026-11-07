@@ -25,27 +25,32 @@ type SubmitButtonProps = Omit<ComponentProps<typeof Button>, "type" | "asChild">
 export function SubmitButton({ children, pendingLabel, pending: pendingProp, disabled, className, onClick, ...props }: SubmitButtonProps) {
   const status = useFormStatus();
   const pending = Boolean(pendingProp || status.pending);
+  // The live region sits next to the button, not inside it: modal dialogs (aria-hidden's hideOthers) keep
+  // [aria-live] elements exposed and hide their siblings, which stripped the label from every submit button
+  // behind an open dialog (axe "button-name"). It comes first so `space-y-*` parents add no margin to the button.
   return (
-    <Button
-      {...props}
-      type="submit"
-      disabled={disabled}
-      aria-disabled={pending || undefined}
-      data-pending={pending || undefined}
-      className={cn("min-w-24", pending && "cursor-wait opacity-80", className)}
-      onClick={(event) => {
-        if (pending) {
-          event.preventDefault();
-          return;
-        }
-        onClick?.(event);
-      }}
-    >
-      {pending ? <Spinner aria-hidden="true" role="presentation" /> : null}
-      <span>{pending && pendingLabel ? pendingLabel : children}</span>
+    <>
       <span aria-live="polite" className="sr-only">
         {pending ? "Submitting" : ""}
       </span>
-    </Button>
+      <Button
+        {...props}
+        type="submit"
+        disabled={disabled}
+        aria-disabled={pending || undefined}
+        data-pending={pending || undefined}
+        className={cn("min-w-24", pending && "cursor-wait opacity-80", className)}
+        onClick={(event) => {
+          if (pending) {
+            event.preventDefault();
+            return;
+          }
+          onClick?.(event);
+        }}
+      >
+        {pending ? <Spinner aria-hidden="true" role="presentation" /> : null}
+        <span>{pending && pendingLabel ? pendingLabel : children}</span>
+      </Button>
+    </>
   );
 }

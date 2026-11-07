@@ -24,13 +24,14 @@ import type { CandidateApplicationDetail } from "@/modules/recruitment/types";
 import { InterviewCard } from "../../interviews/interview-card";
 import { stageDescription, stageLabel, stageTone } from "../_lib/stage";
 import { ChecklistSubmit, OfferResponse, WithdrawApplicationButton } from "../application-controls";
+import { requireOnboardedCandidate } from "../../_lib/guard";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function load(id: string): Promise<{ session: Awaited<ReturnType<typeof requireCandidate>>; app: CandidateApplicationDetail }> {
-  const session = await requireCandidate();
+  const session = await requireOnboardedCandidate();
   if (!UUID.test(id)) notFound();
   try {
     return { session, app: await getApplicationForCandidate(asCandidate(session), id) };
@@ -85,9 +86,10 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         title={app.job.title}
         description={app.job.employerName}
         status={
-          <StatusBadge tone={stageTone(app.stage)} data-testid="application-stage">
-            {stageLabel(app.stage, locale)}
-          </StatusBadge>
+          // StatusBadge does not pass extra props on, so the test hook sits on a wrapper.
+          <span data-testid="application-stage" className="inline-flex">
+            <StatusBadge tone={stageTone(app.stage)}>{stageLabel(app.stage, locale)}</StatusBadge>
+          </span>
         }
         meta={
           <span className="text-sm text-muted-foreground">

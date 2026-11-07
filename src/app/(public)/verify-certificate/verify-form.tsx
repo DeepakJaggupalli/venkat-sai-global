@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { intlLocale } from "@/components/training/training-rules";
 import { VerificationResult } from "@/components/training/verification-result";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ export function VerifyCertificateForm({ defaultCode }: { defaultCode?: string })
 
   return (
     <div className="space-y-6">
-      <form action={formAction} className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-6" noValidate>
+      <form action={formAction} onResetCapture={keepFormValues} className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-6" noValidate>
         <FormErrorAlert state={state} title={t("verify.formError")} />
         <FormField label={t("verify.codeLabel")} name="code" required state={state} hint={t("verify.codeHint")}>
           <Input

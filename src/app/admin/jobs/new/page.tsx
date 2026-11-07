@@ -15,6 +15,8 @@ import { VISA_SPONSORSHIP_OPTIONS } from "@/modules/jobs/constants";
 import { getRequirement } from "@/modules/operations/queries";
 import { countryOptions, currencyOptions, industryOptions, jobCategoryOptions } from "@/modules/taxonomy/queries";
 
+import { createJobFromRequirementLineAction } from "../actions";
+
 export const metadata: Metadata = { title: "Create job" };
 
 type SP = Record<string, string | string[] | undefined>;
@@ -43,6 +45,8 @@ export default async function NewAdminJobPage({ searchParams }: { searchParams: 
     requirementId && staffCan(ctx, "requirements.view") ? getRequirement(ctx, requirementId) : Promise.resolve(null),
   ]);
   const line = requirement?.lines.find((l) => l.id === lineId) ?? null;
+  // Opened from a role: the draft is linked to that role on save (needs the requirements permission too).
+  const linkLine = line && staffCan(ctx, "requirements.manage") ? line : null;
   const money = (v: number | null | undefined) => (v != null && line?.salaryCurrency ? fromMinorUnits(v, line.salaryCurrency) : null);
 
   const fields: AdminFieldSpec[] = [
@@ -61,7 +65,7 @@ export default async function NewAdminJobPage({ searchParams }: { searchParams: 
     },
     { name: "employerReference", label: "Internal reference", optional: true },
     { name: "isConfidential", label: "Confidential client: candidates never see the employer's name, logo or page", kind: "checkbox", wide: true },
-    { name: "confidentialEmployerName", label: "Employer description shown to candidates", optional: true, hint: "For example “EPC contractor, Qatar”. Required for confidential jobs.", wide: true },
+    { name: "confidentialEmployerName", label: "Employer description shown to candidates", optional: true, hint: "For example “EPC contractor, Qatar”. Required for confidential jobs and when no employer is chosen.", wide: true },
     { name: "managedByVenkatSai", label: "Venkat Sai manages this hiring (applications come to our team)", kind: "checkbox", defaultValue: !requirement?.requirement.organizationId, wide: true },
     { name: "jobCategoryId", label: "Category", kind: "search-select", options: categories, optional: true, allowClear: true, defaultValue: line?.jobCategoryId ?? null },
     { name: "industryId", label: "Industry", kind: "search-select", options: industries, optional: true, allowClear: true, defaultValue: requirement?.requirement.industryId ?? null },
@@ -100,7 +104,8 @@ export default async function NewAdminJobPage({ searchParams }: { searchParams: 
       />
       {requirement ? (
         <Callout tone="info" title={`From ${requirement.requirement.code}`}>
-          Prefilled from {line ? `the role “${line.roleTitle}” of ` : ""}“{requirement.requirement.title}”. Link the new job to the role from the requirement page.
+          Prefilled from {line ? `the role “${line.roleTitle}” of ` : ""}“{requirement.requirement.title}”.{" "}
+          {linkLine ? "Saving links the new job to this role." : "Link the new job to the role from the requirement page."}
         </Callout>
       ) : null}
       <Callout tone="neutral" title="Candidates are never charged">
@@ -108,8 +113,8 @@ export default async function NewAdminJobPage({ searchParams }: { searchParams: 
       </Callout>
       <SectionCard title="Job details">
         <ActionForm
-          action={saveStaffJobAction}
-          hidden={{ requirementId: requirement?.requirement.id }}
+          action={linkLine ? createJobFromRequirementLineAction : saveStaffJobAction}
+          hidden={{ requirementId: requirement?.requirement.id, requirementLineId: linkLine?.id }}
           columns={2}
           fields={fields}
           submitLabel="Save draft"

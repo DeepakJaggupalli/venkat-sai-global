@@ -33,7 +33,6 @@ export default async function TalentListsPage({ searchParams }: { searchParams: 
       <PageHeader
         title="Talent lists"
         description="Shortlists, saved candidates and hiring projects. Notes on lists stay inside your organisation."
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Talent lists" }]}
         actions={<ListFormDialog jobs={jobs} />}
       />
       <LinkTabs

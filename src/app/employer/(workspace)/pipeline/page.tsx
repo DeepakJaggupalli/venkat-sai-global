@@ -31,7 +31,6 @@ export default async function PipelineOverviewPage() {
       <PageHeader
         title="Pipeline"
         description="Every job's candidates by stage, and workforce requirements on their way to sourcing."
-        breadcrumbs={[{ label: "Employer", href: "/employer" }, { label: "Pipeline" }]}
         actions={orgCan(ctx, "employer.jobs.manage") ? [{ label: "Post a job", href: "/employer/jobs/new" }] : undefined}
       />
 

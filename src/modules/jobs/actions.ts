@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { ActionError, createAction, createFormAction, ok } from "@/lib/actions";
+import { assertGuardianConsentIfMinor, getCandidateByUserId } from "@/modules/candidates/guard";
 import { requireOrgMember, requireStaff } from "@/modules/identity/authz";
 import { requireUser } from "@/modules/identity/session";
 
@@ -217,8 +218,15 @@ export const setJobRecruitingAgentAction = createFormAction(recruitingAgentSchem
 // People Portal: saved jobs and alerts
 // ---------------------------------------------------------------------------
 
+/** Saving jobs and alerts collects more of a child's data: refused until a guardian consents (DPDP Act s.9). */
+async function assertGuardianConsentForUser(userId: string): Promise<void> {
+  const candidate = await getCandidateByUserId(userId);
+  if (candidate) await assertGuardianConsentIfMinor(candidate);
+}
+
 export const saveJobBookmarkAction = createAction(savedJobSchema, async ({ jobId }) => {
   const user = await requireUser();
+  await assertGuardianConsentForUser(user.id);
   await saveJob(user, jobId);
   revalidatePath("/talent/saved");
   return ok(undefined, "Job saved");
@@ -240,6 +248,7 @@ export const clearUnavailableSavedJobsAction = createAction(z.object({}), async 
 
 export const saveJobAlertAction = createFormAction(jobAlertSchema, async (input) => {
   const user = await requireUser();
+  await assertGuardianConsentForUser(user.id);
   const alert = await saveJobAlert(user, input);
   revalidatePath("/talent/alerts");
   return ok({ id: alert.id }, input.id ? "Job alert updated" : "Job alert created");
@@ -247,6 +256,7 @@ export const saveJobAlertAction = createFormAction(jobAlertSchema, async (input)
 
 export const toggleJobAlertAction = createAction(jobAlertToggleSchema, async ({ id, isActive }) => {
   const user = await requireUser();
+  if (isActive) await assertGuardianConsentForUser(user.id);
   await setJobAlertActive(user, id, isActive);
   revalidatePath("/talent/alerts");
   return ok(undefined, isActive ? "Job alert turned on" : "Job alert paused");

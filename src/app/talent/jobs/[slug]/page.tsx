@@ -7,10 +7,10 @@ import { TrackEvent } from "@/components/jobs/track-event";
 import { PortalBreadcrumb } from "@/components/layout/portal-breadcrumb";
 import { getLocale, getT } from "@/i18n/server";
 import { absoluteUrl } from "@/lib/env";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { getPublicJobBySlug } from "@/modules/jobs/queries";
 
 import { findOwnApplicationForJob } from "../../applications/_lib/queries";
+import { requireOnboardedCandidate } from "../../_lib/guard";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 /** A job inside the People Portal: the same page as the public board, with the candidate's own state. */
 export default async function TalentJobPage({ params }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const { slug } = await params;
   const [t, locale] = await Promise.all([getT("talent-jobs"), getLocale()]);
   const job = await loadJobDetail(slug, { userId: user.id, candidateId: candidate.id });

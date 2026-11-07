@@ -11,7 +11,6 @@ import { getLocale, getT } from "@/i18n/server";
 import { formatDate, formatMoney, fromMinorUnits } from "@/lib/format";
 import { sp as firstParam, type SearchParams } from "@/lib/http";
 import { cn } from "@/lib/utils";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { isMinor } from "@/modules/candidates/profile-rules";
 import { JOB_LIMITS } from "@/modules/jobs/constants";
 import { getJobAlert, listJobAlerts } from "@/modules/jobs/saved-alerts-service";
@@ -21,6 +20,7 @@ import { countryOptions, currencyOptions, jobCategoryOptions } from "@/modules/t
 import { intlLocale } from "@/components/jobs/labels";
 import { AlertControls } from "./alert-controls";
 import { AlertForm, type AlertDraft } from "./alert-form";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 type PageProps = { searchParams: Promise<SearchParams> };
 
@@ -98,7 +98,7 @@ function criteriaSummary(alert: JobAlertView, t: Translate, labels: { categories
  * `?new=1` (+ search params) opens a pre-filled form; `?edit=<id>` or `?alert=<id>` (digest emails) opens one alert.
  */
 export default async function JobAlertsPage({ searchParams }: PageProps) {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const params = await searchParams;
   const [t, locale, alerts, categories, countries, currencies] = await Promise.all([
     getT("talent-jobs"),

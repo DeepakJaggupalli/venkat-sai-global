@@ -15,7 +15,7 @@ const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 async function signIn(page: Page, returnTo: string) {
   await page.goto(`/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
   await page.getByLabel(/email|phone/i).first().fill(ADMIN_EMAIL!);
-  await page.getByLabel(/password/i).first().fill(ADMIN_PASSWORD!);
+  await page.locator('input[type="password"]').first().fill(ADMIN_PASSWORD!);
   await page.getByRole("button", { name: /sign in|continue/i }).first().click();
   await page.waitForURL((url) => url.pathname.startsWith(returnTo.split("?")[0]!));
 }

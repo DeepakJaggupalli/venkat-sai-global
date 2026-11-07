@@ -1,7 +1,12 @@
 import "server-only";
 
+import { and, eq } from "drizzle-orm";
+
+import type { DrawerData } from "@/components/employer-talent/application-drawer";
 import type { OfferFormOptions } from "@/components/employer-talent/offer-forms";
 import { SALARY_PERIOD_LABELS } from "@/components/employer/labels";
+import { db } from "@/db";
+import { jobs } from "@/db/schema";
 import { SALARY_PERIODS } from "@/db/schema/_constants";
 import { env } from "@/lib/env";
 import { canAccessFile, getCurrentFileViewer, getFiles, toFileSummary } from "@/modules/files";
@@ -17,6 +22,16 @@ export function viewerTimeZone(ctx: OrgContext<"employer">): string {
 export async function loadOfferFormOptions(): Promise<OfferFormOptions> {
   const [currencies, countries] = await Promise.all([currencyOptions(), countryOptions()]);
   return { currencies, countries, salaryPeriods: SALARY_PERIODS.map((p) => ({ value: p, label: SALARY_PERIOD_LABELS[p] })) };
+}
+
+/** The job's advertised pay terms and place (offer defaults), scoped to the caller's organisation. */
+export async function loadJobOfferTerms(ctx: OrgContext<"employer">, jobId: string): Promise<NonNullable<DrawerData["jobTerms"]> | undefined> {
+  const [row] = await db
+    .select({ salaryCurrency: jobs.salaryCurrency, salaryPeriod: jobs.salaryPeriod, countryCode: jobs.countryCode, city: jobs.city })
+    .from(jobs)
+    .where(and(eq(jobs.id, jobId), eq(jobs.organizationId, ctx.organization.id)))
+    .limit(1);
+  return row;
 }
 
 /** File summaries for ids the current viewer may open (others are silently left out). */

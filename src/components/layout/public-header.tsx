@@ -106,7 +106,8 @@ export function PublicHeader({ navItems, announcement = null, account = null }: 
           )}
         >
           <div className="mx-auto flex h-16 max-w-[96rem] items-center gap-3 px-4 sm:px-6 lg:px-8 xl:h-[4.5rem] xl:gap-6">
-            <Link href="/" aria-label={`${BRAND.name} home`} className="shrink-0 rounded-md">
+            <Link href="/" className="shrink-0 rounded-md">
+              <span className="sr-only">{`${BRAND.name} home`}</span>
               <Logo decorative className="h-8 w-auto xl:h-9" />
             </Link>
 

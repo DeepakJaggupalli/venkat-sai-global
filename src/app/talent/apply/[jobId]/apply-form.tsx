@@ -2,13 +2,15 @@
 
 import { CheckCircle2, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useId, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useCallback, useEffect, useId, useState } from "react";
 
 import { FileLink, FileUpload } from "@/components/files";
 import { enumLabel } from "@/components/jobs/labels";
 import { Callout } from "@/components/shared/callout";
 import { CopyButton } from "@/components/shared/copy-button";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -41,7 +43,7 @@ const SALARY_PERIODS = ["hour", "day", "week", "month", "year", "project"] as co
 const SELECT_CLASS =
   "h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive";
 
-type ApplyResult = { id: string; code: string; reopened: boolean };
+export type ApplyResult = { id: string; code: string; reopened: boolean };
 
 function QuestionField({ question, value, onChange, error }: { question: PublicScreeningQuestion; value: Answer | undefined; onChange: (v: Answer | undefined) => void; error?: string }) {
   const t = useT("talent-jobs");
@@ -155,8 +157,15 @@ function QuestionField({ question, value, onChange, error }: { question: PublicS
   );
 }
 
-function Confirmation({ result, jobTitle }: { result: ApplyResult; jobTitle: string }) {
+/**
+ * "Application submitted" with the application code. The apply page renders it from the URL
+ * (?submitted=<application id>) once the form has navigated there, so a refresh keeps it.
+ */
+export function Confirmation({ result, jobTitle }: { result: ApplyResult; jobTitle: string }) {
   const t = useT("talent-jobs");
+  useEffect(() => {
+    document.getElementById("apply-done")?.focus();
+  }, []);
   return (
     <section className="space-y-4 rounded-xl border bg-card p-6 text-center shadow-xs" aria-labelledby="apply-done" data-testid="apply-confirmation">
       <CheckCircle2 aria-hidden="true" className="mx-auto size-12 text-success-strong" />
@@ -192,7 +201,21 @@ function Confirmation({ result, jobTitle }: { result: ApplyResult; jobTitle: str
  */
 export function ApplyForm({ jobId, jobTitle, employerName, questions, profileResume, currencies, defaultCurrency, defaultPeriod }: ApplyFormProps) {
   const t = useT("talent-jobs");
-  const [state, formAction] = useActionState<ActionState<ApplyResult>, FormData>(submitApplicationAction, null);
+  const router = useRouter();
+  // On success, move to the confirmation URL from the action itself. The action revalidates the People Portal,
+  // and the refreshed apply page shows "You have already applied" instead of this form, so the confirmation
+  // kept in this component's state was never seen.
+  const submit = useCallback(
+    async (prev: ActionState<ApplyResult>, formData: FormData) => {
+      const result = await submitApplicationAction(prev, formData);
+      if (result.ok && result.data) {
+        router.replace(`/talent/apply/${jobId}?submitted=${result.data.id}${result.data.reopened ? "&again=1" : ""}`, { scroll: false });
+      }
+      return result;
+    },
+    [jobId, router],
+  );
+  const [state, formAction] = useActionState<ActionState<ApplyResult>, FormData>(submit, null);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [resumeChoice, setResumeChoice] = useState<"profile" | "upload">(profileResume ? "profile" : "upload");
   const ids = { consent: useId(), docs: useId(), declaration: useId(), resume: useId() };
@@ -200,10 +223,6 @@ export function ApplyForm({ jobId, jobTitle, employerName, questions, profileRes
   useEffect(() => {
     track("application_started", { jobId });
   }, [jobId]);
-
-  useEffect(() => {
-    if (state?.ok) document.getElementById("apply-done")?.focus();
-  }, [state]);
 
   if (state?.ok && state.data) return <Confirmation result={state.data} jobTitle={jobTitle} />;
 
@@ -219,7 +238,7 @@ export function ApplyForm({ jobId, jobTitle, employerName, questions, profileRes
   }
 
   return (
-    <form action={formAction} className="space-y-6" noValidate data-testid="apply-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-6" noValidate data-testid="apply-form">
       <input type="hidden" name="jobId" value={jobId} />
       <input type="hidden" name="answers:json" value={JSON.stringify(answers)} />
       {failure?.code === "duplicate_application" ? (

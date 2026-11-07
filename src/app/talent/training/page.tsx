@@ -9,8 +9,8 @@ import { CourseCard } from "@/components/training/course-card";
 import { EnrolmentCard } from "@/components/training/enrolment-card";
 import { groupEnrolments, intlLocale } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
-import { requireCandidate } from "@/modules/candidates/guard";
 import { listCandidateEnrolments, listPublicCourses } from "@/modules/training/queries";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT("talent-training");
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** My training: current and past enrolments (status, schedule, attendance, results) and courses open now. */
 export default async function TalentTrainingPage() {
-  const { user, candidate } = await requireCandidate();
+  const { user, candidate } = await requireOnboardedCandidate();
   const [t, locale, enrolments, open] = await Promise.all([
     getT("talent-training"),
     getLocale(),

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { CountrySelect, SearchableSelect, SimpleSelect } from "@/components/shared/selects";
 import type { SelectOption } from "@/components/shared/types";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,7 @@ export function EducationForm({
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   const [current, setCurrent] = useState(item?.isCurrent ?? false);
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       {item?.verificationStatus === "verified" ? <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning-strong">{t("verification.editResets")}</p> : null}
@@ -100,7 +101,7 @@ export function ExperienceForm({
   const [state, formAction] = useTalentForm(action, { successMessage: t("toast.saved"), onSuccess: close });
   const [current, setCurrent] = useState(item?.isCurrent ?? false);
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate>
       <FormErrorAlert state={state} />
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
       {item?.verificationStatus === "verified" ? <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning-strong">{t("verification.editResets")}</p> : null}

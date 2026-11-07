@@ -1,6 +1,7 @@
 "use client";
 
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { SimpleSelect } from "@/components/shared/selects";
 import { Input } from "@/components/ui/input";
 import type { ActionResult, ActionState } from "@/lib/actions";
@@ -15,7 +16,7 @@ export function DateOfBirthForm({ action, defaultValue, maxDate }: { action: For
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="onboarding-dob-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="onboarding-dob-form">
       <FormErrorAlert state={state} />
       <FormField label={t("onboarding.age.dobLabel")} name="dateOfBirth" required state={state} hint={t("onboarding.age.dobHint")}>
         <Input type="date" max={maxDate} min="1900-01-01" defaultValue={defaultValue ?? undefined} autoComplete="bday" className="max-w-xs" />
@@ -43,7 +44,7 @@ export function GuardianConsentForm({ action }: { action: FormAction }) {
         }
       : raw;
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="onboarding-guardian-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="onboarding-guardian-form">
       <FormErrorAlert state={state} />
       <FormField label={t("onboarding.guardian.name")} name="guardianName" required state={state}>
         <Input autoComplete="off" maxLength={150} />

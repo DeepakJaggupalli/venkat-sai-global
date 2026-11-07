@@ -125,6 +125,8 @@
   "save.saved": "Job saved",
   "save.removed": "Removed from saved jobs",
   "save.errorSave": "Could not save this job. Please try again.",
+  "save.guardianRequired": "A parent or guardian needs to give consent before you can save jobs.",
+  "save.guardianAction": "Go to the guardian step",
   "save.errorRemove": "Could not remove this job. Please try again.",
   "save.signInShort": "Sign in to save",
   "save.signInToSave": "Sign in to save {title}",

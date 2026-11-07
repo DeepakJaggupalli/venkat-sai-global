@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { CountrySelect, CurrencySelect, SimpleSelect } from "@/components/shared/selects";
 import { SkillPicker } from "@/components/shared/skill-picker";
 import { TagInput } from "@/components/shared/tag-input";
 import type { SelectOption } from "@/components/shared/types";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ActionResult, ActionState } from "@/lib/actions";
 import { track } from "@/modules/analytics/client";
@@ -36,22 +38,43 @@ function StepActions({ skip, children }: { skip?: ReactNode; children: ReactNode
   return <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">{skip ?? <span />}{children}</div>;
 }
 
-/** "Skip for now" — a separate form so it never submits the step's fields. */
+/**
+ * "Skip for now". It renders inside the step's form, and forms cannot be nested (the browser drops the
+ * inner form, so Skip submitted the step instead, and hydration failed). It is a second submitter with its
+ * own action. React leaves a function-formAction submitter's name/value out of the form data, so `step` is
+ * set here; the skip schema reads only `step` and ignores the step's fields.
+ */
 export function SkipStepButton({ action, step }: { action: FormAction; step: OnboardingStep }) {
   const { t } = useTalentMessages();
-  const [state, formAction] = useTalentForm(action);
+  const skipAction = useCallback<FormAction>(
+    (prev, formData) => {
+      formData.set("step", step);
+      return action(prev, formData);
+    },
+    [action, step],
+  );
+  const [state, formAction, pending] = useTalentForm(skipAction);
   return (
-    <form action={formAction}>
-      <input type="hidden" name="step" value={step} />
-      <SubmitButton variant="ghost" pendingLabel={t("form.saving")}>
-        {t("onboarding.skip")}
-      </SubmitButton>
+    <div>
+      <Button
+        type="submit"
+        variant="ghost"
+        formAction={formAction}
+        formNoValidate
+        aria-disabled={pending || undefined}
+        className={pending ? "cursor-wait opacity-80" : undefined}
+        onClick={(event) => {
+          if (pending) event.preventDefault();
+        }}
+      >
+        {pending ? t("form.saving") : t("onboarding.skip")}
+      </Button>
       {state && !state.ok ? (
         <p role="alert" className="mt-1 text-sm text-danger-strong">
           {state.error}
         </p>
       ) : null}
-    </form>
+    </div>
   );
 }
 
@@ -59,7 +82,7 @@ export function GoalsForm({ action, goals, allowed, minor, skip }: { action: For
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-6" noValidate data-testid="onboarding-goals">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-6" noValidate data-testid="onboarding-goals">
       <FormErrorAlert state={state} />
       <CheckboxGroup
         name="goals"
@@ -90,7 +113,7 @@ export function BasicsForm({ action, defaults, countries, categories, skip }: { 
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="onboarding-basics">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="onboarding-basics">
       <FormErrorAlert state={state} />
       <FieldGrid>
         <FormField label={t("field.country")} name="currentCountryCode" state={state}>
@@ -133,7 +156,7 @@ export function SkillsStepForm({ action, skills, skip }: { action: FormAction; s
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="onboarding-skills">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="onboarding-skills">
       <FormErrorAlert state={state} />
       <FormField label={t("field.skills")} name="skillIds" state={state} hint={t("onboarding.skills.hint")}>
         {(field) => (
@@ -175,7 +198,7 @@ export function AvailabilityForm({
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-6" noValidate data-testid="onboarding-availability">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-6" noValidate data-testid="onboarding-availability">
       <FormErrorAlert state={state} />
       <FormField label={t("field.availability")} name="availability" state={state}>
         {(field) => <SimpleSelect {...field} options={enumOptions(t, "availability")} defaultValue={defaults.availability ?? undefined} placeholder={t("form.select")} allowClear clearLabel={t("form.notSet")} />}
@@ -216,7 +239,7 @@ export function ResumeStepForm({ action, resume, skip }: { action: FormAction; r
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="onboarding-resume">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="onboarding-resume">
       <FormErrorAlert state={state} />
       <FileUpload purpose="resume" name="fileId" label={t("field.resume")} description={t("onboarding.resume.hint")} defaultFiles={resume ? [resume] : []} />
       <p className="text-sm text-muted-foreground">{t("onboarding.resume.optional")}</p>
@@ -241,7 +264,7 @@ export function VisibilityStepForm({
   const { t } = useTalentMessages();
   const [state, formAction] = useTalentForm(action);
   return (
-    <form action={formAction} className="space-y-6" noValidate data-testid="onboarding-visibility">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-6" noValidate data-testid="onboarding-visibility">
       <FormErrorAlert state={state} />
       <RadioCards
         name="visibility"

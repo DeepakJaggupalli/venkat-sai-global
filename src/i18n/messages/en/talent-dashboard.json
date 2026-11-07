@@ -103,5 +103,9 @@
   "next.add_passport_status": "Add your passport status",
   "next.fix_rejected_documents": "Fix documents that need attention",
   "next.submit_documents_for_verification": "Send your documents for verification",
-  "next.review_visibility": "Review who can find your profile"
+  "next.review_visibility": "Review who can find your profile",
+  "notFound.title": "We could not find that page",
+  "notFound.description": "It may have been removed, or it belongs to another account. Check the link, or continue from your dashboard.",
+  "notFound.dashboard": "Go to my dashboard",
+  "notFound.jobs": "Find jobs"
 }

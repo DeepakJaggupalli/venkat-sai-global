@@ -4,9 +4,9 @@ import { MessagesListView } from "@/components/messages/portal-messages";
 import { Callout } from "@/components/shared/callout";
 import { env } from "@/lib/env";
 import type { SearchParams } from "@/lib/http";
-import { requireCandidate } from "@/modules/candidates/guard";
 
 import { getMessagesT, getTalentMessagesLabels } from "./_lib/i18n";
+import { requireOnboardedCandidate } from "../_lib/guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getMessagesT();
@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * support requests); they read and reply to conversations Venkat Sai staff start with them.
  */
 export default async function TalentMessagesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { user } = await requireCandidate();
+  const { user } = await requireOnboardedCandidate();
   const { labels, contextLabels, locale, t } = await getTalentMessagesLabels();
   return (
     <div className="space-y-6">

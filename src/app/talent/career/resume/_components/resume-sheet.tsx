@@ -10,7 +10,7 @@ export type ResumeTemplate = "classic" | "compact";
 function Section({ title, compact, children }: { title: string; compact: boolean; children: ReactNode }) {
   return (
     <section className={compact ? "mt-4" : "mt-6"}>
-      <h2 className={cn("border-b border-foreground/40 pb-1 font-heading font-bold uppercase tracking-wide", compact ? "text-xs" : "text-sm")}>{title}</h2>
+      <h3 className={cn("border-b border-foreground/40 pb-1 font-heading font-bold uppercase tracking-wide", compact ? "text-xs" : "text-sm")}>{title}</h3>
       <div className={compact ? "mt-2 space-y-2" : "mt-3 space-y-3"}>{children}</div>
     </section>
   );
@@ -75,7 +75,8 @@ export function ResumeSheet({
       className={cn("mx-auto max-w-[210mm] rounded-xl border bg-white text-black shadow-sm", compact ? "p-6 text-[13px] leading-snug sm:p-8" : "p-6 text-sm leading-relaxed sm:p-10")}
     >
       <header>
-        <h1 className={cn("font-heading font-bold", compact ? "text-2xl" : "text-3xl")}>{name}</h1>
+        {/* The page already has its h1 ("Resume builder"); the sheet is a document inside it. */}
+        <h2 className={cn("font-heading font-bold", compact ? "text-2xl" : "text-3xl")}>{name}</h2>
         {profile.headline ? <p className={compact ? "text-sm" : "mt-1 text-base"}>{profile.headline}</p> : null}
         {contact.length ? <p className="mt-1 break-words">{contact.join(" | ")}</p> : null}
       </header>
