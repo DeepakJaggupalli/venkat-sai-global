@@ -2,7 +2,7 @@
  * Organisation membership, invitations and verification.
  * Layer 4 — may import: taxonomy, core, identity.
  */
-import { index, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { createdAtOnly, emptyJsonObject, pk, timestamps, tstz } from "./_shared";
 import { files, organizations, users } from "./core";
@@ -114,7 +114,8 @@ export const organizationDocuments = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    verificationId: uuid().references(() => organizationVerifications.id, { onDelete: "set null" }),
+    /** FK organization_documents_verification_fk (set null). */
+    verificationId: uuid(),
     documentType: text({ enum: ORG_DOCUMENT_TYPES }).notNull(),
     title: text(),
     fileId: uuid()
@@ -129,5 +130,13 @@ export const organizationDocuments = pgTable(
     uploadedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
-  (t) => [index("organization_documents_org_idx").on(t.organizationId), index("organization_documents_expiry_idx").on(t.expiresAt)],
+  (t) => [
+    index("organization_documents_org_idx").on(t.organizationId),
+    index("organization_documents_expiry_idx").on(t.expiresAt),
+    // Explicit name: the generated one exceeds PostgreSQL's 63-byte limit and is truncated, which made
+    // drizzle-kit push drop and re-add the constraint on every run.
+    foreignKey({ columns: [t.verificationId], foreignColumns: [organizationVerifications.id], name: "organization_documents_verification_fk" }).onDelete(
+      "set null",
+    ),
+  ],
 );

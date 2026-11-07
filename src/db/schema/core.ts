@@ -5,7 +5,6 @@
  * They live in one file because they reference each other (avatar/logo → files,
  * files → owner user / organization) and cross-file cycles are not allowed.
  */
-import { sql } from "drizzle-orm";
 import { bigint, boolean, char, index, integer, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { FILE_PURPOSES, FILE_SCAN_STATUSES, FILE_VISIBILITIES, ORG_STATUSES, ORG_TYPES, USER_STATUSES } from "./_constants";
@@ -53,7 +52,8 @@ export const users = pgTable(
     uniqueIndex("users_phone_uq").on(t.phone),
     index("users_status_idx").on(t.status),
     index("users_staff_idx").on(t.isStaff),
-    index("users_display_name_trgm_idx").using("gin", sql`${t.displayName} gin_trgm_ops`),
+    // Operator class via .op(): an SQL expression here makes drizzle-kit push re-create the index every run.
+    index("users_display_name_trgm_idx").using("gin", t.displayName.op("gin_trgm_ops")),
   ],
 );
 
@@ -104,7 +104,7 @@ export const organizations = pgTable(
     uniqueIndex("organizations_slug_uq").on(t.slug),
     index("organizations_type_status_idx").on(t.type, t.status),
     index("organizations_country_idx").on(t.countryCode),
-    index("organizations_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
+    index("organizations_name_trgm_idx").using("gin", t.name.op("gin_trgm_ops")),
   ],
 );
 

@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, text, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { CONSENT_PURPOSES, ROLE_SCOPES } from "./_constants";
-import { createdAtOnly, emptyJsonObject, emptyTextArray, pk, timestamps, tstz } from "./_shared";
+import { createdAtOnly, emptyJsonObject, pk, timestamps, tstz } from "./_shared";
 import { organizations, users } from "./core";
 
 /**
@@ -117,7 +117,8 @@ export const roles = pgTable(
     key: text().notNull(),
     name: text().notNull(),
     description: text(),
-    permissions: text().array().notNull().default(emptyTextArray),
+    /** Insert-time default: drizzle-kit cannot round-trip an empty-array DB default (docs/SCHEMA_NOTES.md). */
+    permissions: text().array().notNull().$defaultFn(() => []),
     organizationId: uuid().references(() => organizations.id, { onDelete: "cascade" }),
     /** System roles cannot be deleted (their permissions can still be edited, except super_admin). */
     isSystem: boolean().notNull().default(false),

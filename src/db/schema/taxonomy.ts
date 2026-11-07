@@ -2,11 +2,10 @@
  * Reference data administered from /admin/settings/taxonomies.
  * Layer 1 — imports nothing from other schema files.
  */
-import { sql } from "drizzle-orm";
 import { boolean, char, foreignKey, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { MARKET_REGIONS, QUALIFICATION_KINDS, SKILL_CATEGORIES } from "./_constants";
-import { countryCode, currencyCode, emptyTextArray, pk, timestamps } from "./_shared";
+import { countryCode, currencyCode, pk, timestamps } from "./_shared";
 
 export const currencies = pgTable("currencies", {
   code: char({ length: 3 }).primaryKey(),
@@ -110,7 +109,8 @@ export const skills = pgTable(
     slug: text().notNull(),
     name: text().notNull(),
     category: text({ enum: SKILL_CATEGORIES }).notNull(),
-    synonyms: text().array().notNull().default(emptyTextArray),
+    /** Insert-time default: drizzle-kit cannot round-trip an empty-array DB default (docs/SCHEMA_NOTES.md). */
+    synonyms: text().array().notNull().$defaultFn(() => []),
     /** approved = curated; pending = suggested by a user and awaiting admin review. */
     status: text({ enum: ["approved", "pending", "rejected"] }).notNull().default("approved"),
     isActive: boolean().notNull().default(true),
@@ -119,7 +119,8 @@ export const skills = pgTable(
   (t) => [
     uniqueIndex("skills_slug_uq").on(t.slug),
     index("skills_category_idx").on(t.category),
-    index("skills_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
+    // Operator class via .op(): an SQL expression here makes drizzle-kit push re-create the index every run.
+    index("skills_name_trgm_idx").using("gin", t.name.op("gin_trgm_ops")),
   ],
 );
 
