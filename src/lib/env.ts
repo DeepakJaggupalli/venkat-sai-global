@@ -53,7 +53,7 @@ const schema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: optional,
   WHATSAPP_ACCESS_TOKEN: optional,
 
-  STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+  STORAGE_DRIVER: z.enum(["local", "s3", "blob"]).default("local"),
   STORAGE_LOCAL_DIR: z.string().default("./storage"),
   S3_ENDPOINT: optional,
   S3_REGION: z.string().default("auto"),
@@ -61,6 +61,8 @@ const schema = z.object({
   S3_ACCESS_KEY_ID: optional,
   S3_SECRET_ACCESS_KEY: optional,
   STORAGE_PUBLIC_HOST: optional,
+  /** Vercel Blob (private store) read-write token; set automatically when a store is connected. */
+  BLOB_READ_WRITE_TOKEN: optional,
   CLAMAV_HOST: optional,
   CLAMAV_PORT: z.coerce.number().default(3310),
 

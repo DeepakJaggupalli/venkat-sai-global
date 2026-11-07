@@ -3,6 +3,7 @@ import "server-only";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
+import { createBlobDriver } from "./blob";
 import { createLocalDriver } from "./local";
 import { createS3Driver } from "./s3";
 import { StorageError, type StorageDriver, type StorageDriverName } from "./types";
@@ -18,9 +19,15 @@ function build(name: StorageDriverName): StorageDriver {
   if (name === "local") {
     if (!warnedEphemeral && e.NODE_ENV === "production" && process.env.VERCEL) {
       warnedEphemeral = true;
-      logger.warn("STORAGE_DRIVER=local on a serverless host: uploaded files will not persist. Use STORAGE_DRIVER=s3.");
+      logger.warn("STORAGE_DRIVER=local on a serverless host: uploaded files will not persist. Use STORAGE_DRIVER=blob or s3.");
     }
     return createLocalDriver(e.STORAGE_LOCAL_DIR);
+  }
+  if (name === "blob") {
+    if (!e.BLOB_READ_WRITE_TOKEN) {
+      throw new StorageError("Vercel Blob storage is not configured: set BLOB_READ_WRITE_TOKEN (connect a private Blob store to the project).");
+    }
+    return createBlobDriver({ token: e.BLOB_READ_WRITE_TOKEN });
   }
   if (!e.S3_BUCKET || !e.S3_ACCESS_KEY_ID || !e.S3_SECRET_ACCESS_KEY) {
     throw new StorageError("S3 storage is not configured: set S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY (and S3_ENDPOINT for non-AWS services).");

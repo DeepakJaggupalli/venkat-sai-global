@@ -2,7 +2,7 @@
  * Storage driver contract. Bytes live in a driver; the `files` row records which driver and key.
  * Keys are produced by generateStorageKey()/variantStorageKey() only.
  */
-export type StorageDriverName = "local" | "s3";
+export type StorageDriverName = "local" | "s3" | "blob";
 
 export type StoredObject = {
   body: ReadableStream<Uint8Array>;

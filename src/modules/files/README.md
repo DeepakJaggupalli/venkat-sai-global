@@ -9,11 +9,21 @@ Browser ── <FileUpload purpose name> ── POST /api/v1/uploads ──► a
                                                                                          │
              size limit → sniff (file-type) → extension/declared type must agree → SVG check
              → ClamAV INSTREAM (optional) → sharp: auto-rotate + strip ALL metadata + WebP variants
-             → storage driver (local | S3) → files row  (deferred work → "files.process" task)
+             → storage driver (local | S3 | Vercel Blob) → files row  (deferred work → "files.process" task)
 
 Reads:  private  GET /api/v1/files/<id>[?variant&download]   checkFileAccess() + data-access log
         public   GET /media/<id>/<name>[?variant&download]   public files only, immutable cache
 ```
+
+### Storage drivers (`STORAGE_DRIVER`)
+
+| Driver | Use | Configuration |
+|---|---|---|
+| `local` | development, single-server hosts | `STORAGE_LOCAL_DIR` (outside `/public`) |
+| `blob` | Vercel deployments (staging/production) | a **private** Vercel Blob store connected to the project (`BLOB_READ_WRITE_TOKEN`). Objects are written with `access: "private"` and read with the token, so every read still goes through the app's access checks. |
+| `s3` | AWS S3, Cloudflare R2, MinIO… | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_REGION` |
+
+Each `files` row records its driver, so switching `STORAGE_DRIVER` keeps older files readable while both drivers stay configured.
 
 ## Public API
 

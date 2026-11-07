@@ -117,7 +117,7 @@ export const files = pgTable(
   "files",
   {
     id: pk(),
-    storageDriver: text({ enum: ["local", "s3"] }).notNull(),
+    storageDriver: text({ enum: ["local", "s3", "blob"] }).notNull(),
     storageKey: text().notNull(),
     originalName: text().notNull(),
     mimeType: text().notNull(),
