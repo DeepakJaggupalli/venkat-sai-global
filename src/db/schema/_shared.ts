@@ -11,7 +11,26 @@
  *  - Status / type columns are `text` with a TS enum (no Postgres enums → painless migrations).
  */
 import { sql } from "drizzle-orm";
-import { bigint, char, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, char, customType, timestamp, uuid } from "drizzle-orm/pg-core";
+
+/**
+ * PostgreSQL tsvector for full-text search. Typical use (generated column + GIN index):
+ *
+ *   searchVector: tsvector().generatedAlwaysAs(
+ *     (): SQL => sql`to_tsvector('simple'::regconfig, coalesce(${jobs.title}, '') || ' ' || coalesce(${jobs.summary}, ''))`,
+ *   ),
+ *   ...
+ *   index("jobs_search_idx").using("gin", t.searchVector)
+ *
+ * Generated-column expressions must be IMMUTABLE: use to_tsvector('simple'::regconfig, …) over text
+ * columns with coalesce(); do not use array_to_string()/joins — keep a denormalised text column
+ * (e.g. `skillsText`) maintained by the service instead.
+ */
+export const tsvector = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 /** UUID primary key with database default. */
 export const pk = () => uuid().primaryKey().defaultRandom();
