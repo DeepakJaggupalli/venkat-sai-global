@@ -62,6 +62,10 @@ async function main(): Promise<number> {
       console.log(`  [ok] ${r.name}: ${r.inserted} inserted, ${r.updated} updated, ${r.total} defined${r.note ? ` (${r.note})` : ""}`);
     });
 
+    if (process.env.SEED_ONLY_REFERENCE === "1") {
+      console.log("Module seeds: skipped (SEED_ONLY_REFERENCE=1)");
+      return 0;
+    }
     console.log("Module seeds:");
     for (const [name, load] of MODULE_SEEDS) {
       const moduleStarted = Date.now();
