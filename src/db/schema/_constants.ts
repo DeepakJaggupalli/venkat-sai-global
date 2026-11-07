@@ -80,6 +80,10 @@ export const FILE_PURPOSES = [
   "partner_licence",
   "mobilisation_document",
   "certificate",
+  /** Evidence from Venkat Sai / institution practical assessments (test-piece photos, inspection reports). */
+  "assessment_evidence",
+  /** Evidence of a placement outcome (offer / appointment letter). */
+  "placement_evidence",
   "course_material",
   "cms_media",
   "ticket_attachment",
@@ -109,6 +113,14 @@ export const CONSENT_PURPOSES = [
   "overseas_processing",
   "testimonial_publication",
   "media_publication",
+  /** Share Venkat Sai trade/skill assessment results with prospective employers. */
+  "share_assessment_results",
+  /** Contact the references a candidate listed. */
+  "contact_references",
+  /** Background / document verification with third parties. */
+  "background_verification",
+  /** Verifiable consent of a parent or lawful guardian for a user under 18 (DPDP Rules 2025, rule 10). */
+  "guardian_consent",
 ] as const;
 export type ConsentPurpose = (typeof CONSENT_PURPOSES)[number];
 

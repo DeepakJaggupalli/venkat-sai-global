@@ -70,12 +70,12 @@ export const PUBLIC_CTA = {
 
 /** Legal links required in the public footer (labels/paths can be overridden from the CMS). */
 export const DEFAULT_LEGAL_LINKS = [
-  { title: "Privacy policy", href: "/privacy" },
-  { title: "Terms of use", href: "/terms" },
+  { title: "Privacy policy", href: "/legal/privacy-policy" },
+  { title: "Terms of use", href: "/legal/terms" },
   { title: "Cookie preferences", href: "/cookie-preferences" },
-  { title: "Your data rights", href: "/data-rights" },
-  { title: "Accessibility", href: "/accessibility" },
-  { title: "Grievance redressal", href: "/grievance-redressal" },
+  { title: "Your data rights", href: "/legal/data-rights" },
+  { title: "Accessibility", href: "/legal/accessibility" },
+  { title: "Grievance redressal", href: "/grievance" },
 ] as const;
 
 export function isOrgPortal(portal: PortalKey): portal is OrgPortalKey {

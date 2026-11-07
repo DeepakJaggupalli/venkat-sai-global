@@ -15,7 +15,8 @@ export const SETTINGS = {
   // Privacy & grievance (DPDP Act 2023 / IT Rules 2021)
   "privacy.data_request_sla_days": { default: 30, label: "Data request response time (days)", group: "Privacy" },
   "privacy.grievance_ack_hours": { default: 24, label: "Grievance acknowledgement time (hours)", group: "Privacy" },
-  "privacy.grievance_resolution_days": { default: 15, label: "Grievance resolution time (days)", group: "Privacy" },
+  // IT (Intermediary Guidelines) Rules 2021 as amended in 2026: 7-day resolution limit (verify with counsel).
+  "privacy.grievance_resolution_days": { default: 7, label: "Grievance resolution time (days, IT Rules limit)", group: "Privacy" },
   "privacy.policy_version": { default: "2026-11-01", label: "Current privacy notice version", group: "Privacy" },
   "privacy.terms_version": { default: "2026-11-01", label: "Current terms of service version", group: "Privacy" },
 
@@ -39,6 +40,12 @@ export const SETTINGS = {
   // Recruitment
   "recruitment.application_edit_window_hours": { default: 0, label: "Hours a candidate may edit an application after submitting", group: "Recruitment" },
   "recruitment.job_default_duration_days": { default: 30, label: "Default job listing duration (days)", group: "Recruitment" },
+  "recruitment.partner_attribution_days": { default: 90, label: "Partner candidate attribution window (days)", group: "Recruitment" },
+  "recruitment.profile_unlock_days": { default: 90, label: "How long an employer contact unlock lasts (days)", group: "Recruitment" },
+
+  // Platform
+  /** ISO country code of Venkat Sai's home market; jobs outside it are flagged as overseas. */
+  "platform.home_country": { default: "IN", label: "Home country (jobs elsewhere are overseas)", group: "Platform" },
 
   // Support
   "support.sla_hours_urgent": { default: 4, label: "Urgent ticket first-response SLA (hours)", group: "Support" },

@@ -138,8 +138,12 @@ const [state, formAction, pending] = useActionState(saveJob, null);
 ## 7. UI & design system
 
 - Use shadcn components from `@/components/ui/*` and shared blocks from `@/components/shared/*` (built by the design-system owner — see `src/components/shared/README.md`).
-- Tokens (Tailwind classes): `bg-navy`, `bg-navy-deep`, `text-teal-strong` (AA text), `bg-teal` (fills), `bg-teal-soft`, `text-gold-strong`, `bg-gold-soft`, `bg-surface-subtle`, `text-muted-foreground`, `bg-success-soft text-success`, `bg-warning-soft text-warning`, `bg-danger-soft text-danger`, `bg-info-soft text-info`. Fonts: `font-heading` (Manrope) for headings, Inter body.
-- **Never put teal (#16A6A1) or gold text on white** — use `text-teal-strong` / `text-gold-strong`.
+- Tokens (Tailwind classes): `bg-navy`, `bg-navy-deep`, `text-teal-strong` (AA text), `bg-teal` (fills), `bg-teal-soft`, `text-gold-strong`, `bg-gold-soft`, `bg-surface-subtle`, `text-muted-foreground`, status pairs `bg-success-soft text-success-strong`, `bg-warning-soft text-warning-strong`, `bg-danger-soft text-danger-strong`, `bg-info-soft text-info`. Fonts: `font-heading` (Manrope) for headings, Inter body.
+- **Never put teal (#16A6A1), gold, `text-success` or `text-warning` text on white** — they fail WCAG AA. Use the `-strong` variants for text; the base hues are for fills, icons and borders.
+- Charts: colours from `src/components/shared/charts/palette.ts` (validated for colour-vision deficiency); `--chart-1..5` match it.
+- Upload components live in `@/components/files` (`FileUpload`, `FilePreview`, `FileLink`), not `@/components/shared`.
+- Public legal routes (fixed): `/legal/privacy-policy`, `/legal/terms`, `/legal/cookie-policy`, `/legal/data-rights`, `/legal/accessibility`, `/legal/disclaimers`, `/cookie-preferences`, `/grievance`.
+- Sort and filter params: whitelist sort keys (`parseSort()` in the shared components) and validate filters with zod before they reach a query.
 - Layout: `.container-page` (16px gutter on mobile). No horizontal scroll at 360px. Tables collapse to cards or scroll inside their own container on mobile.
 - Every list has an empty state, every async boundary a loading state (`loading.tsx` with skeletons), every form inline errors.
 - Light theme only for now (dark tokens exist for later).
@@ -160,7 +164,8 @@ const [state, formAction, pending] = useActionState(saveJob, null);
 | Entitlements / credits | `checkEntitlement(orgId, key)`, `consumeEntitlement(orgId, key, { reference, actorUserId, tx })` — `@/modules/commercial/entitlements` |
 | Files | `<FileUpload purpose="resume" name="resumeFileId" />` (client) posts to `/api/v1/uploads`; server: `getFile`, `fileUrl`, `grantFileAccess`, `canAccessFile` — `@/modules/files` (see its README) |
 | Consent | `recordConsent({ userId, purpose, granted, source, contextType, contextId }, tx)`, `hasConsent(userId, purpose)` — `@/modules/identity/consent` |
-| Settings / flags | `getSetting("security.require_staff_2fa")`, `isFeatureEnabled("portal.recruiter")` — `@/modules/settings` |
+| Settings / flags | `getSetting("security.require_staff_2fa")`, `isFeatureEnabled("portal.recruiter")` — `@/modules/settings` (keys incl. `platform.home_country`, `recruitment.partner_attribution_days`, `recruitment.profile_unlock_days`) |
+| Tax invoices / credit notes | `nextGstDocumentNumber("invoice" \| "credit_note", { tx })` — `@/lib/codes` (GST Rule 46: ≤ 16 chars, per financial year; assign only on issue) |
 | Taxonomies | `listCountries()`, `countryOptions()`, `industryOptions()`, `jobCategoryOptions()`, `searchSkills(q)`, `listLanguages()`, `currencyOptions()` — `@/modules/taxonomy/queries` |
 | Human codes | `nextCode("REQ")` — `@/lib/codes` |
 | Rate limits | `rateLimit(key, limit, windowSeconds)` — `@/lib/rate-limit` (all public forms, OTP, login) |
@@ -221,3 +226,16 @@ npx tsc --noEmit
 - Small files: split components over ~250 lines.
 - Comments explain *why*, not *what*. Every module has a README listing its public API.
 - User-facing copy: clear, plain English, sentence case, no hype, no exclamation marks, no unverifiable claims.
+
+## 15. Product rules from the regulatory research
+
+Source: `docs/research/regulatory-notes.md` (to be validated by counsel). Enforce or support these in every relevant feature:
+
+1. **Employer pays.** Candidates are never charged to discover, apply, be submitted, be interviewed or be trade-tested for a role. A trade test linked to a requirement/application is paid by the employer or Venkat Sai. Course fees are never a condition of an application, offer or placement.
+2. **Recruiting-agent transparency.** Overseas jobs advertised by or for a recruiting agent show the agent's name and eMigrate registration/certificate number. Venkat Sai's own registration is only shown once it is recorded and verified (never assumed).
+3. **Fraud awareness.** The public site has a "We never charge candidates" page explaining how to verify an agent on eMigrate and the government helpline (Pravasi Bharatiya Sahayata Kendra).
+4. **Honest credentials.** Venkat Sai trade/skill test results are labelled "Venkat Sai assessment" with the procedure reference — never presented as an accredited certification. Public verification lives at `/verify-certificate`.
+5. **Pre-departure:** call it "PDOT (Pre-Departure Orientation Training)" in UI copy.
+6. **Children's data (DPDP Rules 2025).** Sign-up confirms the person is 18+; under-18 users need verifiable guardian consent (`guardian_consent`) before anything beyond age confirmation, are excluded from overseas matching and employer search for overseas roles, and get no tracking, heatmaps or marketing.
+7. **Grievances** follow the settings-driven timelines (`privacy.grievance_ack_hours`, `privacy.grievance_resolution_days`); never hardcode them.
+8. **Invoices** use GST-compliant numbering (`nextGstDocumentNumber`).

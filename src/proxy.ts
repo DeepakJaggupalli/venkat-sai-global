@@ -136,7 +136,32 @@ export function proxy(request: NextRequest): NextResponse {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("X-Request-Id", requestId);
+  refreshSessionCookie(request, response);
   return response;
+}
+
+const SESSION_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+/**
+ * Sliding session cookie: the database session slides (src/modules/identity/session.ts) but the cookie's
+ * expiry was fixed at sign-in. Re-issue the same token with a fresh Max-Age on real page navigations
+ * (not prefetches, assets or API calls). The database stays authoritative: an expired or revoked
+ * session is rejected server-side regardless of the cookie's lifetime (staff sessions still end after 12h).
+ */
+export function refreshSessionCookie(request: NextRequest, response: NextResponse): void {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token || request.method.toUpperCase() !== "GET") return;
+  const isDocument = request.headers.get("sec-fetch-dest") === "document" || (request.headers.get("accept") ?? "").includes("text/html");
+  const isPrefetch =
+    request.headers.has("next-router-prefetch") || request.headers.get("purpose") === "prefetch" || request.headers.get("sec-purpose")?.includes("prefetch");
+  if (!isDocument || isPrefetch) return;
+  response.cookies.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,
+  });
 }
 
 export const config = {
