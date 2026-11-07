@@ -173,8 +173,19 @@ export async function requireOrgMember<T extends OrgType>(
   return ctx;
 }
 
+export type UserMembership = {
+  organizationId: string;
+  organizationName: string;
+  organizationType: OrgType;
+  organizationStatus: OrganizationRow["status"];
+  logoFileId: string | null;
+  roleKey: string;
+  roleName: string;
+  memberStatus: "invited" | "active" | "disabled";
+};
+
 /** All active memberships of a user (portal switcher, account page). */
-export async function listUserMemberships(userId: string) {
+export async function listUserMemberships(userId: string): Promise<UserMembership[]> {
   return db
     .select({
       organizationId: organizations.id,

@@ -44,7 +44,11 @@ export async function recordConsent(input: RecordConsentInput, tx: DbOrTx = db):
   });
 }
 
-export async function recordConsents(base: Omit<RecordConsentInput, "purpose" | "granted">, choices: Partial<Record<ConsentPurpose, boolean>>, tx: DbOrTx = db) {
+export async function recordConsents(
+  base: Omit<RecordConsentInput, "purpose" | "granted">,
+  choices: Partial<Record<ConsentPurpose, boolean>>,
+  tx: DbOrTx = db,
+): Promise<void> {
   for (const [purpose, granted] of Object.entries(choices) as [ConsentPurpose, boolean][]) {
     await recordConsent({ ...base, purpose, granted }, tx);
   }
@@ -73,6 +77,6 @@ export async function hasConsent(userId: string, purpose: ConsentPurpose): Promi
 }
 
 /** Full consent history for a user (privacy dashboard / data export). */
-export async function listConsentHistory(userId: string) {
+export async function listConsentHistory(userId: string): Promise<(typeof consentRecords.$inferSelect)[]> {
   return db.select().from(consentRecords).where(eq(consentRecords.userId, userId)).orderBy(desc(consentRecords.createdAt));
 }

@@ -29,6 +29,8 @@ export const SESSION_TTL_MS = 30 * DAY;
 export const STAFF_SESSION_TTL_MS = 12 * 60 * MINUTE;
 const SLIDE_WHEN_REMAINING_MS = 15 * DAY;
 const TOUCH_INTERVAL_MS = 5 * MINUTE;
+/** A session waiting for the second factor lives only long enough to complete the challenge. */
+export const PENDING_TWO_FACTOR_TTL_MS = 15 * MINUTE;
 
 export type SessionUser = {
   id: string;
@@ -72,12 +74,18 @@ function cookieOptions(expires: Date) {
 /**
  * Create a session for a user and set the cookie. Call from Server Actions or Route Handlers only.
  * Also stamps lastLoginAt and clears failed-login counters.
+ * `pendingTwoFactor`: the user still has to pass the TOTP challenge — the session gets a short
+ * lifetime that markSessionTwoFactorVerified() extends.
  */
-export async function createSession(userId: string, opts: { isStaff: boolean; twoFactorVerified?: boolean }) {
+export async function createSession(
+  userId: string,
+  opts: { isStaff: boolean; twoFactorVerified?: boolean; pendingTwoFactor?: boolean },
+): Promise<{ id: string; expiresAt: Date }> {
   const token = randomToken(32);
   const id = hmacToken(token, "session");
   const meta = await getRequestMeta().catch(() => null);
-  const expiresAt = new Date(Date.now() + (opts.isStaff ? STAFF_SESSION_TTL_MS : SESSION_TTL_MS));
+  const ttl = opts.pendingTwoFactor && !opts.twoFactorVerified ? PENDING_TWO_FACTOR_TTL_MS : opts.isStaff ? STAFF_SESSION_TTL_MS : SESSION_TTL_MS;
+  const expiresAt = new Date(Date.now() + ttl);
   await db.insert(sessions).values({
     id,
     userId,
@@ -127,9 +135,13 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
     return null;
   }
 
+  const twoFactorEnabled = Boolean(row.twoFactorEnabledAt);
+  const needsTwoFactor = twoFactorEnabled && !row.session.twoFactorVerifiedAt;
+
   // Sliding expiry for non-staff sessions + periodic lastSeenAt touch (best effort, no cookie write here).
+  // Sessions still waiting for the second factor never slide (they must complete it within minutes).
   const updates: Partial<typeof sessions.$inferInsert> = {};
-  if (!row.user.isStaff && row.session.expiresAt.getTime() - now < SLIDE_WHEN_REMAINING_MS) {
+  if (!row.user.isStaff && !needsTwoFactor && row.session.expiresAt.getTime() - now < SLIDE_WHEN_REMAINING_MS) {
     updates.expiresAt = new Date(now + SESSION_TTL_MS);
   }
   if (now - row.session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
@@ -142,7 +154,6 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
       .catch((error) => logger.warn("Failed to touch session", { error }));
   }
 
-  const twoFactorEnabled = Boolean(row.twoFactorEnabledAt);
   return {
     session: {
       id: row.session.id,
@@ -166,7 +177,7 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
       hasPassword: Boolean(row.user.passwordHash),
       twoFactorEnabled,
     },
-    needsTwoFactor: twoFactorEnabled && !row.session.twoFactorVerifiedAt,
+    needsTwoFactor,
   };
 });
 
@@ -194,8 +205,26 @@ export async function requireUser(opts: { returnTo?: string } = {}): Promise<Ses
   return current.user;
 }
 
-export async function markSessionTwoFactorVerified(sessionId: string): Promise<void> {
-  await db.update(sessions).set({ twoFactorVerifiedAt: new Date() }).where(eq(sessions.id, sessionId));
+/**
+ * Record that the second factor was completed for a session. Pass `isStaff` to also restore the
+ * normal session lifetime (sessions created with `pendingTwoFactor` start short-lived).
+ */
+export async function markSessionTwoFactorVerified(sessionId: string, opts: { isStaff?: boolean } = {}): Promise<Date | null> {
+  const now = Date.now();
+  const expiresAt = opts.isStaff === undefined ? null : new Date(now + (opts.isStaff ? STAFF_SESSION_TTL_MS : SESSION_TTL_MS));
+  await db
+    .update(sessions)
+    .set({ twoFactorVerifiedAt: new Date(now), ...(expiresAt ? { expiresAt } : {}) })
+    .where(eq(sessions.id, sessionId));
+  return expiresAt;
+}
+
+/** Re-issue the session cookie with a new expiry (after the session lifetime was extended). */
+export async function refreshSessionCookieExpiry(expiresAt: Date): Promise<void> {
+  const token = await readSessionToken();
+  if (!token) return;
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, token, cookieOptions(expiresAt));
 }
 
 /** Remember which organisation the user is working in for a portal. */
@@ -213,7 +242,8 @@ export async function invalidateCurrentSession(): Promise<void> {
   if (token) {
     await db.delete(sessions).where(eq(sessions.id, hmacToken(token, "session")));
   }
-  jar.delete(SESSION_COOKIE);
+  // Repeat the attributes: browsers ignore a deletion of a "__Host-" cookie without Secure + Path=/.
+  jar.delete({ name: SESSION_COOKIE, path: "/", secure: process.env.NODE_ENV === "production", httpOnly: true, sameSite: "lax" });
 }
 
 export async function invalidateSession(sessionId: string): Promise<void> {
@@ -227,7 +257,16 @@ export async function invalidateUserSessions(userId: string, opts: { exceptSessi
     .where(opts.exceptSessionId ? and(eq(sessions.userId, userId), ne(sessions.id, opts.exceptSessionId)) : eq(sessions.userId, userId));
 }
 
-export async function listUserSessions(userId: string) {
+export type UserSessionRow = {
+  id: string;
+  createdAt: Date;
+  lastSeenAt: Date;
+  expiresAt: Date;
+  userAgent: string | null;
+  twoFactorVerifiedAt: Date | null;
+};
+
+export async function listUserSessions(userId: string): Promise<UserSessionRow[]> {
   return db
     .select({
       id: sessions.id,
