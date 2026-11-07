@@ -16,12 +16,31 @@ type Db = NodePgDatabase<typeof schema>;
 
 const globalForDb = globalThis as unknown as { __vsgPool?: Pool; __vsgDb?: Db };
 
+/**
+ * When TLS is configured explicitly (DATABASE_SSL=true, certificate verified by default), drop libpq-only
+ * URL parameters (sslmode, channel_binding — e.g. in Neon URLs). node-postgres would otherwise re-parse
+ * sslmode and log a deprecation warning on every connection; the explicit `ssl` option is authoritative.
+ */
+function normalizeConnectionString(url: string, explicitSsl: boolean): string {
+  if (!explicitSsl) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("sslmode");
+    parsed.searchParams.delete("channel_binding");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 function createPool() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
+  const rawConnectionString = process.env.DATABASE_URL;
+  if (!rawConnectionString) {
     throw new Error("DATABASE_URL is not set");
   }
-  const ssl = process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false" } : undefined;
+  const explicitSsl = process.env.DATABASE_SSL === "true";
+  const ssl = explicitSsl ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false" } : undefined;
+  const connectionString = normalizeConnectionString(rawConnectionString, explicitSsl);
   return new Pool({
     connectionString,
     max: Number(process.env.DATABASE_POOL_MAX ?? 10),
