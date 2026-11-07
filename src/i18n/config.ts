@@ -17,7 +17,7 @@ export const LOCALE_LABELS: Record<Locale, { label: string; english: string }> =
 };
 
 /** One namespace per area so different owners never edit the same file. */
-export const NAMESPACES = ["common", "auth", "talent-dashboard", "talent-profile", "talent-jobs", "talent-training", "talent-account"] as const;
+export const NAMESPACES = ["common", "auth", "talent-dashboard", "talent-profile", "talent-jobs", "talent-training", "talent-account", "talent-messages", "public-safety"] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 export function isLocale(value: string | null | undefined): value is Locale {

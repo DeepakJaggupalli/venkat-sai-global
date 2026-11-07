@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 
 import type { FeatureKey } from "@/config/features";
 import { PORTAL_HOME, PORTAL_LABEL, type PortalKey } from "@/config/navigation";
@@ -155,6 +155,8 @@ export async function getHeaderAccount(): Promise<HeaderAccount | null> {
     const portal = (Object.keys(PORTAL_HOME) as PortalKey[]).find((key) => PORTAL_HOME[key] === href) ?? "talent";
     return { name: user.displayName, href, portalLabel: PORTAL_LABEL[portal] };
   } catch (error) {
+    // Let Next.js control-flow signals (dynamic rendering, redirects) through; only real failures degrade.
+    unstable_rethrow(error);
     logger.warn("Public header could not resolve the session", { error });
     return null;
   }

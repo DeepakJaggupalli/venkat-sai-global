@@ -10,7 +10,7 @@ import { requireOrgMember, requireStaff } from "@/modules/identity/authz";
 import { selfActor } from "./actor";
 import { setEducationVerification, setExperienceVerification, saveEducation, deleteEducation, reorderEducation, saveExperience, deleteExperience, reorderExperience } from "./career-service";
 import { deleteCandidateCredential, deleteCandidateDocument, saveCandidateCredential, saveCandidateDocument, setDocumentSharing, submitCredentialForVerification, submitDocumentForVerification } from "./documents-service";
-import { requireCandidate } from "./guard";
+import { assertGuardianConsentIfMinor, requireCandidate } from "./guard";
 import { deletePortfolioItem, reorderPortfolio, savePortfolioItem } from "./portfolio-service";
 import { updateCandidateConsents, updatePrivacySettings, updateVisibility } from "./privacy-service";
 import { setCandidatePhoto, setCandidateResume, updateJobPreferences, updatePersonalDetails, updateProfessionalSummary } from "./profile-service";
@@ -56,8 +56,15 @@ function refreshProfile(...extra: string[]): void {
   for (const path of extra) revalidatePath(path);
 }
 
-async function me() {
-  return selfActor(await requireCandidate());
+/**
+ * The signed-in candidate as the acting party. Actions that collect or share more data also pass
+ * the children's-data gate (assertGuardianConsentIfMinor); entering or correcting the date of birth
+ * and deleting data stay open (`{ ungated: true }`).
+ */
+async function me(opts: { ungated?: boolean } = {}) {
+  const session = await requireCandidate();
+  if (!opts.ungated) await assertGuardianConsentIfMinor(session.candidate);
+  return selfActor(session);
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +72,7 @@ async function me() {
 // ---------------------------------------------------------------------------
 
 export const savePersonalAction = createFormAction(personalSchema, async (input) => {
-  await updatePersonalDetails(await me(), input);
+  await updatePersonalDetails(await me({ ungated: true }), input);
   refreshProfile();
   return ok(undefined, "Personal details saved");
 });
@@ -105,7 +112,7 @@ export const saveEducationAction = createFormAction(educationSchema, async (inpu
 });
 
 export const deleteEducationAction = createAction(idSchema, async ({ id }) => {
-  await deleteEducation(await me(), id);
+  await deleteEducation(await me({ ungated: true }), id);
   refreshProfile();
   return ok(undefined, "Education removed");
 });
@@ -123,7 +130,7 @@ export const saveExperienceAction = createFormAction(experienceSchema, async (in
 });
 
 export const deleteExperienceAction = createAction(idSchema, async ({ id }) => {
-  await deleteExperience(await me(), id);
+  await deleteExperience(await me({ ungated: true }), id);
   refreshProfile();
   return ok(undefined, "Work experience removed");
 });
@@ -145,7 +152,7 @@ export const saveSkillsAction = createFormAction(skillsSchema, async (input) => 
 });
 
 export const removeSkillAction = createAction(z.object({ skillId: z.uuid() }), async ({ skillId }) => {
-  await removeCandidateSkill(await me(), skillId);
+  await removeCandidateSkill(await me({ ungated: true }), skillId);
   refreshProfile();
   return ok(undefined, "Skill removed");
 });
@@ -173,7 +180,7 @@ export const saveCredentialAction = createFormAction(credentialSchema, async (in
 });
 
 export const deleteCredentialAction = createAction(idSchema, async ({ id }) => {
-  await deleteCandidateCredential(await me(), id);
+  await deleteCandidateCredential(await me({ ungated: true }), id);
   refreshProfile();
   return ok(undefined, "Credential removed");
 });
@@ -191,7 +198,7 @@ export const saveDocumentAction = createFormAction(documentSchema, async (input)
 });
 
 export const deleteDocumentAction = createAction(idSchema, async ({ id }) => {
-  await deleteCandidateDocument(await me(), id);
+  await deleteCandidateDocument(await me({ ungated: true }), id);
   refreshProfile();
   return ok(undefined, "Document removed");
 });
@@ -215,7 +222,7 @@ export const savePortfolioItemAction = createFormAction(portfolioItemSchema, asy
 });
 
 export const deletePortfolioItemAction = createAction(idSchema, async ({ id }) => {
-  await deletePortfolioItem(await me(), id);
+  await deletePortfolioItem(await me({ ungated: true }), id);
   refreshProfile();
   return ok(undefined, "Portfolio item removed");
 });

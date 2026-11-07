@@ -7,12 +7,15 @@ import { cache } from "react";
 import { db, type DbOrTx } from "@/db";
 import { candidatePrivacySettings, candidateProfiles } from "@/db/schema";
 import type { CandidateSource } from "@/db/schema/candidates";
+import { ActionError } from "@/lib/actions";
 import { logger } from "@/lib/logger";
 import { audit } from "@/modules/audit";
+import { getConsentState } from "@/modules/identity/consent";
 import { requireUser } from "@/modules/identity/session";
 import { isFeatureEnabled } from "@/modules/settings";
 
 import { refreshCandidateDerived } from "./derived";
+import { ADULT_AGE, ageOn } from "./profile-rules";
 import type { CandidateProfileRow, CandidateSession } from "./types";
 
 const ACTIVITY_TOUCH_MS = 15 * 60_000;
@@ -126,4 +129,20 @@ export async function requireCandidate(): Promise<CandidateSession> {
   }
   touchLastActive(candidate);
   return { user, candidate };
+}
+
+/**
+ * DPDP Act s.9 (children's data): a candidate under 18 whose guardian has not yet given verifiable
+ * consent may only enter or correct their date of birth, reduce what is shared, or delete data.
+ * Every People Portal action that collects or shares more data calls this after requireCandidate().
+ * An unknown date of birth is not blocked here (sign-up asks users to confirm they are 18+; the
+ * People Portal onboarding collects the date of birth before anything else).
+ */
+export async function assertGuardianConsentIfMinor(candidate: CandidateProfileRow): Promise<void> {
+  if (!candidate.dateOfBirth) return;
+  const age = ageOn(candidate.dateOfBirth);
+  if (age === null || age >= ADULT_AGE) return;
+  const consent = await getConsentState(candidate.userId, ["guardian_consent"]);
+  if (consent.guardian_consent?.granted === true) return;
+  throw new ActionError("A parent or guardian needs to give consent before you can continue. Finish the guardian step in onboarding.", { code: "guardian_consent_required" });
 }

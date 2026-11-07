@@ -821,7 +821,8 @@ export async function listInterviewsForPartner(ctx: PartnerActor["ctx"], filters
   ]);
   const views = await toInterviewViews(rows, { kind: "partner" }, db);
   return paginated(
-    views.map((v) => ({ ...v, meetingUrl: null, candidateResponseNote: null })),
+    // Partners never see the employer's panel (names, emails) or internal feedback.
+    views.map((v) => ({ ...v, meetingUrl: null, candidateResponseNote: null, participants: [], feedback: [] })),
     total[0]?.value ?? 0,
     page,
   );

@@ -43,7 +43,7 @@ export const PORTAL_NOTIFICATIONS_HREF: Record<PortalKey, string> = {
 export const VERIFICATION_HREF: Record<OrgPortalKey, string> = {
   employer: "/employer/company/verification",
   recruiter: "/recruiter/profile/verification",
-  institution: "/institution/profile/verification",
+  institution: "/institution/profile#verification",
 };
 
 /** What members call their organisation in each portal (used in copy). */

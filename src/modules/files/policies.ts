@@ -140,6 +140,8 @@ const ORG_PROFILE_MANAGERS = ["employer.company.manage", "partner.profile.manage
 const PARTNER_CANDIDATE_HANDLERS = ["partner.candidates.submit", "partner.documents.manage"] as const satisfies readonly OrgPermission[];
 const PARTNER_CANDIDATE_VIEWERS = ["partner.candidates.submit", "partner.documents.manage", "partner.submissions.view"] as const satisfies readonly OrgPermission[];
 const ALL_ORG_TYPES = ["employer", "recruitment_partner", "institution"] as const satisfies readonly OrgType[];
+/** May attach organisation documents without managing the profile: placement evidence, partner invoices (read stays with profile managers + the uploader). */
+const ORG_DOCUMENT_UPLOADERS = [...ORG_PROFILE_MANAGERS, "institution.placements.manage", "partner.settlements.view"] as const satisfies readonly OrgPermission[];
 
 const base = {
   defaultVisibility: "private",
@@ -268,7 +270,7 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
     sensitive: true,
     dataCategory: "organization_documents",
     upload: [
-      { kind: "org", orgTypes: ALL_ORG_TYPES, permissions: ORG_PROFILE_MANAGERS },
+      { kind: "org", orgTypes: ALL_ORG_TYPES, permissions: ORG_DOCUMENT_UPLOADERS },
       { kind: "staff", permissions: ["orgs.manage", "orgs.verify"] },
     ],
     staffView: ["orgs.view"],

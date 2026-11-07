@@ -263,6 +263,9 @@ describe.skipIf(!enabled)("platform route handlers", async () => {
     });
 
     it("lets organisation members upload for their organisation, and scopes reads to members", async () => {
+      // Do not depend on another test file having seeded the role templates.
+      const { seedRoles } = await import("@/server/seed/roles");
+      await seedRoles();
       const [role] = await db.select({ id: roles.id }).from(roles).where(and(eq(roles.scope, "employer"), eq(roles.key, "owner"), isNull(roles.organizationId)));
       if (!role) throw new Error("Seed the test database first (employer owner role missing)");
       const [org] = await db.insert(organizations).values({ type: "employer", name: "Route test employer", slug: `route-test-employer-${stamp}` }).returning({ id: organizations.id });
