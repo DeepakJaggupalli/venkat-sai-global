@@ -5,6 +5,27 @@
  */
 const isProd = process.env.NODE_ENV === "production";
 
+/** Seller (supplier) details printed on invoices. Only legalName/address are required; finance fills the rest. */
+export type SellerDetailsSetting = {
+  legalName: string;
+  address: string;
+  /** GSTIN. Blank = unregistered supplier: no GST is charged and documents say "Invoice", not "Tax invoice". */
+  taxId: string;
+  /** GST state code of the place of business (37 = Andhra Pradesh). */
+  stateCode: string;
+  countryCode?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  postalCode?: string;
+  stateRegion?: string;
+  email?: string;
+  phone?: string;
+  taxIdType?: string;
+  /** Bank account / UPI details shown on unpaid invoices. Never invented — finance enters them. */
+  paymentInstructions?: string;
+};
+
 export const SETTINGS = {
   // Security
   "security.require_staff_2fa": { default: isProd, label: "Require two-factor authentication for staff", group: "Security" },
@@ -26,16 +47,30 @@ export const SETTINGS = {
   "analytics.retention_days_sessions": { default: 395, label: "Keep session records (days)", group: "Analytics" },
   "analytics.clarity_project_id": { default: "", label: "Microsoft Clarity project ID (optional)", group: "Analytics" },
   "analytics.ga4_measurement_id": { default: "", label: "Google Analytics 4 measurement ID (optional)", group: "Analytics" },
+  /** Bump to re-ask every visitor for cookie consent (combined with the privacy notice version). */
+  "analytics.consent_version": { default: "1", label: "Cookie consent version (change to re-ask everyone)", group: "Analytics" },
 
   // Commercial
   "commercial.default_currency": { default: "INR", label: "Default billing currency", group: "Commercial" },
   "commercial.enforce_limits": { default: false, label: "Enforce plan limits and credits", group: "Commercial" },
   "commercial.invoice_prefix_note": { default: "", label: "Invoice footer note", group: "Commercial" },
   "commercial.seller_details": {
-    default: { legalName: "Venkat Sai Welding Works and Testing Center", address: "Auto Nagar, Visakhapatnam, Andhra Pradesh, India", taxId: "", stateCode: "37" },
+    default: {
+      legalName: "Venkat Sai Welding Works and Testing Center",
+      address: "Auto Nagar, Visakhapatnam, Andhra Pradesh, India",
+      taxId: "",
+      stateCode: "37",
+    } as SellerDetailsSetting,
     label: "Seller details printed on invoices",
     group: "Commercial",
   },
+  "commercial.grace_period_days": { default: 7, label: "Days a past-due subscription stays live", group: "Commercial" },
+  "commercial.invoice_due_days": { default: 15, label: "Days from invoice issue until due", group: "Commercial" },
+  "commercial.export_zero_rated": { default: true, label: "Zero-rate export of services (LUT filed)", group: "Commercial" },
+  "commercial.default_tax_code": { default: "9985", label: "Default SAC / HSN code on invoice lines", group: "Commercial" },
+
+  // Organisations
+  "orgs.invitation_ttl_days": { default: 7, label: "Team invitation validity (days)", group: "Organisations" },
 
   // Recruitment
   "recruitment.application_edit_window_hours": { default: 0, label: "Hours a candidate may edit an application after submitting", group: "Recruitment" },

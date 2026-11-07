@@ -4,6 +4,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 
 import { env } from "@/lib/env";
 
+import { sanitizeEmailHeaders } from "./headers";
 import { PROVIDER_TIMEOUT_MS } from "./http";
 import type { EmailMessage, SendResult } from "./index";
 
@@ -41,6 +42,14 @@ export function describeSmtpError(error: unknown): string {
   return `${parts.length ? `${parts.join(" ")}: ` : ""}${message}`;
 }
 
+/** Caller headers plus the tag header, sanitised against header injection (CR / LF, reserved names). */
+export function buildSmtpHeaders(message: Pick<EmailMessage, "headers" | "tags">): Record<string, string> | undefined {
+  return sanitizeEmailHeaders({
+    ...message.headers,
+    ...(message.tags?.length ? { "X-VSG-Tags": message.tags.join(",").slice(0, 200) } : {}),
+  });
+}
+
 export async function sendSmtpEmail(message: EmailMessage): Promise<SendResult> {
   const t = getTransport();
   if (!t) return { ok: false, provider: "smtp", error: "SMTP is not configured (set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)" };
@@ -52,7 +61,7 @@ export async function sendSmtpEmail(message: EmailMessage): Promise<SendResult> 
       html: message.html,
       text: message.text,
       replyTo: message.replyTo,
-      headers: message.tags?.length ? { "X-VSG-Tags": message.tags.join(",").slice(0, 200) } : undefined,
+      headers: buildSmtpHeaders(message),
     });
     return { ok: true, provider: "smtp", providerMessageId: typeof info.messageId === "string" ? info.messageId : undefined };
   } catch (error) {

@@ -4,6 +4,10 @@ import { db } from "@/db";
 import { devOutbox } from "@/db/schema";
 import { logger } from "@/lib/logger";
 
+import { sanitizeEmailHeaders } from "./headers";
+
+export { sanitizeEmailHeaders } from "./headers";
+
 /**
  * Low-level message transports — CONTRACT used by auth (OTP) and the notifications engine.
  * Business code should call `notify()` (src/modules/notifications) instead, except for
@@ -14,7 +18,16 @@ import { logger } from "@/lib/logger";
  * The real providers (SMTP, MSG91, Twilio, Meta WhatsApp Cloud API) are implemented in
  * ./providers.ts by the infrastructure module and selected by environment variables.
  */
-export type EmailMessage = { to: string; subject: string; html: string; text: string; replyTo?: string; tags?: string[] };
+export type EmailMessage = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+  tags?: string[];
+  /** Extra headers (e.g. List-Unsubscribe). Every transport sanitises them (sanitizeEmailHeaders). */
+  headers?: Record<string, string>;
+};
 export type SmsMessage = { to: string; body: string; templateId?: string; variables?: Record<string, string> };
 export type WhatsAppMessage = { to: string; templateName: string; languageCode: string; variables: string[]; fallbackText?: string };
 export type SendResult = { ok: true; providerMessageId?: string; provider: string } | { ok: false; error: string; provider: string };
@@ -28,7 +41,8 @@ export type MessagingProviders = {
 /** Dev transport: capture in the dev outbox. */
 export const devProviders: MessagingProviders = {
   async sendEmail(m) {
-    await db.insert(devOutbox).values({ channel: "email", to: m.to, subject: m.subject, bodyText: m.text, bodyHtml: m.html, metadata: { tags: m.tags ?? [] } });
+    const headers = sanitizeEmailHeaders(m.headers);
+    await db.insert(devOutbox).values({ channel: "email", to: m.to, subject: m.subject, bodyText: m.text, bodyHtml: m.html, metadata: { tags: m.tags ?? [], ...(headers ? { headers } : {}) } });
     logger.info("[dev-outbox] email captured", { to: m.to, subject: m.subject });
     return { ok: true, provider: "dev" };
   },

@@ -8,6 +8,7 @@ import { securityEvents, users } from "@/db/schema";
 import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
 import { logger } from "@/lib/logger";
 import { getRequestMeta } from "@/lib/request";
+import { trackServer } from "@/modules/analytics/server";
 import { logSecurityEvent } from "@/modules/audit";
 import { notify, type NotificationRecipient } from "@/modules/notifications";
 
@@ -135,12 +136,15 @@ export async function establishSession(
     await logSecurityEvent({ userId: user.id, type: "login_first_factor_succeeded", metadata: { method: opts.method } });
     return `/sign-in/two-factor?returnTo=${encodeURIComponent(destination)}`;
   }
-  await recordSuccessfulLogin(user, opts.method);
+  await recordSuccessfulLogin(user, opts.method, { isNewUser: opts.isNewUser });
   return destination;
 }
 
-/** Security log entry for a completed sign-in + alert when the device has not been seen before. */
-export async function recordSuccessfulLogin(user: Pick<UserRow, "id">, method: AuthMethod): Promise<void> {
+/**
+ * Security log entry for a completed sign-in + alert when the device has not been seen before, and the
+ * login_completed conversion (not for a brand-new account, which records registration_completed, nor for staff).
+ */
+export async function recordSuccessfulLogin(user: Pick<UserRow, "id" | "isStaff">, method: AuthMethod, opts: { isNewUser?: boolean } = {}): Promise<void> {
   const meta = await getRequestMeta().catch(() => null);
   const deviceHash = deviceFingerprint(meta?.userAgent);
   const [prior] = await db
@@ -170,6 +174,12 @@ export async function recordSuccessfulLogin(user: Pick<UserRow, "id">, method: A
     await logSecurityEvent({ userId: user.id, type: "new_device_sign_in", severity: "warning", metadata: { method, deviceHash, device: device.label } });
     await sendSecurityAlert([{ userId: user.id }], "new_sign_in", { device: device.label });
   }
+  if (!opts.isNewUser && !user.isStaff) await trackServer("login_completed");
+}
+
+/** registration_completed conversion, once the new account's activation has committed (no personal data). */
+export async function trackRegistrationCompleted(intent: SignupIntent | null): Promise<void> {
+  await trackServer("registration_completed", { intent });
 }
 
 // ---------------------------------------------------------------------------

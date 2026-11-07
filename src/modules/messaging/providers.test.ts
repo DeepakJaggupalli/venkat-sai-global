@@ -16,7 +16,8 @@ Object.assign(process.env, {
 const { buildMsg91Payload, buildTwilioForm, sendMsg91Sms, sendTwilioSms, MSG91_FLOW_URL } = await import("./sms");
 const { buildWhatsAppTemplatePayload, sendMetaWhatsApp, DEFAULT_GRAPH_API_VERSION } = await import("./whatsapp");
 const { maskRecipient, toMsisdn } = await import("./http");
-const { describeSmtpError } = await import("./smtp");
+const { buildSmtpHeaders, describeSmtpError } = await import("./smtp");
+const { sanitizeEmailHeaders } = await import("./headers");
 
 const fetchMock = vi.fn<typeof fetch>();
 beforeAll(() => {
@@ -138,5 +139,34 @@ describe("SMTP error mapping", () => {
     const e = Object.assign(new Error("Invalid login: 535 Authentication failed"), { code: "EAUTH", responseCode: 535 });
     expect(describeSmtpError(e)).toBe("EAUTH SMTP 535: Invalid login: 535 Authentication failed");
     expect(describeSmtpError("weird")).toBe("SMTP send failed");
+  });
+});
+
+describe("email headers", () => {
+  it("passes List-Unsubscribe headers through and neutralises CR / LF injection", () => {
+    const headers = sanitizeEmailHeaders({
+      "List-Unsubscribe": "<https://example.test/api/v1/notifications/unsubscribe?token=abc>",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      "X-Note": "first\r\nBcc: victim@example.test",
+    });
+    expect(headers).toEqual({
+      "List-Unsubscribe": "<https://example.test/api/v1/notifications/unsubscribe?token=abc>",
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      "X-Note": "first Bcc: victim@example.test",
+    });
+    expect(Object.values(headers!).join("")).not.toMatch(/[\r\n]/);
+  });
+
+  it("drops malformed names, reserved headers and empty values", () => {
+    expect(sanitizeEmailHeaders({ "Bad Name": "x", "X:Y": "x", From: "a@b.test", bcc: "c@d.test", "X-Empty": " \r\n " })).toBeUndefined();
+    expect(sanitizeEmailHeaders(undefined)).toBeUndefined();
+  });
+
+  it("merges caller headers with the SMTP tag header", () => {
+    expect(buildSmtpHeaders({ tags: ["job.approved"], headers: { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } })).toEqual({
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      "X-VSG-Tags": "job.approved",
+    });
+    expect(buildSmtpHeaders({})).toBeUndefined();
   });
 });

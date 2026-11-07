@@ -26,11 +26,13 @@ export function isProtectedPath(pathname: string): boolean {
 }
 
 /** Third-party origins allowed by the CSP (keep in sync with the integrations in use). */
-const SCRIPT_HOSTS = ["https://www.clarity.ms", "https://www.googletagmanager.com", "https://checkout.razorpay.com", "https://js.stripe.com"];
+const SCRIPT_HOSTS = ["https://www.clarity.ms", "https://scripts.clarity.ms", "https://www.googletagmanager.com", "https://checkout.razorpay.com", "https://js.stripe.com"];
 const CONNECT_HOSTS = [
   "https://*.clarity.ms",
   "https://www.google-analytics.com",
   "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+  "https://*.googletagmanager.com",
   "https://api.razorpay.com",
   "https://lumberjack.razorpay.com",
   "https://api.stripe.com",
@@ -39,6 +41,9 @@ const FRAME_HOSTS = [
   "https://www.youtube-nocookie.com",
   "https://www.youtube.com",
   "https://player.vimeo.com",
+  // CMS map embeds (Google Maps embed URLs and OpenStreetMap export iframes).
+  "https://www.google.com",
+  "https://www.openstreetmap.org",
   "https://api.razorpay.com",
   "https://checkout.razorpay.com",
   "https://js.stripe.com",

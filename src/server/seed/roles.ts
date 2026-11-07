@@ -30,7 +30,7 @@ export async function seedRoles(): Promise<SeedResult> {
         sortOrder: (index + 1) * 10,
       })),
     )
-    .onConflictDoNothing({ target: [roles.scope, roles.key, roles.organizationId] })
+    .onConflictDoNothing()
     .returning({ inserted: sql<boolean>`(xmax = 0)` });
 
   const allPlatform = PLATFORM_PERMISSIONS.map((p) => p.key);

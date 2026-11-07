@@ -34,7 +34,7 @@ export const countries = pgTable(
     sortOrder: integer().notNull().default(0),
     ...timestamps,
   },
-  (t) => [index("countries_market_region_idx").on(t.marketRegion)],
+  (t) => [index("countries_market_region_idx").on(t.marketRegion), index("countries_currency_idx").on(t.currencyCode)],
 );
 
 export const states = pgTable(
@@ -78,6 +78,7 @@ export const industries = pgTable(
   },
   (t) => [
     uniqueIndex("industries_slug_uq").on(t.slug),
+    index("industries_parent_idx").on(t.parentId),
     foreignKey({ columns: [t.parentId], foreignColumns: [t.id], name: "industries_parent_fk" }).onDelete("set null"),
   ],
 );
@@ -98,6 +99,7 @@ export const jobCategories = pgTable(
   (t) => [
     uniqueIndex("job_categories_slug_uq").on(t.slug),
     index("job_categories_industry_idx").on(t.industryId),
+    index("job_categories_parent_idx").on(t.parentId),
     foreignKey({ columns: [t.parentId], foreignColumns: [t.id], name: "job_categories_parent_fk" }).onDelete("set null"),
   ],
 );

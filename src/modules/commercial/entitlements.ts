@@ -30,6 +30,11 @@ export type EntitlementKey = (typeof ENTITLEMENT_KEYS)[number];
 
 export type EntitlementCheck = {
   allowed: boolean;
+  /**
+   * Whether limits are currently enforced ("commercial.enforce_limits"). When false, `allowed` is always true
+   * and `limit` / `remaining` are informational only — callers must not apply their own limit checks.
+   */
+  enforced: boolean;
   /** null = unlimited */
   limit: number | null;
   used: number;
@@ -38,15 +43,8 @@ export type EntitlementCheck = {
   planName?: string | null;
 };
 
-export class EntitlementError extends Error {
-  constructor(
-    message: string,
-    public readonly key: EntitlementKey,
-  ) {
-    super(message);
-    this.name = "EntitlementError";
-  }
-}
+// Defined in ./entitlement-error.ts (no import cycle with the implementation); same class, same export.
+export { EntitlementError } from "./entitlement-error";
 
 export type ConsumeOptions = {
   quantity?: number;

@@ -38,6 +38,8 @@ export const organizationMembers = pgTable(
   (t) => [
     uniqueIndex("organization_members_org_user_uq").on(t.organizationId, t.userId),
     index("organization_members_user_idx").on(t.userId),
+    index("organization_members_role_idx").on(t.roleId),
+    index("organization_members_invited_by_idx").on(t.invitedByUserId),
   ],
 );
 
@@ -64,6 +66,9 @@ export const organizationInvitations = pgTable(
     uniqueIndex("organization_invitations_token_uq").on(t.tokenHash),
     index("organization_invitations_org_idx").on(t.organizationId),
     index("organization_invitations_email_idx").on(t.email),
+    index("organization_invitations_role_idx").on(t.roleId),
+    index("organization_invitations_invited_by_idx").on(t.invitedByUserId),
+    index("organization_invitations_accepted_by_idx").on(t.acceptedByUserId),
   ],
 );
 
@@ -91,7 +96,11 @@ export const organizationVerifications = pgTable(
     approvalRequestId: uuid(),
     ...timestamps,
   },
-  (t) => [index("organization_verifications_org_idx").on(t.organizationId, t.submittedAt)],
+  (t) => [
+    index("organization_verifications_org_idx").on(t.organizationId, t.submittedAt),
+    index("organization_verifications_submitted_by_idx").on(t.submittedByUserId),
+    index("organization_verifications_reviewed_by_idx").on(t.reviewedByUserId),
+  ],
 );
 
 export const ORG_DOCUMENT_TYPES = [
@@ -133,6 +142,9 @@ export const organizationDocuments = pgTable(
   (t) => [
     index("organization_documents_org_idx").on(t.organizationId),
     index("organization_documents_expiry_idx").on(t.expiresAt),
+    index("organization_documents_verification_idx").on(t.verificationId),
+    index("organization_documents_file_idx").on(t.fileId),
+    index("organization_documents_uploaded_by_idx").on(t.uploadedByUserId),
     // Explicit name: the generated one exceeds PostgreSQL's 63-byte limit and is truncated, which made
     // drizzle-kit push drop and re-add the constraint on every run.
     foreignKey({ columns: [t.verificationId], foreignColumns: [organizationVerifications.id], name: "organization_documents_verification_fk" }).onDelete(

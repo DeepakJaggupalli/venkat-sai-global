@@ -7,7 +7,7 @@ import { skills } from "@/db/schema";
 import type { SkillCategory } from "@/db/schema/_constants";
 import { slugify } from "@/lib/http";
 
-import { assertUnique, chunk, countInserted, type SeedResult } from "./util";
+import { assertUnique, chunk, countInserted, wasInserted, type SeedResult } from "./util";
 
 /**
  * Curated skills (status "approved") across SKILL_CATEGORIES, with synonyms used by the skill
@@ -404,7 +404,7 @@ export function skillSeedData(): SkillSeed[] {
 
 export async function seedSkills(): Promise<SeedResult> {
   const data = skillSeedData();
-  const results: { inserted: boolean }[] = [];
+  const results: { id: string; inserted: boolean | string | null }[] = [];
   for (const batch of chunk(data, 500)) {
     const rows = await db
       .insert(skills)
@@ -415,8 +415,14 @@ export async function seedSkills(): Promise<SeedResult> {
         set: { synonyms: sql`excluded.synonyms` },
         setWhere: sql`cardinality(${skills.synonyms}) = 0 and cardinality(excluded.synonyms) > 0`,
       })
-      .returning({ inserted: sql<boolean>`(xmax = 0)` });
+      .returning({ id: skills.id, inserted: sql<boolean>`(xmax = 0)` });
     results.push(...rows);
+  }
+  // Synonyms feed the profile and job search text: refresh whatever lists a skill that just gained them.
+  const updated = results.filter((r) => !wasInserted(r));
+  if (updated.length) {
+    const { afterSkillChanged } = await import("@/modules/taxonomy/service");
+    for (const row of updated) await afterSkillChanged(row.id);
   }
   return { name: "skills", ...countInserted(results), total: data.length };
 }

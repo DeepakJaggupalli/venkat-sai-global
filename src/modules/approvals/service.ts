@@ -134,7 +134,7 @@ export async function decideApproval(args: {
       await handler.onDecision({ request: row!, decision: args.decision, reason, actorUserId: args.ctx.user.id, tx });
     }
 
-    if (request.submittedByUserId) {
+    if (request.submittedByUserId && !handler?.notifiesSubmitter) {
       await notify(
         {
           event: "approval.decided",

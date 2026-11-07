@@ -114,6 +114,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       title: "Account",
       items: [
         { title: "Notifications", href: "/talent/notifications", icon: Bell, i18nKey: "nav.notifications" },
+        { title: "Messages", href: "/talent/messages", icon: MessageSquare, i18nKey: "nav.messages" },
         { title: "Support", href: "/talent/support", icon: LifeBuoy, i18nKey: "nav.support" },
         { title: "Privacy & data", href: "/talent/privacy", icon: ShieldCheck, i18nKey: "nav.privacy" },
       ],
@@ -144,6 +145,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Company profile", href: "/employer/company", icon: Building2, permission: "employer.company.manage" },
         { title: "Team", href: "/employer/team", icon: Users, permission: "employer.team.manage" },
+        { title: "Announcements", href: "/employer/announcements", icon: Megaphone, permission: "employer.company.manage" },
         { title: "Billing", href: "/employer/billing", icon: CreditCard, permission: "employer.billing.view" },
         { title: "Messages", href: "/employer/messages", icon: MessageSquare },
         { title: "Support", href: "/employer/support", icon: LifeBuoy },
@@ -168,7 +170,9 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Performance", href: "/recruiter/performance", icon: Gauge, permission: "partner.performance.view" },
         { title: "Settlements", href: "/recruiter/settlements", icon: Wallet, permission: "partner.settlements.view" },
+        { title: "Billing", href: "/recruiter/billing", icon: CreditCard, permission: "partner.billing.manage" },
         { title: "Agency profile", href: "/recruiter/profile", icon: Building2, permission: "partner.profile.manage" },
+        { title: "Announcements", href: "/recruiter/announcements", icon: Megaphone, permission: "partner.profile.manage" },
         { title: "Team", href: "/recruiter/team", icon: Users, permission: "partner.team.manage" },
         { title: "Support", href: "/recruiter/support", icon: LifeBuoy },
       ],
@@ -193,7 +197,9 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Profile", href: "/institution/profile", icon: Building2, permission: "institution.profile.manage" },
         { title: "Team", href: "/institution/team", icon: Users, permission: "institution.team.manage" },
+        { title: "Announcements", href: "/institution/announcements", icon: Megaphone, permission: "institution.profile.manage" },
         { title: "Billing", href: "/institution/billing", icon: CreditCard, permission: "institution.billing.manage" },
+        { title: "Messages", href: "/institution/messages", icon: MessageSquare },
         { title: "Support", href: "/institution/support", icon: LifeBuoy },
       ],
     },
@@ -204,6 +210,8 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Executive dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard.view", matchNested: false },
         { title: "Approval centre", href: "/admin/approvals", icon: ListChecks, permission: "approvals.view" },
+        { title: "My tasks", href: "/admin/tasks", icon: ClipboardCheck },
+        { title: "Messages", href: "/admin/messages", icon: MessageSquare },
       ],
     },
     {

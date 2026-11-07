@@ -105,7 +105,9 @@ export const mediaFolders = pgTable(
  * asset can be public; an asset showing people can only be public while consent is `obtained`; public images
  * need a text alternative (all CHECK constraints). Consent withdrawal = set consentStatus `withdrawn` and
  * visibility `internal` in the same update; the content service also makes the underlying file private and
- * unpublishes the entries listed in media_usages.
+ * returns the entries listed in media_usages to their editors. Those entries stay published: public queries only
+ * resolve public assets, so the withdrawn item disappears from every page at once without taking pages offline.
+ * Public use of an asset showing people additionally goes through the approval centre (type media_asset).
  */
 export const mediaAssets = pgTable(
   "media_assets",
@@ -300,8 +302,13 @@ export const logoPermissions = pgTable(
 // CMS (generic typed collections + versions)
 // ---------------------------------------------------------------------------
 
-/** Collections holding exactly one entry per locale (site-wide settings and layout). */
-export const CMS_SINGLETON_COLLECTIONS = ["site_settings", "homepage", "navigation", "footer"] as const;
+/**
+ * Collections holding exactly one entry per locale (site-wide settings, layout and the About page).
+ * Footer link columns live in `navigation` and the footer text in `site_settings`, so there is no separate
+ * footer singleton. A singleton's slug is its collection key with "_" replaced by "-" (e.g. "site-settings").
+ * TS-only enum (text column): changing this list needs no migration.
+ */
+export const CMS_SINGLETON_COLLECTIONS = ["site_settings", "homepage", "navigation", "about"] as const;
 export type CmsSingletonCollection = (typeof CMS_SINGLETON_COLLECTIONS)[number];
 
 /**
@@ -522,9 +529,10 @@ export type AnnouncementStatus = (typeof ANNOUNCEMENT_STATUSES)[number];
 /**
  * Banners, tickers and notification-centre posts for the public site and/or portals. Shown while status is
  * `published` and now is within [startsAt, endsAt). organizationId is set when a partner organisation requested
- * the announcement (approval type `partner_announcement`); null = Venkat Sai. sendNotification fans out in-app
- * notifications once (notificationSentAt makes the task idempotent). The body is plain text rendered escaped —
- * never HTML; links are site-relative paths or http(s) URLs only (CHECK).
+ * the announcement (approval type `partner_announcement`); null = Venkat Sai. Broadcasts are never fanned out as
+ * per-user notifications: banners and notification centres read the active announcements at render time, so the
+ * content service always stores sendNotification = false (the column is kept for a possible targeted use later).
+ * The body is plain text rendered escaped — never HTML; links are site-relative paths or http(s) URLs only (CHECK).
  */
 export const announcements = pgTable(
   "announcements",

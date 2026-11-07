@@ -33,7 +33,7 @@ import {
   type GoogleIdentity,
   type GoogleOAuthState,
 } from "./google";
-import { establishSession, findUserByContact, findUserById, postAuthDestination, sendSecurityAlert, sendWelcome, type UserRow } from "./login";
+import { establishSession, findUserByContact, findUserById, postAuthDestination, sendSecurityAlert, sendWelcome, trackRegistrationCompleted, type UserRow } from "./login";
 import { sanitizeReturnTo } from "./redirects";
 import { currentPolicyVersions, recordSignupConsents, signupIntentOf } from "./registration";
 import { getCurrentUser, type SessionUser } from "./session";
@@ -177,12 +177,14 @@ export async function completeGoogleSignIn(query: { code: string | null; state: 
     await sendSecurityAlert([{ userId: user.id }], "google_linked");
   }
   await logSecurityEvent({ userId: user.id, type: "oauth_login", metadata: { provider: "google" } });
-  return establishSession(user, {
+  const next = await establishSession(user, {
     method: "google",
     returnTo: stored.returnTo,
     intent: stored.intent ?? (created ? null : signupIntentOf(user)),
     isNewUser: created,
   });
+  if (created) await trackRegistrationCompleted(stored.intent ?? signupIntentOf(user));
+  return next;
 }
 
 type Resolution = { ok: true; user: UserRow; created: boolean; linked: boolean } | { ok: false; code: "account_unavailable" | "google_email_conflict" };

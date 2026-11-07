@@ -15,9 +15,9 @@ services should rely on, and every deliberate deviation from the brief. Written 
 | Spine exports (DATA_MODEL §3) | all present |
 | Identifier length (≤ 63 bytes; longer names are silently truncated) | all within limit |
 | Index / constraint relation names (global per schema) | all unique |
-| Every FK column indexed | yes in all domain files; foundation gaps listed in §7 |
+| Every FK column indexed | yes, schema-wide (foundation gaps closed in migration 0001, §8) |
 | `node scripts/test-db.mjs vsg_schema_integration` (fresh `drizzle-kit push`) | succeeds |
-| Further `drizzle-kit push` runs on the same database — right after creation (stale catalog statistics) and after `ANALYZE` | one residual statement pair (`roles_scope_key_org_uq`, foundation — §7) |
+| `npm run db:migrate` (0000 + 0001) on a blank database, then `drizzle-kit push --force` twice | "No changes detected" both times — migrations and schema are in sync and push is idempotent |
 | `npm run db:seed` twice on an isolated database | idempotent (reference data, roles, Super Admin, module seeds) |
 
 Database objects created by the full schema (PostgreSQL 17): **145 tables, 440 foreign keys, 256 CHECK
@@ -139,8 +139,9 @@ silently cascading.
   name), education_levels, qualification_types.
 - **core**: users (every person), organizations (`type` employer | recruitment_partner | institution; soft delete),
   files (all binaries; storage driver + scan status).
-- **identity**: sessions, oauth_accounts, verification_tokens, user_two_factor, roles (`roles_scope_key_org_uq`,
-  NULLS NOT DISTINCT), user_roles, consent_records (append-only ledger).
+- **identity**: sessions, oauth_accounts, verification_tokens, user_two_factor, roles (`roles_scope_key_org_uq`:
+  unique expression index over scope, key, coalesce(organization_id, nil uuid)), user_roles, consent_records
+  (append-only ledger).
 - **organizations**: organization_members, organization_invitations, organization_verifications, organization_documents.
 - **system**: file_access_grants, background_jobs, code_sequences, platform_settings, feature_flags,
   rate_limit_buckets, audit_logs, security_events, data_access_logs, data_requests, approval_requests
@@ -270,6 +271,12 @@ silently cascading.
   employer name (confidential jobs).
 - Services maintain: `skillsText`, `categoryNameCache`, `isOverseas`, `viewCount`, `applicationCount`,
   `verifiedEmployer` (snapshot at publication).
+- Recruiting agent (CONVENTIONS §15.2, overseas job ads must show the recruiting agent's licence):
+  `recruitingAgentLicenceId` (FK partner_licences, set null), `recruitingAgentName`,
+  `recruitingAgentCertificateNumber`, `recruitingAgentCertificateValidUntil` (date),
+  `recruitingAgentVerifiedAt`, `recruitingAgentVerifiedByUserId` (FK users, set null); indexes
+  `jobs_recruiting_agent_licence_idx`, `jobs_recruiting_agent_verified_by_idx`; check `jobs_recruiting_agent_chk`
+  (verified ⇒ name and certificate number present). Added in migration 0001.
 - Deviations: added `isConfidential`, `employerReference`, `moderationNote`, `closedReason`, soft `workflowId`;
   accommodation / food / transport are tri-state (null = not stated); alert `lastRunAt` watermark; promotion
   `cancelledAt`; `salaryCurrency` references currencies (integration).
@@ -559,21 +566,33 @@ cluster, every database included).
 
 ## 7. Open items
 
-1. **`roles_scope_key_org_uq` (foundation)** is still `unique().nullsNotDistinct()`, so every `drizzle-kit push`
-   drops and re-adds it (the only remaining push diff). It cannot become a coalesce index while
-   `src/server/seed/roles.ts` uses `onConflictDoNothing({ target: [roles.scope, roles.key, roles.organizationId] })`
-   (PostgreSQL cannot infer an expression index from columns). Fix: drop the target in the seed
-   (`onConflictDoNothing()`), then convert the constraint like the six in §6.
-2. **Foundation FK columns without an index** (rule "every FK indexed"): organizations.industryId,
-   accountManagerUserId, createdByUserId; consent_records.capturedByUserId; user_roles.grantedByUserId;
-   organization_documents.fileId, uploadedByUserId, verificationId; organization_invitations.roleId,
-   invitedByUserId, acceptedByUserId; organization_members.roleId, invitedByUserId;
-   organization_verifications.submittedByUserId, reviewedByUserId; approval_events.actorUserId;
-   approval_requests.organizationId, submittedByUserId, decidedByUserId; data_access_logs.actorOrganizationId;
-   data_requests.handledByUserId, exportFileId; feature_flags.updatedByUserId; file_access_grants.grantedByUserId;
-   platform_settings.updatedByUserId; countries.currencyCode; industries.parentId; job_categories.parentId.
-   The user FKs matter for account deletion (each `SET NULL` scans the table without an index).
-3. `_shared.ts` still exports `emptyTextArray` (now unused); `docs/DATA_MODEL.md` §2 still recommends it. Both
-   belong to the foundation owner: deprecate the helper and point DATA_MODEL at rule 1.
-4. `src/lib/codes.ts` registry comment lacks `STL` (partner settlements) and the credit-note prefix used by
-   invoices (`documentType = credit_note`, yearly like INV).
+Items 1–4 of the integration list are resolved (see §8). Remaining:
+
+1. `_shared.ts` still exports `emptyTextArray` (unused, kept for raw-SQL backfills); prefer insert-time
+   `$defaultFn(() => [])` per rule 1.
+2. Composite-FK column order: local databases created before integration may keep re-creating the commercial
+   composite FKs on push; recreate them (`node scripts/test-db.mjs <name>`).
+
+## 8. Stage 1 service-layer changes (migration `0001_stage1_domain_services`)
+
+Generated with `drizzle-kit generate`; applied with `npm run db:migrate`. Verified on a blank database:
+0000 + 0001 apply cleanly, `drizzle-kit push --force` then reports "No changes detected" twice, and
+`npm run db:seed` is idempotent (second run inserts nothing).
+
+- **jobs**: recruiting-agent columns, indexes and check (§4.6).
+- **commercial**: `subscriptions.startedAt` (timestamptz not null default now(), anchors monthly / yearly
+  allowance windows); new `pending` subscription status (TS enum only: created and invoiced, not live until
+  paid); `tax_rates.taxCode` (per SAC / HSN), `notes`, `confirmedAt`, `confirmedByUserId` (FK users, set null) +
+  `tax_rates_confirmed_by_idx` — seeded rates stay unconfirmed until finance confirms them;
+  `tax_rates_definition_uq` now includes `coalesce(tax_code, '')`. Invoice numbers come from
+  `nextGstDocumentNumber` (`VSG/2627/000123`, credit notes `VSGC/2627/000045`).
+- **identity**: `roles_scope_key_org_uq` converted from `unique().nullsNotDistinct()` to an all-SQL coalesce unique
+  index (same name and semantics); the roles seed now uses `onConflictDoNothing()` without a target.
+- **foundation FK indexes**: `_idx` indexes on every previously unindexed FK column (organizations, consent_records,
+  user_roles, organization_documents / invitations / members / verifications, approval_requests / events,
+  data_access_logs, data_requests, feature_flags, file_access_grants, platform_settings, countries, industries,
+  job_categories).
+- **TypeScript-only (no DDL)**: CMS singleton `footer` replaced by `about` (footer columns live in `navigation`,
+  footer text in `site_settings`); media consent withdrawal makes the asset internal instead of unpublishing
+  entries; announcements never fan out as notifications (`sendNotification` always false);
+  `AnalyticsFunnelStep.match` accepts `props` (exact-match event properties).

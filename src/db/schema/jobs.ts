@@ -36,6 +36,7 @@ import {
 } from "./_shared";
 import { organizations, users } from "./core";
 import { requirementRequests } from "./operations";
+import { partnerLicences } from "./partners";
 import { countries, currencies, educationLevels, industries, jobCategories, skills } from "./taxonomy";
 
 // Empty-array defaults are applied by Drizzle at insert time (`$defaultFn(() => [])`), not by the database:
@@ -226,6 +227,19 @@ export const jobs = pgTable(
     /** Snapshot of organizations.status = verified at publication. */
     verifiedEmployer: boolean().notNull().default(false),
     infoSource: text({ enum: JOB_INFO_SOURCES }).notNull().default("pending_review"),
+    /**
+     * Recruiting-agent transparency (docs/CONVENTIONS.md §15.2, regulatory notes rec. 8): an overseas job
+     * advertised by or for an Indian recruiting agent shows the agent's name and eMigrate certificate number.
+     * Set only by staff with jobs.approve after checking the certificate; shown publicly only while verified
+     * and unexpired — never assumed. `recruitingAgentLicenceId` links a partner's verified licence (name and
+     * number are snapshotted from it); Venkat Sai's own certificate has no partner row and is entered by staff.
+     */
+    recruitingAgentLicenceId: uuid().references(() => partnerLicences.id, { onDelete: "set null" }),
+    recruitingAgentName: text(),
+    recruitingAgentCertificateNumber: text(),
+    recruitingAgentCertificateValidUntil: date({ mode: "string" }),
+    recruitingAgentVerifiedAt: tstz(),
+    recruitingAgentVerifiedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
     viewCount: integer().notNull().default(0),
     applicationCount: integer().notNull().default(0),
     /** Space-separated skill names (maintained by the jobs service from job_skills). */
@@ -252,6 +266,8 @@ export const jobs = pgTable(
     index("jobs_min_education_idx").on(t.minEducationLevelId),
     index("jobs_salary_currency_idx").on(t.salaryCurrency),
     index("jobs_country_idx").on(t.countryCode, t.city),
+    index("jobs_recruiting_agent_licence_idx").on(t.recruitingAgentLicenceId),
+    index("jobs_recruiting_agent_verified_by_idx").on(t.recruitingAgentVerifiedByUserId),
     // Staff moderation queues (pending approval, changes requested...).
     index("jobs_status_idx").on(t.status, t.updatedAt),
     // Public job board: newest published, not deleted.
@@ -278,6 +294,10 @@ export const jobs = pgTable(
     ),
     check("jobs_contract_duration_chk", sql`${t.contractDurationMonths} > 0`),
     check("jobs_external_apply_chk", sql`${t.applyMode} <> 'external_url' or ${t.externalApplyUrl} is not null`),
+    check(
+      "jobs_recruiting_agent_chk",
+      sql`${t.recruitingAgentVerifiedAt} is null or (${t.recruitingAgentName} is not null and ${t.recruitingAgentCertificateNumber} is not null)`,
+    ),
   ],
 );
 

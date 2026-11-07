@@ -40,6 +40,7 @@ export const fileAccessGrants = pgTable(
     index("file_access_grants_file_idx").on(t.fileId),
     index("file_access_grants_user_idx").on(t.granteeUserId),
     index("file_access_grants_org_idx").on(t.granteeOrganizationId),
+    index("file_access_grants_granted_by_idx").on(t.grantedByUserId),
   ],
 );
 
@@ -89,26 +90,34 @@ export const codeSequences = pgTable("code_sequences", {
 // Settings & feature flags (administered from /admin/settings)
 // ---------------------------------------------------------------------------
 
-export const platformSettings = pgTable("platform_settings", {
-  key: text().primaryKey(),
-  value: jsonb().$type<unknown>().notNull(),
-  description: text(),
-  updatedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
-  ...timestamps,
-});
+export const platformSettings = pgTable(
+  "platform_settings",
+  {
+    key: text().primaryKey(),
+    value: jsonb().$type<unknown>().notNull(),
+    description: text(),
+    updatedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("platform_settings_updated_by_idx").on(t.updatedByUserId)],
+);
 
-export const featureFlags = pgTable("feature_flags", {
-  key: text().primaryKey(),
-  enabled: boolean().notNull().default(false),
-  name: text().notNull(),
-  description: text(),
-  /** Module grouping in the admin UI (e.g. "portals", "commercial", "analytics"). */
-  category: text().notNull().default("general"),
-  /** Optional targeting rules: { portals?: string[], orgIds?: string[], staffOnly?: boolean } */
-  rules: jsonb().$type<Record<string, unknown>>().notNull().default(emptyJsonObject),
-  updatedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
-  ...timestamps,
-});
+export const featureFlags = pgTable(
+  "feature_flags",
+  {
+    key: text().primaryKey(),
+    enabled: boolean().notNull().default(false),
+    name: text().notNull(),
+    description: text(),
+    /** Module grouping in the admin UI (e.g. "portals", "commercial", "analytics"). */
+    category: text().notNull().default("general"),
+    /** Optional targeting rules: { portals?: string[], orgIds?: string[], staffOnly?: boolean } */
+    rules: jsonb().$type<Record<string, unknown>>().notNull().default(emptyJsonObject),
+    updatedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("feature_flags_updated_by_idx").on(t.updatedByUserId)],
+);
 
 // ---------------------------------------------------------------------------
 // Rate limiting (fixed window, shared across serverless instances)
@@ -193,6 +202,7 @@ export const dataAccessLogs = pgTable(
   (t) => [
     index("data_access_logs_subject_idx").on(t.subjectUserId, t.occurredAt),
     index("data_access_logs_actor_idx").on(t.actorUserId, t.occurredAt),
+    index("data_access_logs_actor_org_idx").on(t.actorOrganizationId),
   ],
 );
 
@@ -229,6 +239,8 @@ export const dataRequests = pgTable(
     uniqueIndex("data_requests_code_uq").on(t.code),
     index("data_requests_status_idx").on(t.status, t.dueAt),
     index("data_requests_user_idx").on(t.userId),
+    index("data_requests_handled_by_idx").on(t.handledByUserId),
+    index("data_requests_export_file_idx").on(t.exportFileId),
   ],
 );
 
@@ -291,6 +303,9 @@ export const approvalRequests = pgTable(
     index("approval_requests_status_idx").on(t.status, t.type, t.createdAt),
     index("approval_requests_entity_idx").on(t.entityType, t.entityId),
     index("approval_requests_assignee_idx").on(t.assignedToUserId, t.status),
+    index("approval_requests_org_idx").on(t.organizationId),
+    index("approval_requests_submitted_by_idx").on(t.submittedByUserId),
+    index("approval_requests_decided_by_idx").on(t.decidedByUserId),
     // At most one open request per entity and type.
     uniqueIndex("approval_requests_open_uq")
       .on(t.type, t.entityId)
@@ -313,7 +328,7 @@ export const approvalEvents = pgTable(
     metadata: jsonb().$type<Record<string, unknown>>().notNull().default(emptyJsonObject),
     ...createdAtOnly,
   },
-  (t) => [index("approval_events_request_idx").on(t.approvalRequestId, t.createdAt)],
+  (t) => [index("approval_events_request_idx").on(t.approvalRequestId, t.createdAt), index("approval_events_actor_idx").on(t.actorUserId)],
 );
 
 // ---------------------------------------------------------------------------

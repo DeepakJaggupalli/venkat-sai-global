@@ -24,9 +24,13 @@ export function assertUnique<T>(items: readonly T[], key: (item: T) => string, l
   if (dupes.size) throw new Error(`Duplicate ${label} in seed data: ${[...dupes].join(", ")}`);
 }
 
+/** A row returned with `(xmax = 0) as inserted` was inserted (otherwise the upsert updated it). */
+export function wasInserted(row: { inserted: boolean | string | null }): boolean {
+  return row.inserted === true || row.inserted === "t" || row.inserted === "true";
+}
+
 /** Count rows returned with `(xmax = 0) as inserted` (true = inserted, false = updated). */
 export function countInserted(rows: readonly { inserted: boolean | string | null }[]): { inserted: number; updated: number } {
-  let inserted = 0;
-  for (const r of rows) if (r.inserted === true || r.inserted === "t" || r.inserted === "true") inserted += 1;
+  const inserted = rows.filter(wasInserted).length;
   return { inserted, updated: rows.length - inserted };
 }

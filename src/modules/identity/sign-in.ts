@@ -22,6 +22,7 @@ import {
   recordSuccessfulLogin,
   sendSecurityAlert,
   sendWelcome,
+  trackRegistrationCompleted,
   type UserRow,
 } from "./login";
 import { issueOtp, targetRateKey, verifyOtp } from "./otp";
@@ -259,7 +260,9 @@ export async function completeLoginOtp(code: string): Promise<string> {
     const intent = flow.intent ?? signupIntentOf(outcome.user);
     const destination = await postAuthDestination(outcome.user, { returnTo: flow.returnTo, intent, isNewUser: true });
     await sendWelcome(outcome.user, intent, destination);
-    return establishSession(outcome.user, { method: "otp", returnTo: flow.returnTo, intent, isNewUser: true });
+    const next = await establishSession(outcome.user, { method: "otp", returnTo: flow.returnTo, intent, isNewUser: true });
+    await trackRegistrationCompleted(intent);
+    return next;
   }
   return establishSession(outcome.user, { method: "otp", returnTo: flow.returnTo, intent: flow.intent });
 }

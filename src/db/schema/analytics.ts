@@ -123,8 +123,14 @@ export type AnalyticsConsentMethod = (typeof ANALYTICS_CONSENT_METHODS)[number];
 /** Non-personal event properties: a flat object of public ids, categories, counts and filter names. */
 export type AnalyticsEventProps = Record<string, string | number | boolean | null>;
 
-/** A funnel step matches an event name and/or a path (exact path, or a prefix ending in "*"). */
-export type AnalyticsFunnelStep = { label: string; match: { event?: string; path?: string } };
+/**
+ * A funnel step matches an event name and/or a path (exact path, or a prefix ending in "*"), optionally
+ * narrowed by event properties (all must be equal, e.g. { intent: "employer" }).
+ */
+export type AnalyticsFunnelStep = {
+  label: string;
+  match: { event?: string; path?: string; props?: Record<string, string | number | boolean> };
+};
 
 /**
  * Cookie-banner choice per category, e.g.

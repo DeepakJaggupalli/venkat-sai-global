@@ -107,8 +107,9 @@ export type CandidateCredentialType = (typeof CANDIDATE_CREDENTIAL_TYPES)[number
  * Who issued a credential. A `venkat_sai` credential always points at a certificate issued on this
  * platform (training.certificates) — enforced by CHECK so a Venkat Sai result can never be
  * self-declared — and must never be presented as an external accredited qualification.
+ * `institution` = a completion certificate a training institution issued on this platform.
  */
-export const CANDIDATE_CREDENTIAL_ISSUER_TYPES = ["venkat_sai", "accredited_external", "self_declared"] as const;
+export const CANDIDATE_CREDENTIAL_ISSUER_TYPES = ["venkat_sai", "accredited_external", "self_declared", "institution"] as const;
 export type CandidateCredentialIssuerType = (typeof CANDIDATE_CREDENTIAL_ISSUER_TYPES)[number];
 
 // ---------------------------------------------------------------------------

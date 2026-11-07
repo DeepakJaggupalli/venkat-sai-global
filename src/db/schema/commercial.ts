@@ -177,7 +177,12 @@ export const planFeatures = pgTable(
 // Subscriptions & credit ledger
 // ---------------------------------------------------------------------------
 
-export const SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "cancelled", "expired", "paused"] as const;
+/**
+ * `pending` = created and invoiced but awaiting its first payment (not live: it grants nothing and does not
+ * count towards subscriptions_live_base_uq); it becomes `active` when the invoice is paid, or `cancelled`
+ * when the invoice is not paid in time (src/modules/commercial/README.md → Subscription lifecycle).
+ */
+export const SUBSCRIPTION_STATUSES = ["pending", "trialing", "active", "past_due", "cancelled", "expired", "paused"] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 /** Statuses that count as the organisation's live plan (also drives subscriptions_live_base_uq). */
@@ -209,6 +214,8 @@ export const subscriptions = pgTable(
     currency: currencyCode().references(() => currencies.code),
     amountMinor: moneyMinor(),
     interval: text({ enum: BILLING_INTERVALS }),
+    /** First day of service (trial start); anchors the windows of monthly / yearly plan allowances. */
+    startedAt: tstz().notNull().defaultNow(),
     currentPeriodStart: tstz().notNull(),
     /** Null for open-ended (e.g. manual) subscriptions. */
     currentPeriodEnd: tstz(),
@@ -377,17 +384,37 @@ export const taxRates = pgTable(
     kind: text({ enum: TAX_RATE_KINDS }).notNull(),
     /** 900 = 9.00 %. */
     rateBasisPoints: integer().notNull(),
+    /**
+     * HSN / SAC code the rate applies to (e.g. "9985" support services); null = every code without a more
+     * specific rate. Invoice lines carry their own code (invoice_lines.taxCode).
+     */
+    taxCode: text(),
     isActive: boolean().notNull().default(true),
     effectiveFrom: tstz().notNull(),
     effectiveUntil: tstz(),
+    /** Internal note (legal basis, notification number...). */
+    notes: text(),
+    /**
+     * Set when finance confirms the rate. Seeded rows are default configuration and stay unconfirmed until
+     * finance (with its tax adviser) confirms them; the admin UI highlights unconfirmed rates.
+     */
+    confirmedAt: tstz(),
+    confirmedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
     ...timestamps,
   },
   (t) => [
-    // One definition per (country, region, kind, effective date); a null region (whole country) counts as one
-    // value. Expression index instead of `unique().nullsNotDistinct()`, which drizzle-kit 0.31 re-creates on
-    // every push; plain columns are written as SQL as well (docs/SCHEMA_NOTES.md).
-    uniqueIndex("tax_rates_definition_uq").on(sql`${t.countryCode}`, sql`coalesce(${t.region}, '')`, sql`${t.kind}`, sql`${t.effectiveFrom}`),
+    // One definition per (country, region, kind, tax code, effective date); a null region (whole country) and a
+    // null tax code (all codes) each count as one value. Expression index instead of `unique().nullsNotDistinct()`,
+    // which drizzle-kit 0.31 re-creates on every push; plain columns are written as SQL as well (docs/SCHEMA_NOTES.md).
+    uniqueIndex("tax_rates_definition_uq").on(
+      sql`${t.countryCode}`,
+      sql`coalesce(${t.region}, '')`,
+      sql`${t.kind}`,
+      sql`coalesce(${t.taxCode}, '')`,
+      sql`${t.effectiveFrom}`,
+    ),
     index("tax_rates_country_idx").on(t.countryCode, t.isActive),
+    index("tax_rates_confirmed_by_idx").on(t.confirmedByUserId),
     check("tax_rates_rate_chk", sql`${t.rateBasisPoints} between 0 and 10000`),
     check("tax_rates_effective_chk", sql`${t.effectiveUntil} is null or ${t.effectiveUntil} > ${t.effectiveFrom}`),
   ],
@@ -441,9 +468,11 @@ export type InvoiceLineTax = {
 
 /**
  * Invoices and credit notes, in the invoice's own currency.
- *  - `code` (VSG-INV-YYYY-000123, nextCode("INV", { yearly: true }); credit notes use their own
- *    prefix) is assigned when the document is issued, so deleted drafts never leave gaps in the
- *    legal numbering series. Drafts may be deleted; issued documents are voided instead.
+ *  - `code` is the GST document number (CGST Rule 46: ≤ 16 characters, consecutive per financial year,
+ *    separate series for credit notes) from nextGstDocumentNumber() in src/lib/codes.ts — e.g.
+ *    "VSG/2627/000123" (invoice) and "VSGC/2627/000045" (credit note). It is assigned when the document
+ *    is issued, so deleted drafts never leave gaps in the legal numbering series. Drafts may be deleted;
+ *    issued documents are voided instead.
  *  - `buyerSnapshot` / `sellerSnapshot` are frozen at issue and never updated.
  *  - totals: totalMinor = subtotalMinor − discountMinor + taxMinor (enforced).
  * Buyer is an organisation, or an individual (`buyerUserId`) for services such as training fees.

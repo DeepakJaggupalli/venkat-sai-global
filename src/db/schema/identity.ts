@@ -3,7 +3,7 @@
  * Layer 3 — may import: taxonomy, core.
  */
 import { sql } from "drizzle-orm";
-import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, text, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { CONSENT_PURPOSES, ROLE_SCOPES } from "./_constants";
 import { createdAtOnly, emptyJsonObject, pk, timestamps, tstz } from "./_shared";
@@ -126,7 +126,14 @@ export const roles = pgTable(
     ...timestamps,
   },
   (t) => [
-    unique("roles_scope_key_org_uq").on(t.scope, t.key, t.organizationId).nullsNotDistinct(),
+    // Expression index (not unique().nullsNotDistinct()): drizzle-kit 0.31 reads NND constraints back as
+    // NULLS DISTINCT and re-creates them on every push. Same semantics: platform roles (null org) are unique too.
+    // All-SQL parts: a mixed column/expression index does not round-trip either (docs/SCHEMA_NOTES.md §2).
+    uniqueIndex("roles_scope_key_org_uq").on(
+      sql`${t.scope}`,
+      sql`${t.key}`,
+      sql`coalesce(${t.organizationId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+    ),
     index("roles_org_idx").on(t.organizationId),
   ],
 );
@@ -144,7 +151,7 @@ export const userRoles = pgTable(
     grantedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
     ...createdAtOnly,
   },
-  (t) => [primaryKey({ columns: [t.userId, t.roleId] }), index("user_roles_role_idx").on(t.roleId)],
+  (t) => [primaryKey({ columns: [t.userId, t.roleId] }), index("user_roles_role_idx").on(t.roleId), index("user_roles_granted_by_idx").on(t.grantedByUserId)],
 );
 
 /**
@@ -176,5 +183,6 @@ export const consentRecords = pgTable(
     index("consent_records_user_purpose_idx").on(t.userId, t.purpose, t.createdAt),
     index("consent_records_anon_idx").on(t.anonymousId, t.purpose, t.createdAt),
     index("consent_records_context_idx").on(t.contextType, t.contextId),
+    index("consent_records_captured_by_idx").on(t.capturedByUserId),
   ],
 );

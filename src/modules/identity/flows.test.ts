@@ -43,6 +43,14 @@ const outbox = vi.hoisted(() => ({ messages: [] as { channel: "email" | "sms"; t
 
 const google = vi.hoisted(() => ({ claims: {} as Record<string, unknown> }));
 
+const analytics = vi.hoisted(() => ({ calls: [] as { event: string; props?: Record<string, unknown> }[] }));
+
+vi.mock("@/modules/analytics/server", () => ({
+  trackServer: async (event: string, props?: Record<string, unknown>) => {
+    analytics.calls.push({ event, props });
+  },
+}));
+
 vi.mock("next/headers", () => ({
   cookies: async () => browser.jar,
   headers: async () => new Headers({ "user-agent": browser.state.userAgent, "x-forwarded-for": browser.state.ip, host: "localhost:3000" }),
@@ -142,7 +150,10 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
     await setFlag("auth.email_otp", true);
     await setFlag("auth.phone_otp", true);
   });
-  beforeEach(() => newBrowser());
+  beforeEach(() => {
+    newBrowser();
+    analytics.calls.length = 0;
+  });
   afterAll(async () => {
     await pool.end();
   });
@@ -184,6 +195,8 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
 
     const jobs = await db.select().from(backgroundJobs).where(eq(backgroundJobs.type, "notifications.dispatch")).orderBy(desc(backgroundJobs.id)).limit(20);
     expect(jobs.some((job) => (job.payload as { event?: string; recipients?: { userId?: string }[] }).event === "account.welcome")).toBe(true);
+    // One server-side conversion for the new account, and no login conversion on top of it.
+    expect(analytics.calls).toEqual([{ event: "registration_completed", props: { intent: "employer" } }]);
   });
 
   it("does not reveal that an address is already registered", async () => {
@@ -224,8 +237,10 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
     await expectAuthError(signInWithPassword({ identifier, password: PASSWORD }), "account_locked");
 
     await db.update(users).set({ lockedUntil: null }).where(eq(users.id, user.id));
+    expect(analytics.calls).toEqual([]);
     const { redirectTo } = await signInWithPassword({ identifier, password: PASSWORD, returnTo: "/talent/jobs" });
     expect(redirectTo).toBe("/talent/jobs");
+    expect(analytics.calls).toEqual([{ event: "login_completed", props: undefined }]);
     const [after] = await db.select().from(users).where(eq(users.id, user.id));
     expect(after!.failedLoginCount).toBe(0);
 
@@ -250,6 +265,7 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
     const [row] = await db.select().from(users).where(eq(users.id, pending.id));
     expect(row).toMatchObject({ status: "active", passwordHash: null });
     expect(row!.emailVerifiedAt).toBeInstanceOf(Date);
+    expect(analytics.calls).toEqual([{ event: "registration_completed", props: { intent: null } }]);
   });
 
   it("asks unknown addresses for a code without sending one", async () => {
@@ -291,13 +307,16 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
     expect(recoveryCodes).toHaveLength(10);
 
     newBrowser();
+    analytics.calls.length = 0;
     const { redirectTo } = await signInWithPassword({ identifier, password: PASSWORD, returnTo: "/account/security" });
     expect(redirectTo).toBe("/sign-in/two-factor?returnTo=%2Faccount%2Fsecurity");
     expect((await getCurrentSession())?.needsTwoFactor).toBe(true);
+    expect(analytics.calls).toEqual([]); // not signed in until the second factor
     await expectAuthError(completeTwoFactorChallenge({ method: "totp", code: "000000", returnTo: "/account/security" }), "two_factor_invalid");
     const next = await completeTwoFactorChallenge({ method: "recovery", code: recoveryCodes[0]!, returnTo: "/account/security" });
     expect(next).toBe("/account/security");
     expect((await getCurrentSession())?.needsTwoFactor).toBe(false);
+    expect(analytics.calls).toEqual([{ event: "login_completed", props: undefined }]);
 
     newBrowser();
     await signInWithPassword({ identifier, password: PASSWORD });
@@ -337,9 +356,12 @@ describe.skipIf(!env.integration)("identity flows (integration)", () => {
       expect(link!.userId).toBe(row!.id);
       const consents = await db.select().from(consentRecords).where(eq(consentRecords.userId, row!.id));
       expect(consents.map((c) => c.purpose).sort()).toEqual(["privacy_notice", "terms_of_service"]);
+      expect(analytics.calls).toEqual([{ event: "registration_completed", props: { intent: null } }]);
       // Signing in again uses the existing link.
       newBrowser();
+      analytics.calls.length = 0;
       expect(await googleRound({ sub, email: address })).toBe("/talent");
+      expect(analytics.calls).toEqual([{ event: "login_completed", props: undefined }]);
     });
 
     it("links to an existing account only when its email is verified", async () => {

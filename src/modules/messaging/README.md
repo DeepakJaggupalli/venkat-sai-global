@@ -8,7 +8,7 @@ then uses these transports. Auth uses them directly only for one-time codes.
 
 | Function | Signature |
 |---|---|
-| `sendEmail` | `(m: { to, subject, html, text, replyTo?, tags? }) => Promise<SendResult>` |
+| `sendEmail` | `(m: { to, subject, html, text, replyTo?, tags?, headers? }) => Promise<SendResult>` — `headers` (e.g. `List-Unsubscribe`) are sanitised by every transport (`sanitizeEmailHeaders`: CR / LF and control characters become spaces, malformed and reserved names such as From / To / Subject / Bcc are dropped); the dev outbox stores them in `metadata.headers` |
 | `sendSms` | `(m: { to (E.164), body, templateId?, variables? }) => Promise<SendResult>` |
 | `sendWhatsApp` | `(m: { to (E.164), templateName, languageCode, variables: string[], fallbackText? }) => Promise<SendResult>` |
 | `devProviders` | the dev-outbox implementation (stores messages in `dev_outbox`) |

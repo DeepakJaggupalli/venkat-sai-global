@@ -19,6 +19,11 @@ export type ApprovalHandler = {
   }): Promise<void>;
   /** Admin UI link to the underlying record, shown in the approval detail view. */
   adminHref?(request: ApprovalRequestRow): string | null;
+  /**
+   * True when onDecision itself tells the submitter about every outcome (e.g. job.approved /
+   * job.changes_requested / job.rejected), so decideApproval does not also send `approval.decided`.
+   */
+  notifiesSubmitter?: boolean;
 };
 
 export type ApprovalHandlers = Partial<Record<ApprovalType, ApprovalHandler>>;

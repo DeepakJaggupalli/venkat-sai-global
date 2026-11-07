@@ -104,6 +104,9 @@ export const organizations = pgTable(
     uniqueIndex("organizations_slug_uq").on(t.slug),
     index("organizations_type_status_idx").on(t.type, t.status),
     index("organizations_country_idx").on(t.countryCode),
+    index("organizations_industry_idx").on(t.industryId),
+    index("organizations_account_manager_idx").on(t.accountManagerUserId),
+    index("organizations_created_by_idx").on(t.createdByUserId),
     index("organizations_name_trgm_idx").using("gin", t.name.op("gin_trgm_ops")),
   ],
 );

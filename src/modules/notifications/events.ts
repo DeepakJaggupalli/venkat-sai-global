@@ -50,6 +50,9 @@ export const NOTIFICATION_EVENTS = {
   "org.verification_changes_requested": e("Verification needs changes", "organization", ["in_app", "email"], true),
   "org.verification_expiring": e("Verification or licence expiring", "organization", ["in_app", "email"], true),
   "org.member_added": e("New team member", "organization", ["in_app"]),
+  "org.status_changed": e("Organisation suspended or reactivated", "organization", ["in_app", "email"], true),
+  "partner.licence_reviewed": e("Licence verification decision", "organization", ["in_app", "email"], true),
+  "partner.agreement_issued": e("Partner agreement ready to review and accept", "organization", ["in_app", "email"], true),
 
   // Jobs
   "job.submitted": e("Job submitted for review", "recruitment", ["in_app"]),
@@ -57,7 +60,13 @@ export const NOTIFICATION_EVENTS = {
   "job.rejected": e("Job not approved", "recruitment", ["in_app", "email"]),
   "job.changes_requested": e("Job needs changes", "recruitment", ["in_app", "email"]),
   "job.closing_soon": e("Job closing soon", "recruitment", ["in_app"]),
+  // To the organisation (or the posting staff member) when a listing closes at its deadline / expiry date.
+  "job.expired": e("Job listing closed after its deadline", "recruitment", ["in_app", "email"]),
   "job.alert_digest": e("New jobs matching your alerts", "job_alerts", ["email", "in_app"]),
+
+  // Candidate profile (People Portal)
+  // Staff decided on a document, credential, education or work-history entry the candidate's profile holds.
+  "candidate.verification_updated": e("Profile verification update", "account", ["in_app", "email"]),
 
   // Applications (candidate-facing)
   "application.submitted": e("Application submitted", "applications", ["in_app", "email"], true),
@@ -71,8 +80,12 @@ export const NOTIFICATION_EVENTS = {
   "interview.rescheduled": e("Interview rescheduled", "interviews", ["in_app", "email", "sms"]),
   "interview.cancelled": e("Interview cancelled", "interviews", ["in_app", "email", "sms"]),
   "interview.reminder": e("Interview reminder", "interviews", ["in_app", "email", "sms"]),
+  // To the organiser / panel when the candidate confirms, declines or asks to reschedule.
+  "interview.response_received": e("Candidate responded to an interview invitation", "interviews", ["in_app", "email"]),
   "assessment.scheduled": e("Assessment scheduled", "interviews", ["in_app", "email", "sms"]),
   "assessment.result": e("Assessment result available", "interviews", ["in_app", "email"]),
+  "assessment.cancelled": e("Assessment cancelled", "interviews", ["in_app", "email", "sms"]),
+  "assessment.reminder": e("Assessment reminder", "interviews", ["in_app", "email", "sms"]),
 
   // Offers & placement
   "offer.issued": e("Offer issued", "applications", ["in_app", "email"], true),
@@ -84,15 +97,26 @@ export const NOTIFICATION_EVENTS = {
   "requirement.received": e("Workforce requirement received", "recruitment", ["in_app", "email"]),
   "requirement.status_changed": e("Requirement status updated", "recruitment", ["in_app", "email"]),
 
+  // Enquiries from the public contact forms (staff alert; the sender's acknowledgement passes `forStaff: false`)
+  "enquiry.received": e("Enquiry received", "support", ["in_app", "email"]),
+
   // Recruitment partners
   "partner.assignment_created": e("New requirement assigned", "recruitment", ["in_app", "email"]),
+  "partner.assignment_updated": e("Assignment paused, resumed, completed or revoked", "recruitment", ["in_app", "email"]),
   "partner.submission_status_changed": e("Submission status updated", "recruitment", ["in_app", "email"]),
+  // Staff review queue: a partner submitted a candidate.
+  "partner.submission_received": e("New partner submission to review", "recruitment", ["in_app"]),
+  // Privacy notice to a person whose details a partner submitted (how to review / claim the profile or object).
+  "candidate.partner_submission_notice": e("A recruitment partner shared your profile", "account", ["email", "sms", "in_app"], true),
   "partner.document_requested": e("Document requested", "recruitment", ["in_app", "email"]),
 
   // Training
   "training.enrolment_confirmed": e("Enrolment confirmed", "training", ["in_app", "email"]),
   "training.batch_starting": e("Batch starting soon", "training", ["in_app", "email", "sms"]),
   "training.certificate_issued": e("Certificate issued", "training", ["in_app", "email"]),
+  "training.certificate_revoked": e("Certificate revoked", "training", ["in_app", "email"], true),
+  "training.enrolment_received": e("New enrolment request", "training", ["in_app"]),
+  "training.enrolment_updated": e("Enrolment waitlisted, declined or cancelled", "training", ["in_app", "email"]),
 
   // Billing
   "billing.invoice_issued": e("Invoice issued", "billing", ["in_app", "email"], true),
@@ -102,11 +126,22 @@ export const NOTIFICATION_EVENTS = {
   "billing.subscription_expired": e("Subscription expired", "billing", ["in_app", "email"], true),
   "billing.credits_low": e("Credits running low", "billing", ["in_app", "email"]),
   "billing.refund_processed": e("Refund processed", "billing", ["in_app", "email"], true),
+  // Subscription started (incl. trial), activated after payment, plan changed, cancellation scheduled or cancelled.
+  // data: planName, change (started|trial_started|activated|cancel_scheduled|cancelled), status, periodEnd (YYYY-MM-DD).
+  "billing.subscription_changed": e("Subscription started, changed or cancelled", "billing", ["in_app", "email"], true),
+  // Billing dispute opened (staff alert, data.forStaff = true) or its status changed (organisation).
+  // data: status, resolution, reason (staff only), forStaff.
+  "billing.dispute_updated": e("Billing dispute opened or updated", "billing", ["in_app", "email"]),
+  // Recruitment-partner settlement approved, paid, cancelled or dispute resolved (partner members with
+  // partner.settlements.view); partner disputes alert staff (data.forStaff = true).
+  // data: code, change, status, amount (formatted net payable), periodStart, periodEnd, paymentReference, note, reason.
+  "partner.settlement_updated": e("Partner settlement approved, paid or disputed", "billing", ["in_app", "email"], true),
 
   // Support, privacy
   "support.ticket_created": e("Support request received", "support", ["in_app", "email"], true),
   "support.ticket_reply": e("New reply on your support request", "support", ["in_app", "email"]),
   "support.ticket_resolved": e("Support request resolved", "support", ["in_app", "email"]),
+  "support.sla_breached": e("Support deadline missed or close (staff)", "support", ["in_app", "email"]),
   "privacy.request_received": e("Data request received", "account", ["email", "in_app"], true),
   "privacy.request_completed": e("Data request completed", "account", ["email", "in_app"], true),
 
@@ -114,6 +149,10 @@ export const NOTIFICATION_EVENTS = {
   "approval.submitted": e("New item awaiting approval", "approvals", ["in_app"]),
   "approval.assigned": e("Approval assigned to you", "approvals", ["in_app", "email"]),
   "approval.decided": e("Your submission was reviewed", "approvals", ["in_app", "email"]),
+
+  // Internal work (staff): leads, enquiries, requirements, tickets and tasks assigned / due
+  "work.assigned": e("Work assigned to you", "approvals", ["in_app", "email"]),
+  "work.reminder": e("Task or follow-up due", "approvals", ["in_app", "email"]),
 
   // Messages & announcements
   "message.received": e("New message", "messages", ["in_app", "email"]),

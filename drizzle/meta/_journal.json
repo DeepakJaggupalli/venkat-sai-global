@@ -8,6 +8,13 @@
       "when": 1794048454042,
       "tag": "0000_initial_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794057339814,
+      "tag": "0001_stage1_domain_services",
+      "breakpoints": true
     }
   ]
 }

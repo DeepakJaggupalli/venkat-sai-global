@@ -23,6 +23,7 @@ import {
   postAuthDestination,
   sendSecurityAlert,
   sendWelcome,
+  trackRegistrationCompleted,
   type UserRow,
 } from "./login";
 import { issueOtp, targetRateKey, verifyOtp } from "./otp";
@@ -237,5 +238,7 @@ export async function completeSignupVerification(code: string): Promise<string> 
     const destination = await postAuthDestination(activated.user, { returnTo: flow.returnTo, intent: flow.intent, isNewUser: true });
     await sendWelcome(activated.user, flow.intent, destination);
   }
-  return establishSession(activated.user, { method: "signup_otp", returnTo: flow.returnTo, intent: flow.intent, isNewUser: activated.wasPending });
+  const next = await establishSession(activated.user, { method: "signup_otp", returnTo: flow.returnTo, intent: flow.intent, isNewUser: activated.wasPending });
+  if (activated.wasPending) await trackRegistrationCompleted(flow.intent ?? signupIntentOf(activated.user));
+  return next;
 }

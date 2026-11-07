@@ -154,8 +154,14 @@ startGoogleSignIn(params): Promise<string>, completeGoogleSignIn({ code, state, 
 disconnectGoogle(user), listConnectedAccounts(userId), canSignInWithoutGoogle(row)
 // Shared
 establishSession(user, { method, returnTo?, intent?, isNewUser? }): Promise<string>   // TOTP hand-off, locale cookie, alerts
-postAuthDestination(user, opts), recordSuccessfulLogin(user, method), sendSecurityAlert(recipients, kind, data?, opts?)
+postAuthDestination(user, opts), recordSuccessfulLogin(user, method, { isNewUser? }), sendSecurityAlert(recipients, kind, data?, opts?)
+trackRegistrationCompleted(intent)
 ```
+
+Server-side conversions (`trackServer`, after the account change has committed): `registration_completed { intent }`
+when a new account is activated (sign-up code, a login code claiming a pending registration, or a new Google
+account); `login_completed` when a sign-in completes (after the second factor when TOTP is on) — never for the
+new account's first session, never for staff.
 
 Post-auth destination (`redirects.ts`): safe `returnTo` → staff `/admin` → sign-up intent (employer →
 `/employer/onboarding`, partner → `/recruiter/onboarding`, institution → `/institution/onboarding`,

@@ -39,6 +39,19 @@ export async function enqueueTask(type: string, payload: Record<string, unknown>
   return rows[0]?.id ?? null;
 }
 
+/**
+ * Remove top-level keys from a task's stored payload — for secrets (e.g. a single-use link) a handler no longer
+ * needs once it has done its work, so they do not stay in background_jobs until cleanup. Call it last in the handler.
+ */
+export async function redactTaskPayload(taskId: number, keys: readonly string[]): Promise<void> {
+  if (!keys.length) return;
+  const list = sql.join(
+    keys.map((k) => sql`${k}`),
+    sql`, `,
+  );
+  await db.execute(sql`update background_jobs set payload = payload - array[${list}]::text[] where id = ${taskId}`);
+}
+
 /** Counts by status (admin system monitor). */
 export async function taskQueueStats() {
   const res = await db.execute<{ status: string; count: string }>(
