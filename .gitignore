@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Venkat Sai Global local data
+/.data/
+/storage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+*.tsbuildinfo
+!.env.example
