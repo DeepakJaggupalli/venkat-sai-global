@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type SectionTone = "white" | "subtle" | "navy" | "teal";
+export type SectionTone = "white" | "subtle" | "navy" | "teal" | "yellow";
 
 const TONE: Record<SectionTone, string> = {
   white: "bg-white",
   subtle: "bg-surface-subtle",
-  navy: "bg-navy-deep text-white",
+  navy: "band-dark bg-navy-deep text-white",
+  yellow: "bg-yellow text-navy",
   teal: "bg-teal-soft",
 };
 
@@ -42,8 +43,8 @@ export function Section({
 /** Small uppercase label above a heading. Never teal/gold text on white: uses the AA "strong" variants. */
 export function Eyebrow({ children, onDark = false, className }: { children: ReactNode; onDark?: boolean; className?: string }) {
   return (
-    <p className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]", onDark ? "text-teal-soft" : "text-teal-strong", className)}>
-      <span aria-hidden="true" className={cn("h-px w-6", onDark ? "bg-gold" : "bg-gold")} />
+    <p className={cn("flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em]", onDark ? "text-yellow" : "text-teal-strong", className)}>
+      <span aria-hidden="true" className={cn("h-1 w-6 rounded-full", onDark ? "bg-yellow" : "bg-red")} />
       {children}
     </p>
   );
@@ -83,7 +84,7 @@ export function SectionHeading({
         <Heading
           id={id}
           className={cn(
-            "mt-3 text-balance font-heading text-3xl font-bold tracking-tight sm:text-4xl",
+            "mt-3 text-balance font-display text-4xl sm:text-5xl",
             onDark ? "text-white" : "text-navy",
           )}
         >

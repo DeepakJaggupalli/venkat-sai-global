@@ -14,6 +14,7 @@ import { notify, notifyStaff } from "@/modules/notifications";
 import { getSetting } from "@/modules/settings";
 
 import { canTransition, ENQUIRY_LEAD_TYPE, ENQUIRY_STATUS_LABELS, ENQUIRY_TRANSITIONS, ENQUIRY_TYPE_LABELS } from "./constants";
+import { notifyBusinessInbox } from "./business-inbox";
 import { assertAssignableStaff, assertStaff, enforceRateLimits, excerptText, loadSlaSettings } from "./internal";
 import { findOrCreateInboundLead } from "./leads";
 import { requesterTicketHref, staffEnquiryHref, staffTicketHref } from "./links";
@@ -194,6 +195,14 @@ export async function submitPublicEnquiry(input: PublicEnquiryInput, meta: Publi
         channels: ["in_app", "email"],
       },
       { tx },
+    );
+    await notifyBusinessInbox(
+      {
+        event: "enquiry.received",
+        data: { code: enquiryCode, type: input.type, senderName: input.name, organizationName: input.organizationName ?? null, subject: input.subject ?? null },
+        link: ticket ? staffTicketHref(ticket.id) : staffEnquiryHref(enquiry!.id),
+      },
+      tx,
     );
 
     if (ticket) {

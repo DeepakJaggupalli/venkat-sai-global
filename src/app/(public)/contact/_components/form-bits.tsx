@@ -3,6 +3,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { startTransition, useActionState, useCallback, useEffect, useRef, type FormEvent, type ReactNode } from "react";
 
+import { ContactButtons } from "@/components/public/requirements/contact-buttons";
 import { CopyButton } from "@/components/shared/copy-button";
 import type { ActionResult, ActionState } from "@/lib/actions";
 import { cn } from "@/lib/utils";
@@ -116,6 +117,10 @@ export function SubmissionReceived({
           ) : null}
           {children ? <div className="space-y-2 text-sm leading-6 text-foreground">{children}</div> : null}
           {actions ? <div className="flex flex-wrap gap-3 pt-1">{actions}</div> : null}
+          <div className="space-y-2 pt-2">
+            <p className="text-sm font-medium text-foreground">Need a quicker answer? Contact us directly:</p>
+            <ContactButtons message={code ? `Hello Venkat Sai, my reference is ${code}.` : undefined} emailSubject={code ? `Reference ${code}` : undefined} />
+          </div>
         </div>
       </div>
     </div>

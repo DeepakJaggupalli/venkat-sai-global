@@ -68,14 +68,14 @@ export function PageHero({
 }) {
   const image = media && media.kind === "image" ? media : null;
   return (
-    <section className={cn("relative isolate overflow-hidden bg-navy-deep text-white", className)}>
+    <section className={cn("band-dark relative isolate overflow-hidden bg-navy-deep text-white", className)}>
       <BeadPattern />
-      <div aria-hidden="true" className="absolute -top-40 right-[-10%] -z-10 size-[36rem] rounded-full bg-teal/15 blur-3xl" />
+      <div aria-hidden="true" className="absolute -top-40 right-[-10%] -z-10 size-[36rem] rounded-full bg-royal/40 blur-3xl" />
       <div className="container-page relative grid gap-10 py-14 sm:py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-center lg:py-20">
         <div className="min-w-0">
           {breadcrumbs?.length ? <Breadcrumbs items={breadcrumbs} onDark className="mb-6" /> : null}
           {eyebrow ? <Eyebrow onDark>{eyebrow}</Eyebrow> : null}
-          <h1 className="mt-3 text-balance font-heading text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+          <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">{title}</h1>
           {intro ? <div className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-white/80">{intro}</div> : null}
           {meta ? <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">{meta}</div> : null}
           {actions ? <div className="mt-8 flex flex-wrap gap-3">{actions}</div> : null}

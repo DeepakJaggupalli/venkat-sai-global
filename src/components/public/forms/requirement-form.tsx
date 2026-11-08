@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { track } from "@/modules/analytics/client";
 import { submitRequirementAction } from "@/modules/operations/actions";
 
+import { ContactButtons } from "../requirements/contact-buttons";
 import { ConsentCheckbox, Honeypot } from "./form-parts";
 import { RequirementLineFields } from "./requirement-line-fields";
 import { buildRequirementPayload, emptyLine, lineErrors, MAX_REQUIREMENT_LINES, type RequirementLineDraft } from "./requirement-lines";
@@ -148,6 +149,7 @@ export function RequirementForm({ options, utm, sourcePage = "/employers/request
             Explore our services
           </Link>
         </div>
+        <ContactButtons className="mt-6" message={code ? `Hello Venkat Sai, my requirement reference is ${code}.` : undefined} emailSubject={code ? `Requirement ${code}` : undefined} />
       </div>
     );
   }

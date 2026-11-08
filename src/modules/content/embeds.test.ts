@@ -34,6 +34,8 @@ describe("map embeds and links", () => {
     expect(isAllowedMapEmbedUrl("https://www.openstreetmap.org/export/embed.html?bbox=1")).toBe(true);
     expect(isAllowedMapEmbedUrl("http://www.google.com/maps/embed?pb=1")).toBe(false);
     expect(isAllowedMapEmbedUrl("https://www.google.com/search?q=maps")).toBe(false);
+    expect(isAllowedMapEmbedUrl("https://www.google.com/maps?q=Autonagar,+Visakhapatnam&output=embed")).toBe(true);
+    expect(isAllowedMapEmbedUrl("https://www.google.com/maps?q=Autonagar")).toBe(false);
   });
 
   it("accepts site paths only when allowed and never protocol-relative or script links", () => {

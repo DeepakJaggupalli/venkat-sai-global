@@ -17,5 +17,5 @@ export const BRAND = {
 export const DEFAULT_SEO = {
   title: `${BRAND.name} — ${BRAND.category}`,
   description:
-    "From education and skill development to internships, recruitment, international employment and workforce solutions, Venkat Sai brings people and organisations together through one integrated opportunity network.",
+    "Overseas jobs, trade training and manpower supply from Visakhapatnam: welding 3G to 6G, piping, electrical and fitting, for employers in the UAE, Gulf, Europe and beyond.",
 } as const;

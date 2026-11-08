@@ -17,8 +17,9 @@ import { isExternalHref } from "./nav-utils";
 import { desktopNavBudgets, fitNavItems, isCurrentPage, isSectionActive } from "./public-nav";
 import type { PublicNavItem, PublicNavLink } from "./types";
 
+/** The header is always navy (transparent over the homepage hero, solid elsewhere): white items, yellow focus. */
 const TOP_LEVEL =
-  "group/top relative inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-transparent px-3 text-sm font-medium text-foreground/80 transition-colors hover:bg-surface-subtle hover:text-navy data-open:bg-surface-subtle data-open:text-navy";
+  "group/top relative inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-transparent px-3 text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-open:bg-white/10 data-open:text-white data-active:bg-transparent data-active:text-white focus-visible:outline-solid! focus-visible:outline-2! focus-visible:outline-yellow!";
 
 /**
  * NavigationMenuContent strips outline/ring from links inside dropdowns, which would leave keyboard
@@ -27,13 +28,13 @@ const TOP_LEVEL =
 const CONTENT_LINK_FOCUS =
   "focus-visible:outline-solid! focus-visible:outline-2! focus-visible:outline-ring! focus-visible:-outline-offset-2!";
 
-/** Small teal bar under the section that contains the current page. */
+/** Small yellow bar under the section that contains the current page. */
 function ActiveIndicator({ active }: { active: boolean }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-teal transition-opacity duration-200",
+        "pointer-events-none absolute inset-x-3 -bottom-1 h-[3px] rounded-full bg-yellow transition-opacity duration-200",
         active ? "opacity-100" : "opacity-0",
       )}
     />

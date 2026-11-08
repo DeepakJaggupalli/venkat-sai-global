@@ -89,6 +89,8 @@ export function isAllowedMapEmbedUrl(input: string): boolean {
   if (!url) return false;
   const host = url.hostname.toLowerCase();
   if ((host === "www.google.com" || host === "google.com" || host === "maps.google.com") && url.pathname.startsWith("/maps/embed")) return true;
+  // Key-less place embed: https://www.google.com/maps?q=<place>&output=embed
+  if ((host === "www.google.com" || host === "maps.google.com") && url.pathname === "/maps" && url.searchParams.get("output") === "embed") return true;
   if (host === "www.openstreetmap.org" && url.pathname === "/export/embed.html") return true;
   return false;
 }

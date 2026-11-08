@@ -16,9 +16,9 @@ import {
  * Animations are slow and wrapped in `motion-safe:` so reduced-motion visitors see a still image.
  */
 
-const TEAL = "#16a6a1";
-const TEAL_LIGHT = "#4fd1cb";
-const GOLD = "#d5a64a";
+const TEAL = "#3d63e0";
+const TEAL_LIGHT = "#8fb0ff";
+const GOLD = "#ffd000";
 const WHITE = "#ffffff";
 
 /** Deterministic pseudo-random sequence (stable between server renders). */
@@ -211,7 +211,7 @@ export function ReachMap({
 }) {
   const hq = project(HQ_COORDS);
   const dark = tone === "dark";
-  const line = dark ? WHITE : "#101c35";
+  const line = dark ? WHITE : "#0b1f5c";
   const placed = points
     .map((p) => {
       const c = coordsFor(p.code, p.region);
@@ -291,7 +291,7 @@ export function ReachMap({
             cy={p.y}
             r={3.5}
             fill={dark ? TEAL_LIGHT : TEAL}
-            stroke={dark ? "#091327" : WHITE}
+            stroke={dark ? "#06123a" : WHITE}
             strokeWidth={1.2}
           />
           {showLabels && labelled.has(p.code) ? (
@@ -300,7 +300,7 @@ export function ReachMap({
               y={p.y - 8}
               fontSize={13}
               fontWeight={600}
-              fill={dark ? WHITE : "#101c35"}
+              fill={dark ? WHITE : "#0b1f5c"}
               fillOpacity={dark ? 0.85 : 0.9}
               className="font-heading"
             >
@@ -322,7 +322,7 @@ export function ReachMap({
         cy={hq.y}
         r={5.5}
         fill={GOLD}
-        stroke={dark ? "#091327" : WHITE}
+        stroke={dark ? "#06123a" : WHITE}
         strokeWidth={1.5}
       />
       {showLabels ? (
@@ -331,7 +331,7 @@ export function ReachMap({
           y={hq.y + 20}
           fontSize={13}
           fontWeight={700}
-          fill={dark ? GOLD : "#8a6417"}
+          fill={dark ? GOLD : "#7a5a00"}
           className="font-heading"
         >
           Visakhapatnam
@@ -351,7 +351,7 @@ export function BeadPattern({
 }) {
   const rows = 6;
   const cols = 14;
-  const color = tone === "dark" ? WHITE : "#101c35";
+  const color = tone === "dark" ? WHITE : "#0b1f5c";
   const cells: string[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -457,7 +457,7 @@ export function AudienceGlyph({
       <path
         d={paths}
         fill="none"
-        stroke="#101c35"
+        stroke="#0b1f5c"
         strokeWidth={3}
         strokeLinecap="round"
         strokeLinejoin="round"

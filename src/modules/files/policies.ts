@@ -409,6 +409,20 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
     staffView: ["recruitment.view", "requirements.view", "partners.view"],
     orgView: { permissions: [] },
   },
+  // Public "Send your CV" form (src/modules/operations/cv-submissions.ts): stored server-side for anonymous
+  // visitors (no owner), so never accepted by POST /api/v1/uploads. 4 MB keeps the whole request under the
+  // 4.5 MB Vercel function body limit.
+  cv_submission: {
+    ...base,
+    purpose: "cv_submission",
+    label: "CV",
+    allowedMimeTypes: [MIME.pdf, MIME.doc, MIME.docx, MIME.jpeg, MIME.png],
+    maxBytes: 4 * MB,
+    sensitive: true,
+    dataCategory: "documents",
+    upload: [{ kind: "system" }],
+    staffView: ["candidates.view_documents", "recruitment.manage"],
+  },
   invoice: {
     ...base,
     purpose: "invoice",

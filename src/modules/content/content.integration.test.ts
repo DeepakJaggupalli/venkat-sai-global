@@ -133,7 +133,8 @@ describe.skipIf(!enabled)("content module (PostgreSQL)", async () => {
         .select({ value: count() })
         .from(s.cmsEntries)
         .where(and(eq(s.cmsEntries.collection, "services"), eq(s.cmsEntries.status, "published")));
-      expect(publishedServices[0]!.value).toBe(11);
+      // 11 services plus 10 training course families (tagged training-course).
+      expect(publishedServices[0]!.value).toBe(21);
       const industryDrafts = await db
         .select({ value: count() })
         .from(s.cmsEntries)
@@ -158,7 +159,7 @@ describe.skipIf(!enabled)("content module (PostgreSQL)", async () => {
 
     it("publishes the About page with facts only and keeps the proposed values as a draft version", async () => {
       const about = await queries.getSingleton("about");
-      expect(about?.entry.data.history).toContain("Auto Nagar, Visakhapatnam");
+      expect(about?.entry.data.history).toContain("Autonagar, Gajuwaka, Visakhapatnam");
       expect(about?.entry.data.mission).toBeUndefined();
       const detail = await queries.getSingletonForEditing(admin, "about");
       expect(detail?.entry.publishedVersion).toBe(1);
@@ -174,7 +175,8 @@ describe.skipIf(!enabled)("content module (PostgreSQL)", async () => {
       expect(privacy?.entry.data).not.toHaveProperty("internalNote");
       const settings = await queries.getSingletonData("site_settings");
       expect(settings?.legalEntity.name).toBe("Venkat Sai Welding Works and Testing Center");
-      expect(settings?.contact).toBeUndefined();
+      // Contact details are the business's own (supplied by the owner), never invented placeholders.
+      expect(settings?.contact).toMatchObject({ phone: "+919494263388", email: "vsweld@gmail.com", whatsappNumber: "+919494263388" });
       expect(await queries.getPublicMetrics()).toEqual([]);
     });
   });

@@ -29,7 +29,19 @@ function link(l: Link | null | undefined): FooterLink | null {
   return title && href ? { title, href } : null;
 }
 
+/**
+ * Header items and footer column titles of the original specification seed. A CMS navigation that still
+ * matches them exactly was never customised, so the current built-in defaults are used instead.
+ */
+const LEGACY_HEADER_TITLES = ["About Us", "What We Do", "Opportunities", "Industries", "Global Reach", "Employers", "Partners", "Success Stories", "Contact"];
+const LEGACY_FOOTER_TITLES = ["What we do", "Opportunities", "Company", "For organisations"];
+
+function sameTitles(list: readonly { title?: string | null }[] | null | undefined, legacy: readonly string[]): boolean {
+  return Boolean(list && list.length === legacy.length && list.every((item, i) => item.title?.trim() === legacy[i]));
+}
+
 export function toNavItems(nav: NavigationData | null): PublicNavItem[] | undefined {
+  if (sameTitles(nav?.headerItems, LEGACY_HEADER_TITLES)) return undefined;
   const items = (nav?.headerItems ?? [])
     .map((item): PublicNavItem | null => {
       const base = link(item);
@@ -46,6 +58,7 @@ export function toNavItems(nav: NavigationData | null): PublicNavItem[] | undefi
 }
 
 export function toFooterColumns(nav: NavigationData | null): FooterColumn[] | undefined {
+  if (sameTitles(nav?.footerColumns, LEGACY_FOOTER_TITLES)) return undefined;
   const columns = (nav?.footerColumns ?? [])
     .map((col): FooterColumn | null => {
       const title = col.title?.trim();

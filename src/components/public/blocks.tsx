@@ -123,7 +123,7 @@ export function CmsCta({ cta, id, location, variant = "primary", fallback }: { c
   );
 }
 
-/** Closing call-to-action band on navy with the horizon ornament. */
+/** Closing call-to-action band: deep navy, heavy display headline, yellow primary action. */
 export function CtaBand({
   heading,
   body,
@@ -142,22 +142,23 @@ export function CtaBand({
   headingId?: string;
 }) {
   return (
-    <section aria-labelledby={headingId} className="relative isolate overflow-hidden bg-navy-deep py-16 text-white sm:py-20">
+    <section aria-labelledby={headingId} className="band-dark relative isolate overflow-hidden bg-navy-deep py-16 text-white sm:py-24">
       <BeadPattern />
+      <div aria-hidden="true" className="absolute -top-32 -right-24 -z-10 size-[28rem] rounded-full bg-royal/50 blur-3xl" />
       <HorizonOrnament className="absolute -right-16 -bottom-24 -z-10 hidden w-[26rem] opacity-80 md:block" />
       <div className="container-page relative">
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           {eyebrow ? <Eyebrow onDark>{eyebrow}</Eyebrow> : null}
-          <h2 id={headingId} className="mt-3 text-balance font-heading text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 id={headingId} className="mt-4 text-balance font-display text-4xl uppercase sm:text-6xl">
             {heading}
           </h2>
           {body ? <p className="mt-4 text-pretty text-lg leading-relaxed text-white/80">{body}</p> : null}
           <div className="mt-8 flex flex-wrap gap-3">
-            <CtaLink href={primary.href} cta={primary.id} location={location} variant="accent" arrow>
+            <CtaLink href={primary.href} cta={primary.id} location={location} variant="accent" arrow className="min-h-13 px-7 text-base">
               {primary.label}
             </CtaLink>
             {secondary ? (
-              <CtaLink href={secondary.href} cta={secondary.id} location={location} variant="onDark">
+              <CtaLink href={secondary.href} cta={secondary.id} location={location} variant="onDark" className="min-h-13 px-7 text-base">
                 {secondary.label}
               </CtaLink>
             ) : null}
@@ -191,7 +192,7 @@ export function EntryCard({
   footer?: ReactNode;
 }) {
   return (
-    <article className={cn("group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white shadow-xs transition-shadow duration-200 hover:shadow-md", className)}>
+    <article className={cn("lift group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white shadow-xs", className)}>
       {image && image.kind === "image" ? (
         <div className="aspect-[16/9] overflow-hidden bg-surface-subtle">
           <CmsImage asset={image} size="md" sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="transition-transform duration-300 group-hover:scale-[1.02]" />

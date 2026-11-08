@@ -99,6 +99,8 @@ export const NOTIFICATION_EVENTS = {
 
   // Enquiries from the public contact forms (staff alert; the sender's acknowledgement passes `forStaff: false`)
   "enquiry.received": e("Enquiry received", "support", ["in_app", "email"]),
+  // A CV sent through the public "Send your CV" form (staff alert + business inbox copy)
+  "cv.received": e("CV received from the website", "recruitment", ["in_app", "email"]),
 
   // Recruitment partners
   "partner.assignment_created": e("New requirement assigned", "recruitment", ["in_app", "email"]),

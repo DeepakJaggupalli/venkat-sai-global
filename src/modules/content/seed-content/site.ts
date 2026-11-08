@@ -1,11 +1,12 @@
+import { CONTACT } from "@/config/contact";
 import { BRAND, DEFAULT_SEO } from "@/config/site";
 
 import { HOMEPAGE_SECTION_OPTIONS } from "../collections";
 import type { SeedEntrySpec } from "./types";
 
 /**
- * Site-wide singletons seeded with the facts we have. Contact details, social profiles and the grievance
- * officer are deliberately left empty: the website shows nothing until an administrator enters real details.
+ * Site-wide singletons seeded with the facts we have. Contact details are the business's own (src/config/contact.ts);
+ * social profiles and the grievance officer are deliberately left empty until an administrator enters real details.
  */
 
 export const SITE_SETTINGS_SEED: SeedEntrySpec = {
@@ -13,8 +14,15 @@ export const SITE_SETTINGS_SEED: SeedEntrySpec = {
   slug: "site-settings",
   title: "Site settings",
   publish: true,
-  note: "Initial settings: legal entity and headquarters only. Contact details are added by an administrator.",
+  note: "Initial settings: legal entity, headquarters and the business contact details.",
   data: {
+    contact: {
+      phone: CONTACT.whatsapp.e164,
+      email: CONTACT.emails.primary,
+      whatsappNumber: CONTACT.whatsapp.e164,
+      address: CONTACT.address.oneLine,
+      mapEmbedUrl: CONTACT.maps.embedUrl,
+    },
     legalEntity: {
       name: BRAND.legalEntity,
       headquarters: BRAND.headquarters,
@@ -31,19 +39,19 @@ export const HOMEPAGE_SEED: SeedEntrySpec = {
   seo: { title: DEFAULT_SEO.title, description: DEFAULT_SEO.description },
   data: {
     hero: {
-      heading: "Connecting Global Talent With Limitless Opportunities.",
-      subheading: DEFAULT_SEO.description,
-      primaryCta: { label: "Explore Opportunities", href: "/jobs" },
-      secondaryCta: { label: "Hire Through Venkat Sai", href: "/employers" },
-      tertiaryCta: { label: "Become a Partner", href: "/partners" },
+      heading: "Skilled hands from Vizag to the world",
+      subheading:
+        "We train welders, fitters, electricians and riggers in Visakhapatnam and connect them with employers in the Gulf, Europe and Asia. Applying for a job is always free.",
+      primaryCta: { label: "Explore jobs", href: "/jobs" },
+      secondaryCta: { label: "Send your CV", href: "/send-cv" },
     },
     // Every section visible, in the specification's order; sections without published content hide themselves.
     sections: HOMEPAGE_SECTION_OPTIONS.map((option) => ({ key: option.value, visible: true })),
     ctaBand: {
-      heading: BRAND.tagline,
-      body: BRAND.promise,
-      primaryCta: { label: "Create your profile", href: "/sign-up" },
-      secondaryCta: { label: "Submit a workforce requirement", href: "/employers/request" },
+      heading: "Your next job could be abroad",
+      body: "Send your CV and trade today. We call you when a matching requirement opens.",
+      primaryCta: { label: "Send your CV", href: "/send-cv" },
+      secondaryCta: { label: "Explore jobs", href: "/jobs" },
     },
   },
 };
@@ -53,22 +61,28 @@ export const HOMEPAGE_SEED: SeedEntrySpec = {
  * (src/components/layout/public-nav.ts). Kept as plain data because those modules import lucide-react, which
  * cannot load in the seed script's react-server runtime; seed-content.test.ts fails if they drift apart.
  */
-const SERVICES_MENU = [
-  { title: "Recruitment & placements", href: "/services/recruitment-and-placements" },
+const FIND_WORK_LINKS = [
+  { title: "Jobs", href: "/jobs" },
+  { title: "Overseas jobs", href: "/jobs?overseas=1" },
+  { title: "Latest requirements", href: "/requirements" },
+  { title: "Send your CV", href: "/send-cv" },
+  { title: "Training courses", href: "/training" },
+];
+
+const SERVICES_LINKS = [
   { title: "Overseas employment", href: "/services/overseas-employment" },
-  { title: "Bulk manpower supply", href: "/services/bulk-manpower-supply" },
-  { title: "Training & skill development", href: "/services/professional-training" },
-  { title: "Welding & industrial testing", href: "/services/welding-and-industrial-testing" },
+  { title: "Training", href: "/services/technical-training" },
+  { title: "Manpower supply", href: "/services/bulk-manpower-supply" },
   { title: "All services", href: "/services" },
 ];
 
-const OPPORTUNITIES_MENU = [
-  { title: "Jobs", href: "/jobs" },
-  { title: "Overseas jobs", href: "/jobs?overseas=1" },
-  { title: "Internships", href: "/jobs?type=internship" },
-  { title: "Apprenticeships", href: "/jobs?type=apprenticeship" },
-  { title: "Training programmes", href: "/training" },
-  { title: "Events & hiring drives", href: "/events" },
+const COMPANY_LINKS = [
+  { title: "About us", href: "/about" },
+  { title: "Contact", href: "/contact" },
+  { title: "For employers", href: "/employers" },
+  { title: "Request workers", href: "/employers/request" },
+  { title: "We never charge candidates", href: "/safe-recruitment" },
+  { title: "Verify a certificate", href: "/verify-certificate" },
 ];
 
 export const NAVIGATION_SEED: SeedEntrySpec = {
@@ -79,56 +93,40 @@ export const NAVIGATION_SEED: SeedEntrySpec = {
   note: "Defaults matching the built-in public navigation.",
   data: {
     headerItems: [
-      { title: "About Us", href: "/about" },
-      { title: "What We Do", href: "/services", children: SERVICES_MENU },
-      { title: "Opportunities", href: "/jobs", children: OPPORTUNITIES_MENU },
-      { title: "Industries", href: "/industries" },
-      { title: "Global Reach", href: "/global-reach" },
-      { title: "Employers", href: "/employers" },
-      { title: "Partners", href: "/partners" },
-      { title: "Success Stories", href: "/success-stories" },
+      { title: "Home", href: "/" },
+      { title: "Jobs", href: "/jobs" },
+      { title: "Training", href: "/training" },
+      { title: "Services", href: "/services" },
+      { title: "Requirements", href: "/requirements" },
+      { title: "About", href: "/about" },
       { title: "Contact", href: "/contact" },
     ],
     footerColumns: [
-      { title: "What we do", links: SERVICES_MENU },
-      { title: "Opportunities", links: OPPORTUNITIES_MENU },
-      {
-        title: "Company",
-        links: [
-          { title: "About Us", href: "/about" },
-          { title: "Industries", href: "/industries" },
-          { title: "Global Reach", href: "/global-reach" },
-          { title: "Success Stories", href: "/success-stories" },
-          { title: "Contact", href: "/contact" },
-        ],
-      },
-      {
-        title: "For organisations",
-        links: [
-          { title: "Employers", href: "/employers" },
-          { title: "Post a requirement", href: "/employers/request" },
-          { title: "Partners", href: "/partners" },
-          { title: "Sign in", href: "/sign-in" },
-        ],
-      },
+      { title: "Find work", links: FIND_WORK_LINKS },
+      { title: "Services", links: SERVICES_LINKS },
+      { title: "Company", links: COMPANY_LINKS },
     ],
   },
 };
 
 const ABOUT_FACTS = {
   history:
-    "<p>Venkat Sai Global is the technology platform of Venkat Sai Welding Works and Testing Center, a business based in Auto Nagar, Visakhapatnam, Andhra Pradesh, India.</p>" +
-    "<p>The business works in overseas recruitment, manpower supply, welding training and welding testing.</p>",
+    "<p>Venkat Sai Welding Works and Testing Center is a training, testing and recruitment centre in Autonagar, Gajuwaka, Visakhapatnam, Andhra Pradesh. Despite the name, we do much more than welding.</p>" +
+    "<p>We train and test tradespeople in welding, pipe fitting, structural fitting and fabrication, piping, electrical work, rigging, scaffolding and mechanical fitting, with safety and NDT testing awareness for every trade. Trained candidates are put forward for jobs abroad, in the UAE, Saudi Arabia, Qatar, Kuwait, Oman, Bahrain, Europe, Russia, Singapore, Malaysia and other countries, and we supply skilled and semi-skilled manpower to companies in India and abroad.</p>" +
+    "<p>Candidates are never charged placement fees.</p>",
   evolution:
-    "<p>Venkat Sai Global brings these activities together on one platform, <strong>The Global Opportunity Network</strong>. Candidates can build a profile, discover jobs and training, and apply. Employers can post jobs and submit workforce requirements. Recruitment partners and training institutions can work with Venkat Sai through their own portals.</p>" +
+    "<p>Venkat Sai Global brings this work online as <strong>The Global Opportunity Network</strong>. Candidates can send their CV and trade, see our latest requirements, and find training. Companies can tell us the trades and numbers they need. Recruitment partners and training institutions can work with us through their own portals.</p>" +
     `<p>${BRAND.statement} ${BRAND.tagline}</p>`,
-  headquarters: BRAND.headquarters,
+  headquarters: CONTACT.address.oneLine,
   capabilities: [
-    { title: "Overseas recruitment", description: "Recruitment of candidates for employers outside India." },
-    { title: "Manpower supply", description: "Supply of skilled and semi-skilled workers for employers and projects." },
-    { title: "Welding training", description: "Practical training for welders." },
-    { title: "Welding testing", description: "Testing services at the Venkat Sai Welding Works and Testing Center." },
+    { title: "Trade training", description: "Welding, pipe fitting, fabrication, electrical, piping, rigging, scaffolding, mechanical fitting and safety." },
+    { title: "Trade testing", description: "Practical trade tests and welder assessments, including 6G pipe, at our Autonagar centre." },
+    { title: "Overseas employment", description: "CV selection, interviews, visa, medical, documents and travel for jobs abroad." },
+    { title: "Manpower supply", description: "Skilled and semi-skilled tradespeople for companies in India and abroad." },
+    { title: "Internships", description: "Workshop internships with an offer letter, certificate and letter of recommendation." },
   ],
+  infrastructure:
+    "<p>Training and trade tests take place at our own workshop at B-Block, Plot D-6, Autonagar, Gajuwaka, where trainees practise on real materials and equipment under supervision.</p>",
 };
 
 /**
@@ -139,7 +137,8 @@ export const ABOUT_SEED: SeedEntrySpec = {
   collection: "about",
   slug: "about",
   title: "About Venkat Sai Global",
-  summary: BRAND.promise,
+  summary:
+    "Training, trade testing, overseas employment and manpower supply from Autonagar, Gajuwaka, Visakhapatnam, for welders, fitters, electricians, riggers, scaffolders and other tradespeople.",
   publish: true,
   note: "Company background, evolution into Venkat Sai Global and headquarters (facts only).",
   data: ABOUT_FACTS,

@@ -5,64 +5,109 @@ import { CtaBand, EntryCard } from "@/components/public/blocks";
 import { pickAsset } from "@/components/public/cms-media";
 import { CtaLink } from "@/components/public/cta-link";
 import { PageHero } from "@/components/public/page-hero";
-import { Section } from "@/components/public/section";
+import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, settle } from "@/components/public/server";
+import { FeaturedServiceCard, hasTag, SERVICE_TAGS } from "@/components/public/services/featured-service-card";
+import { ServiceIllustration } from "@/components/public/services/service-illustration";
+import { CourseFamilyGrid } from "@/components/public/training-catalog/course-family-grid";
 import { getPublishedEntries } from "@/modules/content/queries";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Services",
-  description: "Recruitment and placements, overseas employment, bulk manpower supply, training, skill assessment and welding and industrial testing from Venkat Sai Global.",
+  description:
+    "Overseas employment, trade training and manpower supply from Venkat Sai Welding Works and Testing Center, Autonagar, Gajuwaka, Visakhapatnam, plus internships, trade testing and more.",
   path: "/services",
 });
 
+/**
+ * Services: the main services (entries marked featured in the CMS, in their manual order) as large cards, then
+ * every other active service under "All services", then the training course families (tag "training-course").
+ */
 export default async function ServicesPage() {
   const page = await settle("services.list", () => getPublishedEntries("services", { limit: 100 }), null);
   const services = (page?.items ?? []).filter((s) => s.data.isActive !== false);
+  const courses = services.filter((s) => hasTag(s, SERVICE_TAGS.trainingCourse));
+  const listed = services.filter((s) => !hasTag(s, SERVICE_TAGS.trainingCourse));
+  const featured = listed.filter((s) => s.isFeatured);
+  const others = listed.filter((s) => !s.isFeatured);
+  const empty = !services.length;
+
   return (
     <>
       <PageHero
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Services" }]}
         eyebrow="What we do"
-        title="Services across the opportunity journey"
-        intro="From skill development and testing to recruitment, overseas employment and workforce supply — delivered by one accountable team in Visakhapatnam."
+        title="Overseas jobs, trade training and manpower supply"
+        intro="From our centre in Autonagar, Gajuwaka, Visakhapatnam, we train and test tradespeople, send them to jobs abroad and supply skilled teams to companies."
+        visual={<ServiceIllustration iconName="flame" className="mx-auto aspect-[4/3] w-full max-w-md" />}
         actions={
           <>
-            <CtaLink href="/employers/request" cta="submit_workforce_requirement" location="services_hero" variant="accent" arrow>
-              Submit a workforce requirement
+            <CtaLink href="/send-cv" cta="send_cv" location="services_hero" variant="accent" arrow>
+              Send your CV and trade
             </CtaLink>
-            <CtaLink href="/jobs" cta="explore_opportunities" location="services_hero" variant="onDark">
-              Explore opportunities
+            <CtaLink href="/employers/request" cta="submit_workforce_requirement" location="services_hero" variant="onDark">
+              Request manpower
+            </CtaLink>
+            <CtaLink href="/jobs" cta="explore_jobs" location="services_hero" variant="onDark">
+              Explore jobs
             </CtaLink>
           </>
         }
       />
-      <Section tone="subtle" labelledBy="services-list-title">
-        <h2 id="services-list-title" className="sr-only">
-          All services
-        </h2>
-        {services.length ? (
-          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="services-list">
-            {services.map((s) => (
+
+      {featured.length ? (
+        <Section labelledBy="services-main-title" data-testid="services-featured">
+          <SectionHeading id="services-main-title" eyebrow="Main services" title="How we can help" />
+          <ul className="mt-10 grid gap-6 lg:grid-cols-3">
+            {featured.map((s) => (
+              <li key={s.id}>
+                <FeaturedServiceCard entry={s} assets={page?.assets} />
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
+      <Section tone="subtle" labelledBy="services-list-title" id="all-services" className="scroll-mt-24">
+        <SectionHeading
+          id="services-list-title"
+          eyebrow="All services"
+          title={featured.length ? "More from Venkat Sai" : "All services"}
+          intro={featured.length && others.length ? "Internships, trade testing, recruitment and the other services we offer." : undefined}
+        />
+        {others.length ? (
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="services-list">
+            {others.map((s) => (
               <li key={s.id}>
                 <EntryCard href={s.path ?? `/services/${s.slug}`} title={s.title} summary={s.summary} iconName={s.data.iconName} image={pickAsset(page?.assets, s.heroAssetId)} headingLevel="h3" />
               </li>
             ))}
           </ul>
-        ) : (
+        ) : null}
+        {courses.length ? (
+          <div className="mt-14">
+            <h3 className="font-heading text-xl font-semibold text-navy">Training courses</h3>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Every course ends with a completion certificate and includes trade test preparation for overseas interviews.</p>
+            <CourseFamilyGrid families={courses} assets={page?.assets} compact className="mt-6" />
+          </div>
+        ) : null}
+        {empty ? (
           <EmptyState
+            className="mt-10"
             title="Service pages are being prepared"
             description="Our service descriptions are being updated. Tell us what you need and our team will get back to you."
             primaryAction={{ label: "Contact us", href: "/contact" }}
             secondaryAction={{ label: "Submit a workforce requirement", href: "/employers/request" }}
           />
-        )}
+        ) : null}
       </Section>
+
       <CtaBand
         location="services_cta_band"
         heading="Not sure which service fits?"
-        body="Tell us about your hiring, training or testing need and the right person at Venkat Sai will respond."
+        body="Tell us about your trade, your training plans or the workers you need, and the right person at Venkat Sai will reply."
         primary={{ label: "Contact our team", href: "/contact", id: "contact_team" }}
-        secondary={{ label: "Submit a workforce requirement", href: "/employers/request", id: "submit_workforce_requirement" }}
+        secondary={{ label: "Explore jobs", href: "/jobs", id: "explore_jobs" }}
       />
     </>
   );

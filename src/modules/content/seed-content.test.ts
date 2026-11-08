@@ -8,7 +8,10 @@ vi.hoisted(() => {
 const { validateCollectionData } = await import("./collections");
 const { buildDestinationSeeds, buildFaqSeeds, buildIndustrySeeds } = await import("./seed-content/catalogue");
 const { buildLegalPageSeeds, LEGAL_VERSION } = await import("./seed-content/legal");
-const { buildServiceSeeds } = await import("./seed-content/services");
+const { buildServiceSeeds, FEATURED_SERVICE_SLUGS } = await import("./seed-content/services");
+const { TRAINING_FAMILIES } = await import("./seed-content/training");
+const { CONTACT } = await import("@/config/contact");
+const { isAllowedMapEmbedUrl } = await import("./embeds");
 const { ABOUT_SEED, HOMEPAGE_SEED, NAVIGATION_SEED, SITE_SETTINGS_SEED } = await import("./seed-content/site");
 const { PUBLIC_NAV } = await import("@/config/navigation");
 const { DEFAULT_FOOTER_COLUMNS } = await import("@/components/layout/public-nav");
@@ -46,9 +49,9 @@ describe("content seed", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it("seeds the 18 services with the agreed publication split", () => {
+  it("seeds the 18 services and the training families with the agreed publication split", () => {
     const services = buildServiceSeeds();
-    expect(services).toHaveLength(18);
+    expect(services).toHaveLength(18 + TRAINING_FAMILIES.length);
     expect(services.filter((s) => s.publish).map((s) => s.slug).sort()).toEqual(
       [
         "recruitment-and-placements",
@@ -62,8 +65,28 @@ describe("content seed", () => {
         "welding-and-industrial-testing",
         "skill-assessment",
         "career-development",
+        ...TRAINING_FAMILIES.map((f) => f.slug),
       ].sort(),
     );
+  });
+
+  it("features exactly the three main services, first and in order", () => {
+    const services = buildServiceSeeds();
+    expect(services.filter((s) => s.isFeatured).map((s) => s.slug)).toEqual([...FEATURED_SERVICE_SLUGS]);
+    expect(services.slice(0, 3).map((s) => s.slug)).toEqual([...FEATURED_SERVICE_SLUGS]);
+    const orders = services.map((s) => s.sortOrder ?? 0);
+    expect([...orders].sort((a, b) => a - b)).toEqual(orders);
+  });
+
+  it("tags the training hub and course families, and keeps candidate copy free of guarantees and fees", () => {
+    const services = buildServiceSeeds();
+    expect(services.filter((s) => s.tags?.includes("training-hub")).map((s) => s.slug)).toEqual(["technical-training"]);
+    expect(services.filter((s) => s.tags?.includes("training-course")).map((s) => s.slug)).toEqual(TRAINING_FAMILIES.map((f) => f.slug));
+    const overseas = services.find((s) => s.slug === "overseas-employment")!;
+    expect(JSON.stringify(overseas.data)).toMatch(/depend on the trade and the employer/i);
+    expect(overseas.data.cta).toEqual({ label: "Send your CV and trade", href: "/send-cv" });
+    const text = JSON.stringify(services.filter((s) => s.publish).map((s) => s.data));
+    expect(text).not.toMatch(/\b(we|will) guarantee|guaranteed placement|100%/i);
   });
 
   it("keeps industries, destinations and FAQs as drafts and legal pages published with the policy version", () => {
@@ -89,24 +112,30 @@ describe("content seed", () => {
   });
 
   it("keeps the navigation defaults identical to PUBLIC_NAV and the default footer columns", () => {
-    const header = PUBLIC_NAV.map((item) => ({
-      title: item.title,
-      href: item.href,
-      ...("children" in item ? { children: item.children.map((child) => ({ title: child.title, href: child.href })) } : {}),
-    }));
+    const header = PUBLIC_NAV.map((item) => {
+      const children = (item as { children?: readonly { title: string; href: string }[] }).children;
+      return { title: item.title, href: item.href, ...(children ? { children: children.map((child) => ({ title: child.title, href: child.href })) } : {}) };
+    });
     expect(NAVIGATION_SEED.data.headerItems).toEqual(header);
     const footer = DEFAULT_FOOTER_COLUMNS.map((column) => ({ title: column.title, links: column.links.map((l) => ({ title: l.title, href: l.href })) }));
     expect(NAVIGATION_SEED.data.footerColumns).toEqual(footer);
   });
 
-  it("leaves contact details empty and uses the specification's hero copy", () => {
-    expect(SITE_SETTINGS_SEED.data).not.toHaveProperty("contact");
+  it("seeds the business contact details and uses the specification's hero copy", () => {
+    expect(SITE_SETTINGS_SEED.data.contact).toEqual({
+      phone: "+919494263388",
+      email: "vsweld@gmail.com",
+      whatsappNumber: "+919494263388",
+      address: "B-Block, Plot D-6, Autonagar, Gajuwaka, Visakhapatnam, Andhra Pradesh 530012",
+      mapEmbedUrl: CONTACT.maps.embedUrl,
+    });
+    expect(isAllowedMapEmbedUrl(CONTACT.maps.embedUrl)).toBe(true);
     expect(SITE_SETTINGS_SEED.data).not.toHaveProperty("grievanceOfficer");
     const hero = HOMEPAGE_SEED.data.hero as Record<string, { label: string; href: string } | string>;
-    expect(hero.heading).toBe("Connecting Global Talent With Limitless Opportunities.");
-    expect(hero.primaryCta).toEqual({ label: "Explore Opportunities", href: "/jobs" });
-    expect(hero.secondaryCta).toEqual({ label: "Hire Through Venkat Sai", href: "/employers" });
-    expect(hero.tertiaryCta).toEqual({ label: "Become a Partner", href: "/partners" });
+    expect(hero.heading).toBe("Skilled hands from Vizag to the world");
+    expect(hero.primaryCta).toEqual({ label: "Explore jobs", href: "/jobs" });
+    expect(hero.secondaryCta).toEqual({ label: "Send your CV", href: "/send-cv" });
+    expect(hero).not.toHaveProperty("tertiaryCta");
   });
 
   it("contains no numbers that could read as statistics in published copy", () => {

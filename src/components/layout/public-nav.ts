@@ -103,8 +103,8 @@ export function fitNavItems(items: readonly Pick<PublicNavItem, "title" | "child
  * `xl` at a 1280px viewport and `wide` at 1536px. Signed-in visitors see a longer CTA.
  */
 export function desktopNavBudgets(signedIn: boolean): { xl: number; wide: number } {
-  // "Join Venkat Sai" ≈ 137px; "Go to <portal>" up to ≈ 175px (h-10 button, px-4).
-  const cta = signedIn ? 180 : 140;
+  // "Sign in" + "Sign up" ≈ 195px; "Go to <portal>" up to ≈ 175px (h-10 button, px-4).
+  const cta = signedIn ? 180 : 200;
   // Logo lockup at h-9 (36px tall ≈ 201px wide) + the two 24px gaps either side of the nav.
   const logoAndGaps = 201 + 48;
   return { xl: 1216 - logoAndGaps - cta, wide: 1472 - logoAndGaps - cta };
@@ -114,30 +114,39 @@ export function desktopNavBudgets(signedIn: boolean): { xl: number; wide: number
 // Footer defaults
 // ---------------------------------------------------------------------------
 
-function childrenOf(href: string): FooterLink[] {
-  const item = DEFAULT_PUBLIC_NAV.find((entry) => entry.href === href);
-  return (item?.children ?? []).map(({ title, href: childHref }) => ({ title, href: childHref }));
-}
-
-function topLevel(hrefs: readonly string[]): FooterLink[] {
-  return hrefs
-    .map((href) => DEFAULT_PUBLIC_NAV.find((entry) => entry.href === href))
-    .filter((entry): entry is PublicNavItem => !!entry)
-    .map(({ title, href }) => ({ title, href }));
-}
-
-/** Used until the CMS footer settings are wired in. Derived from PUBLIC_NAV so the two stay in sync. */
+/**
+ * Used until the CMS footer settings are wired in (kept identical to NAVIGATION_SEED in
+ * src/modules/content/seed-content/site.ts; seed-content.test.ts fails if they drift apart).
+ */
 export const DEFAULT_FOOTER_COLUMNS: readonly FooterColumn[] = [
-  { title: "What we do", links: childrenOf("/services") },
-  { title: "Opportunities", links: childrenOf("/jobs") },
-  { title: "Company", links: topLevel(["/about", "/industries", "/global-reach", "/success-stories", "/contact"]) },
   {
-    title: "For organisations",
+    title: "Find work",
     links: [
-      ...topLevel(["/employers"]),
-      { title: "Post a requirement", href: PUBLIC_CTA.postRequirement },
-      ...topLevel(["/partners"]),
-      { title: "Sign in", href: PUBLIC_CTA.signIn },
+      { title: "Jobs", href: "/jobs" },
+      { title: "Overseas jobs", href: "/jobs?overseas=1" },
+      { title: "Latest requirements", href: "/requirements" },
+      { title: "Send your CV", href: "/send-cv" },
+      { title: "Training courses", href: "/training" },
     ],
   },
-].filter((column) => column.links.length > 0);
+  {
+    title: "Services",
+    links: [
+      { title: "Overseas employment", href: "/services/overseas-employment" },
+      { title: "Training", href: "/services/technical-training" },
+      { title: "Manpower supply", href: "/services/bulk-manpower-supply" },
+      { title: "All services", href: "/services" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { title: "About us", href: "/about" },
+      { title: "Contact", href: "/contact" },
+      { title: "For employers", href: "/employers" },
+      { title: "Request workers", href: PUBLIC_CTA.postRequirement },
+      { title: "We never charge candidates", href: "/safe-recruitment" },
+      { title: "Verify a certificate", href: "/verify-certificate" },
+    ],
+  },
+];

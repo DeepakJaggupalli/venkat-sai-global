@@ -23,6 +23,7 @@
     "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "db:seed:e2e": "tsx --conditions=react-server scripts/seed-e2e.ts",
     "db:seed:demo": "tsx --conditions=react-server scripts/seed-demo.ts",
+    "content:refresh": "tsx --conditions=react-server scripts/content-refresh.ts",
     "worker": "tsx --conditions=react-server scripts/worker.ts"
   },
   "dependencies": {

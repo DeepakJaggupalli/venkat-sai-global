@@ -26,10 +26,14 @@ import type { VersionContent } from "./versioning";
  * including one an administrator moved to the bin — so admin edits and deletions are never overwritten.
  *
  * Seeds (all copy is factual and claim-free; see seed-content/*):
- *  - published: site settings (legal entity + headquarters only; contact details empty), homepage hero and
+ *  - published: site settings (legal entity, headquarters and the business contact details), homepage hero and
  *    sections, navigation matching PUBLIC_NAV, the About page (facts only — proposed mission, vision and values
- *    are an unpublished draft version on top), 11 services that reflect existing activities or launch features,
- *    and 7 legal pages (version 2026-11-01, internal note: legal review required);
+ *    are an unpublished draft version on top), 11 services that reflect existing activities or launch features
+ *    (three of them featured as the main services) plus 10 training course families, and 7 legal pages
+ *    (version 2026-11-01, internal note: legal review required);
+ *
+ * Existing databases pick up later seed text through `npm run content:refresh` (scripts/content-refresh.ts),
+ * which only touches entries still at their seeded content.
  *  - drafts: 7 further services, 20 industries, 6 GCC destinations (empty, unreviewed guidance) and 10 FAQs;
  *  - public metric definitions for every standard counter, all hidden.
  * Never seeded: testimonials, case studies, news, team members, client logos, statistics.
@@ -83,6 +87,7 @@ async function seedEntry(spec: SeedEntrySpec, tx: Tx, now: Date): Promise<boolea
       publishedVersion: spec.publish ? 1 : null,
       publishedAt: spec.publish ? now : null,
       sortOrder: spec.sortOrder ?? 0,
+      isFeatured: spec.isFeatured ?? false,
     })
     .returning({ id: cmsEntries.id });
   await tx.insert(cmsEntryVersions).values(

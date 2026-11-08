@@ -13,6 +13,8 @@ export type SeedEntrySpec = {
   seo?: CmsSeo;
   tags?: string[];
   sortOrder?: number;
+  /** Featured entry (services: shown first as a main service on /services). */
+  isFeatured?: boolean;
   /** Publish version 1 (only for factual, claim-free content). */
   publish: boolean;
   /** Version note shown in the history. */

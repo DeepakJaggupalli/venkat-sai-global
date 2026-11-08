@@ -20,6 +20,8 @@ export const dynamic = "force-dynamic";
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
   { path: "/", priority: 1, changeFrequency: "daily" },
   { path: "/jobs", priority: 0.9, changeFrequency: "hourly" },
+  { path: "/requirements", priority: 0.9, changeFrequency: "daily" },
+  { path: "/send-cv", priority: 0.8, changeFrequency: "yearly" },
   { path: "/employers", priority: 0.9, changeFrequency: "monthly" },
   { path: "/employers/request", priority: 0.8, changeFrequency: "yearly" },
   { path: "/candidates", priority: 0.8, changeFrequency: "monthly" },
@@ -50,6 +52,7 @@ const CMS_COLLECTIONS: { collection: CmsCollection; priority: number; changeFreq
   { collection: "blog_posts", priority: 0.5, changeFrequency: "yearly" },
   { collection: "events", priority: 0.5, changeFrequency: "weekly" },
   { collection: "pages", priority: 0.3, changeFrequency: "yearly" },
+  { collection: "requirement_posts", priority: 0.7, changeFrequency: "weekly" },
 ];
 
 const FIXED_PAGE_PATHS = new Set(Object.values(LEGAL_PAGE_PATHS));

@@ -12,6 +12,7 @@ import type { ENQUIRY_TYPE_OPTION_LABELS } from "@/modules/content/constants";
 import { submitEnquiryAction } from "@/modules/operations/actions";
 
 import { SAFE_RECRUITMENT_PATH } from "../links";
+import { ContactButtons } from "../requirements/contact-buttons";
 import { ConsentCheckbox, Honeypot } from "./form-parts";
 
 /** Enquiry types the public form may send (the CMS list mirrors the operations module's ENQUIRY_TYPES). */
@@ -76,6 +77,7 @@ export function EnquiryForm({
             </>
           ) : null}
         </p>
+        <ContactButtons className="mt-5" message={code ? `Hello Venkat Sai, my enquiry reference is ${code}.` : undefined} emailSubject={code ? `Enquiry ${code}` : undefined} />
         <p className="mt-4 text-sm text-muted-foreground">
           Venkat Sai never asks candidates for money to apply for a job. <Link href={SAFE_RECRUITMENT_PATH} className="font-medium text-teal-strong underline underline-offset-4">How to stay safe</Link>
         </p>

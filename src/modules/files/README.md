@@ -121,6 +121,7 @@ if (await canAccessFile(await getCurrentFileViewer(), file)) link = fileUrl(file
 | cms_media | JPG PNG WebP **SVG** PDF | 20 MB | **public** | thumb, md, lg | staff media.manage (trusted) | media.manage | — |
 | ticket_attachment | PDF images DOCX XLSX CSV TXT | 10 MB | private | thumb | self · any org member | support.view | any member |
 | message_attachment | PDF images DOCX DOC XLSX CSV TXT | 15 MB | private | thumb | self · any org member | recruitment.view / requirements.view / partners.view | any member |
+| cv_submission | PDF DOC DOCX JPG PNG | 4 MB | private | — | system only (public /send-cv route handler, no owner) | candidates.view_documents / recruitment.manage | — |
 | invoice | PDF | 10 MB | private | — | staff commercial.invoices · system | commercial.view | billing roles |
 | data_export | ZIP JSON CSV PDF | 500 MB | private | — | system only | **owner only** | **owner only** |
 | other | PDF images DOCX XLSX CSV TXT | 10 MB | private | — | staff settings.manage · system | — | — |

@@ -14,14 +14,15 @@
 export type LogoVariant = "onLight" | "onDark";
 
 export const BRAND_COLORS = {
-  navy: "#101C35",
-  navyDeep: "#091327",
-  teal: "#16A6A1",
-  /** AA-compliant teal for text on white. */
-  tealStrong: "#0B7C78",
-  /** Teal for text on navy backgrounds. */
-  tealLight: "#5FD0CB",
-  gold: "#D5A64A",
+  // 2026-11 rebrand: poster palette (navy, royal blue, golden yellow). Key names kept for compatibility.
+  navy: "#0B1F5C",
+  navyDeep: "#06123A",
+  teal: "#1D3FA8",
+  /** AA-compliant accent for text on white (royal blue). */
+  tealStrong: "#1D3FA8",
+  /** Accent for text/strokes on navy backgrounds. */
+  tealLight: "#8FA9FF",
+  gold: "#FFD000",
   white: "#FFFFFF",
 } as const;
 

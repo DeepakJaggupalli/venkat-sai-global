@@ -4,6 +4,7 @@ import type { DbOrTx } from "@/db";
 import { requirementRequests } from "@/db/schema";
 import { notify, notifyOrganization, notifyStaff } from "@/modules/notifications";
 
+import { notifyBusinessInbox } from "./business-inbox";
 import { REQUIREMENT_SOURCE_LABELS, REQUIREMENT_STATUS_LABELS } from "./constants";
 import { employerRequirementHref, staffRequirementHref } from "./links";
 
@@ -66,6 +67,7 @@ export async function notifyRequirementStaff(
     sourceLabel: REQUIREMENT_SOURCE_LABELS[requirement.source],
     ...input.data,
   };
+  if (input.event === "requirement.received") await notifyBusinessInbox({ event: input.event, data, link: staffRequirementHref(requirement.id) }, tx);
   if (requirement.assignedToUserId) {
     await notify({ event: input.event, recipients: [{ userId: requirement.assignedToUserId }], data, link: staffRequirementHref(requirement.id) }, { tx });
     return;

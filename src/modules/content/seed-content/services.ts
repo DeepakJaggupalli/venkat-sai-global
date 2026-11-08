@@ -1,13 +1,18 @@
+import { TRAINING_BENEFITS, TRAINING_COMMON_CLOSE, TRAINING_FAMILIES, TRAINING_STEPS, type TrainingFamilySeed } from "./training";
 import type { SeedEntrySpec } from "./types";
 
 /**
- * The 18 services of the product specification (§7.5). Copy is deliberately plain and claim-free: it says what
- * the service is and how it works, never how many people were placed or which clients were served.
+ * The 18 services of the product specification (§7.5) plus the training course families (training.ts). Copy is
+ * deliberately plain and claim-free: it says what the service is and how it works, never how many people were
+ * placed or which clients were served, and never promises a job or a visa.
  *
- * Published: services that reflect existing business activities (overseas recruitment, manpower supply, welding
- * training and testing) or platform functionality available at launch (job board, applications, internships,
- * apprenticeships, courses, assessments, career tools). The other seven stay drafts until the business confirms
- * it offers them.
+ * Main services (featured, shown first on /services): overseas employment, training (technical-training) and
+ * manpower supply (bulk-manpower-supply). Everything else is listed under "All services".
+ *
+ * Published: services that reflect existing business activities (overseas recruitment, manpower supply, trade
+ * training, internships and testing) or platform functionality available at launch (job board, applications,
+ * apprenticeships, courses, assessments, career tools), and the ten training course families. The other seven
+ * stay drafts until the business confirms it offers them.
  */
 
 type Pair = readonly [string, string];
@@ -27,6 +32,10 @@ type ServiceSeed = {
   requirements?: readonly string[];
   faqs?: readonly Pair[];
   cta: { label: string; href: string };
+  /** Main service: shown first, as a large card, on /services. */
+  featured?: boolean;
+  /** Entry tags that drive page behaviour: "training-hub", "training-course", "course-fee". */
+  tags?: readonly string[];
 };
 
 const NO_FEES =
@@ -72,38 +81,61 @@ const SERVICES: readonly ServiceSeed[] = [
   {
     slug: "overseas-employment",
     title: "Overseas employment",
-    summary: "Recruitment of candidates from India for employers abroad, with support through documentation and travel.",
+    summary:
+      "Jobs abroad for welders, fitters, electricians, riggers, scaffolders and other tradespeople. We take care of the whole process, from CV selection and trade tests to visa, medical, documents and flight tickets.",
     publish: true,
+    featured: true,
     iconName: "plane",
     enquiryType: "general",
     overview: [
-      "Venkat Sai recruits candidates for employers outside India and supports selected candidates through documentation, pre-departure steps and travel.",
-      "Overseas recruitment follows the Emigration Act, 1983 and the rules of the destination country. Where a registered recruiting agent is involved, the agent's name and registration number are shown on the job.",
+      "Venkat Sai sends trained tradespeople to jobs with employers abroad and takes care of the process from start to finish: CV selection, interviews and trade tests, the employment visa, the medical, documents and flight tickets.",
+      "On arrival, employers usually provide food or a food allowance, accommodation, medical insurance and transport to and from work. <strong>Benefits depend on the trade and the employer.</strong> The exact salary, working hours, benefits and contract length are written in your offer letter, and you read them before you accept.",
+      "Our candidates work in the United Arab Emirates (Dubai, Abu Dhabi, Sharjah), Saudi Arabia, Qatar, Kuwait, Oman, Bahrain, Europe, Russia, Singapore and Malaysia. The countries open at any time depend on the requirements we have from employers.",
+      "Overseas recruitment follows the Emigration Act, 1983 and the rules of the destination country. Selection is the employer's decision and the visa is the destination country's decision, so nobody can honestly guarantee you a job or a visa.",
       `${NO_FEES} If anyone asks you for money for an overseas job, do not pay and report it to us.`,
     ],
     whoItHelps: [
-      ["Candidates", "Skilled and semi-skilled workers and professionals interested in working abroad."],
-      ["Overseas employers", "Employers abroad who need workers from India."],
+      ["Tradespeople", "Welders, pipe fitters, structural fitters, fabricators, electricians, riggers, scaffolders, mechanical fitters and helpers."],
+      ["Freshers with training", "People who have completed trade training and want their first job abroad."],
+      ["Overseas employers", "Companies abroad who need tested workers from India."],
     ],
     whatWeProvide: [
-      ["Overseas job listings", "Jobs abroad with the employment terms stated by the employer."],
-      ["Selection", "Interviews and practical trade tests arranged for the employer."],
-      ["Documentation support", "Guidance on the documents, medical checks and approvals each destination requires."],
-      ["Pre-departure support", "PDOT (Pre-Departure Orientation Training) information and travel coordination."],
+      ["CV selection", "We match your CV and trade with current requirements from employers abroad."],
+      ["Interviews and trade tests", "We arrange the employer's interview and the practical trade test, and help you prepare for both."],
+      ["Employment visa", "We handle the visa process with the employer once you are selected."],
+      ["Medical", "We guide you through the medical examination the destination country requires."],
+      ["Documentation", "Passport checks, offer letter, contract, emigration clearance where it applies, and PDOT (Pre-Departure Orientation Training)."],
+      ["Flight tickets", "We coordinate your travel and joining date with the employer."],
     ],
     processSteps: [
-      ["Apply", "Apply for an overseas job on Venkat Sai Global."],
-      ["Selection", "Interview and, where required, a trade test."],
-      ["Offer and documents", "Accept the offer and complete the documents, medical and approvals."],
-      ["Departure", "Pre-departure orientation and travel."],
+      ["Send your CV and trade", "Share your CV, trade and experience online or on WhatsApp."],
+      ["CV selection", "We shortlist you for requirements that match your trade."],
+      ["Interview and trade test", "Attend the employer's interview and practical test."],
+      ["Offer letter", "Read the salary, benefits and contract terms before you accept."],
+      ["Visa, medical and documents", "Complete the medical, documents and visa steps with our help."],
+      ["Travel and joining", "PDOT, flight tickets and joining your employer abroad."],
     ],
-    benefits: ["Clear information about the job and its terms before you apply", "Help with documentation and approvals", "No fees for candidates"],
-    requirements: ["A valid passport (or an application in progress)", "The qualifications and experience the job asks for"],
+    benefits: [
+      "Food or a food allowance",
+      "Accommodation",
+      "Medical insurance",
+      "Transport to and from work",
+      "Benefits depend on the trade and the employer, and are written in your offer letter",
+    ],
+    requirements: [
+      "A valid passport (or an application in progress)",
+      "Your CV with your trade and years of experience",
+      "Trade certificates and experience letters, if you have them",
+    ],
     faqs: [
+      ["Do I have to pay a placement fee?", NO_FEES],
+      ["Can you guarantee me a job or a visa?", "No. We prepare you and put you forward for suitable requirements, but the employer decides who is selected and the destination country decides on the visa. Be careful of anyone who promises a guaranteed job or visa."],
+      ["What benefits will I get abroad?", "Food or a food allowance, accommodation, medical insurance and transport are common, but benefits depend on the trade and the employer. Your offer letter lists them before you accept."],
+      ["Which trades do you recruit for?", "Mainly welders (including 6G pipe welders), pipe fitters, structural fitters and fabricators, electricians, riggers, scaffolders, mechanical fitters and helpers. Other trades are taken when employers ask for them."],
       ["Will I need emigration clearance?", "It depends on your passport category and the destination country. We explain what applies to you before you travel."],
       ["How do I check that a recruiting agent is genuine?", "Registered recruiting agents are listed on the Government of India's eMigrate portal. Never pay cash or pay anyone who cannot show a valid registration."],
     ],
-    cta: { label: "View overseas jobs", href: "/jobs?overseas=1" },
+    cta: { label: "Send your CV and trade", href: "/send-cv" },
   },
   {
     slug: "domestic-hiring",
@@ -137,62 +169,84 @@ const SERVICES: readonly ServiceSeed[] = [
   },
   {
     slug: "bulk-manpower-supply",
-    title: "Bulk manpower supply",
-    summary: "Supply of skilled and semi-skilled workers for projects, shutdowns and large hiring needs.",
+    title: "Manpower supply",
+    summary:
+      "Skilled and semi-skilled tradespeople for companies in India and abroad. Tell us the trades and how many people you need; we source, test and mobilise them.",
     publish: true,
+    featured: true,
     iconName: "users",
     enquiryType: "employer",
     overview: [
-      "Venkat Sai supplies teams of skilled and semi-skilled workers for projects, plant shutdowns and other large requirements, in India and abroad.",
-      "Each requirement is agreed in writing, including the trades, numbers, duration, working conditions and who is responsible for wages, safety and statutory compliance.",
-      NO_FEES,
+      "Companies tell us which trades they need and how many people. Venkat Sai sources suitable workers, tests them practically at our centre in Autonagar, Gajuwaka, Visakhapatnam, and mobilises the selected team to your site in India or abroad.",
+      "We supply welders, pipe fitters, structural fitters and fabricators, electricians, riggers, scaffolders, mechanical fitters, helpers and other trades for projects, plant shutdowns, maintenance and long-term contracts.",
+      "Each requirement is agreed in writing: trades, numbers, skills, duration, working conditions, and who is responsible for wages, accommodation, safety and statutory compliance.",
+      "Workers are never charged placement fees. The employer pays, in line with ethical recruitment practice.",
     ],
     whoItHelps: [
-      ["Contractors and project owners", "Construction, fabrication, maintenance and industrial projects that need many workers at once."],
-      ["Workers", "Tradespeople looking for project work."],
+      ["Contractors and EPC companies", "Construction, fabrication, piping and electrical projects that need many workers at once."],
+      ["Plants and maintenance teams", "Shutdowns, turnarounds and planned maintenance."],
+      ["Overseas employers", "Companies abroad that need tested tradespeople from India."],
     ],
     whatWeProvide: [
-      ["Requirement planning", "Trades, numbers, skills and timelines agreed with you."],
-      ["Sourcing and trade testing", "Workers sourced and, where needed, practically tested for the trade."],
-      ["Mobilisation", "Coordination of joining, documents and travel."],
+      ["Requirement planning", "We confirm the trades, numbers, skill levels and dates with you."],
+      ["Sourcing", "Candidates from our trainees and from tradespeople who have registered with us."],
+      ["Practical trade tests", "Welding coupons, fit-up tasks and other trade tests at our centre, or in front of your team."],
+      ["Mobilisation", "Documents, travel and joining coordinated until the team reaches your site."],
     ],
     processSteps: [
-      ["Submit a requirement", "List the trades and numbers you need."],
-      ["Agreement", "We agree terms, responsibilities and timelines in writing."],
-      ["Sourcing and testing", "Workers are sourced and tested."],
-      ["Mobilisation", "Selected workers join the project."],
+      ["Tell us what you need", "Send the trades and numbers by WhatsApp, phone, email or the requirement form."],
+      ["Agree terms", "We agree responsibilities and timelines in writing."],
+      ["Source and test", "We shortlist workers and run practical trade tests."],
+      ["Select", "You interview or review the results and select the team."],
+      ["Mobilise", "Selected workers travel and join your project."],
     ],
-    benefits: ["One requirement for many trades", "Practical trade tests before selection where needed"],
-    requirements: ["A written requirement with trades, numbers, location and duration"],
-    cta: { label: "Submit a workforce requirement", href: "/employers/request" },
+    benefits: [
+      "One contact for many trades",
+      "Workers tested practically before selection",
+      "Teams for projects in India and abroad",
+      "No placement fees charged to workers",
+    ],
+    requirements: ["The trades, number of people, location and expected duration", "Working conditions, salary range and benefits for each trade"],
+    faqs: [
+      ["Which trades can you supply?", "Welders, pipe fitters, structural fitters and fabricators, electricians, riggers, scaffolders, mechanical fitters, helpers and other trades on request."],
+      ["Can we test the workers ourselves?", "Yes. Your team can attend the trade tests at our centre or interview candidates by video before selection."],
+    ],
+    cta: { label: "Submit a manpower requirement", href: "/employers/request" },
   },
   {
     slug: "internships",
     title: "Internships",
-    summary: "Internship opportunities for students and recent graduates.",
+    summary:
+      "Hands-on internships in our Autonagar workshop for students and freshers, with an offer letter, internship certificate and letter of recommendation.",
     publish: true,
     iconName: "graduation-cap",
     enquiryType: "general",
+    tags: ["course-fee"],
     overview: [
-      "Students and recent graduates can find internships on Venkat Sai Global, and employers can offer internships to gain early talent.",
-      "Internship listings show the duration, location and whether a stipend is offered, as stated by the employer.",
+      "Venkat Sai offers internships at our workshop in Autonagar, Gajuwaka, Visakhapatnam, for ITI, diploma and engineering students and for recent graduates who want real workshop experience.",
+      "Interns work alongside our trainers on welding, fabrication, piping, electrical and testing work, and learn how jobs are planned, done safely and checked.",
+      "Every intern receives an offer letter before starting and an internship certificate on completion. A letter of recommendation (LOR) is given based on your attendance and performance.",
+      "Internship fees, duration and start dates are confirmed when you enquire.",
     ],
     whoItHelps: [
-      ["Students and graduates", "People who want practical experience in their field."],
-      ["Employers", "Organisations that want to train and assess early talent."],
-      ["Institutions", "Colleges and training institutes placing their students."],
+      ["Students", "ITI, diploma and engineering students in mechanical, electrical, civil and related branches."],
+      ["Recent graduates", "Freshers who want practical experience before their first job."],
+      ["Colleges", "Institutions arranging internships for their students."],
     ],
     whatWeProvide: [
-      ["Internship listings", "Search internships by field and location."],
-      ["Applications", "Apply with your Venkat Sai Global profile."],
+      ["Offer letter", "A written offer with the internship dates, schedule and fee before you start."],
+      ["Hands-on workshop experience", "Practical work in a real workshop, under supervision and with safety training."],
+      ["Internship certificate", "A certificate from Venkat Sai when you complete the internship."],
+      ["Letter of recommendation (LOR)", "Given based on your attendance and performance."],
     ],
     processSteps: [
-      ["Create a profile", "Add your education and skills."],
-      ["Find an internship", "Search and apply."],
-      ["Interview", "The employer reviews your application and contacts you."],
+      ["Enquire", "Send your details on WhatsApp, by email or with the form."],
+      ["Offer letter", "Receive your offer letter with the dates and fee."],
+      ["Internship", "Learn and work in our workshop."],
+      ["Certificate and LOR", "Receive your internship certificate and, based on performance, an LOR."],
     ],
-    requirements: ["Candidates: a profile with your current education details"],
-    cta: { label: "Find internships", href: "/jobs?type=internship" },
+    requirements: ["Your current course and year of study (or your qualification)", "A college letter, if your college asks for one"],
+    cta: { label: "Send your CV", href: "/send-cv" },
   },
   {
     slug: "apprenticeships",
@@ -249,30 +303,44 @@ const SERVICES: readonly ServiceSeed[] = [
   },
   {
     slug: "technical-training",
-    title: "Technical training",
-    summary: "Practical training for technical and industrial trades, including welding.",
+    title: "Training",
+    summary:
+      "Practical training in welding, pipe fitting, fabrication, electrical, piping, rigging, scaffolding, safety and more, with a completion certificate and trade test preparation for overseas interviews.",
     publish: true,
+    featured: true,
     iconName: "flame",
     enquiryType: "general",
+    tags: ["training-hub", "course-fee"],
     overview: [
-      "Venkat Sai provides practical training for welders, building on the work of the Venkat Sai Welding Works and Testing Center in Visakhapatnam. Other technical courses are listed on Venkat Sai Global as they become available.",
-      "Course pages give the syllabus, duration, schedule and fee. Training is optional and never a condition of any job application, offer or placement.",
+      "Venkat Sai Welding Works and Testing Center trains tradespeople at our workshop in Autonagar, Gajuwaka, Visakhapatnam. Despite our name, we do much more than welding: we train welders, pipe fitters, structural fitters and fabricators, electricians, piping technicians, riggers, scaffolders and mechanical fitters, with safety and NDT awareness for every trade.",
+      "Training is hands-on. You practise on real materials and equipment, under supervision, until you can do the work to the standard employers test for.",
+      "Every course ends with a completion certificate from Venkat Sai. We also prepare you for the trade tests used in overseas interviews. Venkat Sai certificates and assessments are our own; they are not presented as an accredited external certification unless that is stated on the certificate.",
+      "Course fees, duration and batch timings are confirmed when you enquire. Training is optional and is never a condition of any job application, offer or placement.",
     ],
     whoItHelps: [
-      ["Trainees", "People starting a career in welding and other industrial trades."],
-      ["Working tradespeople", "People who want to improve their skills."],
+      ["Beginners", "People starting a career in a trade."],
+      ["Working tradespeople", "Helpers and tradespeople who want to move up, learn a new process or position, or prepare for a trade test."],
+      ["Candidates going abroad", "People preparing for overseas interviews and trade tests."],
     ],
     whatWeProvide: [
-      ["Hands-on practice", "Practical training in a workshop setting."],
-      ["Assessment", "A practical assessment at the end of the course, where the course includes one."],
+      ["Hands-on practice", "Most of the time is spent practising in the workshop."],
+      ["Trade test preparation", "Practice on the kind of tests employers use in overseas interviews."],
+      ["Completion certificate", "A Venkat Sai certificate for every course, which can be checked online."],
+      ["Safety first", "PPE and safe working are taught from the first day."],
     ],
     processSteps: [
-      ["Enquire or enrol", "Choose a course and batch."],
-      ["Train", "Attend practical sessions."],
-      ["Assessment", "Complete the course assessment."],
+      ["Enquire", "Tell us your trade and experience on WhatsApp, by phone or with the form."],
+      ["Choose a course", "We suggest the course and level that fit you."],
+      ["Train", "Attend the batch and practise in the workshop."],
+      ["Assessment and certificate", "Complete the course assessment and receive your certificate."],
+      ["Trade test and jobs", "If you want to work abroad, send your CV and trade for current requirements."],
     ],
-    requirements: ["Safety equipment and rules are explained at the start of each course"],
-    cta: { label: "Browse training", href: "/training" },
+    faqs: [
+      ["Do I need experience to join?", "No for beginner courses. For advanced courses, such as 6G pipe welding, we check your current level first."],
+      ["Will training get me a job?", "Training improves your skills and your chances in trade tests, but it does not guarantee a job. Employers decide who they select."],
+      ["How much does a course cost?", "Fees depend on the course and level and are confirmed when you enquire. Online payment is coming soon."],
+    ],
+    cta: { label: "See courses and batches", href: "/training" },
   },
   {
     slug: "welding-and-industrial-testing",
@@ -282,7 +350,7 @@ const SERVICES: readonly ServiceSeed[] = [
     iconName: "shield-check",
     enquiryType: "employer",
     overview: [
-      "The Venkat Sai Welding Works and Testing Center in Auto Nagar, Visakhapatnam, provides welding and industrial testing services.",
+      "The Venkat Sai Welding Works and Testing Center in Autonagar, Gajuwaka, Visakhapatnam, tests welders and welded work, and runs the practical trade tests used for overseas and project recruitment.",
       "The tests available, the standards they follow, turnaround times and fees are confirmed when you enquire, so you know exactly what you will receive before work starts.",
       "Results of Venkat Sai tests are reported as Venkat Sai assessments with the procedure used. They are not presented as an accredited external certification unless that is stated on the report.",
     ],
@@ -484,13 +552,45 @@ const SERVICES: readonly ServiceSeed[] = [
 
 const items = (pairs: readonly Pair[]) => pairs.map(([title, description]) => ({ title, description }));
 
+/** The three main services, in display order (featured; everything else is listed under "All services"). */
+export const FEATURED_SERVICE_SLUGS = ["overseas-employment", "technical-training", "bulk-manpower-supply"] as const;
+
+function trainingFamilyService(f: TrainingFamilySeed): ServiceSeed {
+  return {
+    slug: f.slug,
+    title: f.title,
+    summary: f.summary,
+    publish: true,
+    iconName: f.iconName,
+    enquiryType: "general",
+    tags: ["training-course", "course-fee"],
+    overview: [f.intro, TRAINING_COMMON_CLOSE, "Training is optional and is never a condition of any job application, offer or placement."],
+    whoItHelps: f.whoItHelps,
+    whatWeProvide: f.topics,
+    processSteps: TRAINING_STEPS,
+    benefits: TRAINING_BENEFITS,
+    requirements: f.requirements,
+    faqs: f.faqs,
+    cta: { label: "See courses and batches", href: "/training" },
+  };
+}
+
+/** Display order: the main services, the other services, then the training course families. */
+function orderedServices(): ServiceSeed[] {
+  const featured = FEATURED_SERVICE_SLUGS.map((slug) => SERVICES.find((s) => s.slug === slug)!);
+  const rest = SERVICES.filter((s) => !featured.includes(s));
+  return [...featured, ...rest, ...TRAINING_FAMILIES.map(trainingFamilyService)];
+}
+
 export function buildServiceSeeds(): SeedEntrySpec[] {
-  return SERVICES.map((s, index) => ({
+  return orderedServices().map((s, index) => ({
     collection: "services",
     slug: s.slug,
     title: s.title,
     summary: s.summary,
     sortOrder: (index + 1) * 10,
+    isFeatured: s.featured ?? false,
+    tags: s.tags ? [...s.tags] : [],
     publish: s.publish,
     note: s.publish ? "Initial service description (claim-free)." : "Draft: publish only once the business confirms this service is offered.",
     data: {
@@ -509,4 +609,4 @@ export function buildServiceSeeds(): SeedEntrySpec[] {
   }));
 }
 
-export const SERVICE_SLUGS = SERVICES.map((s) => s.slug);
+export const SERVICE_SLUGS = orderedServices().map((s) => s.slug);

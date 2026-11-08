@@ -330,6 +330,8 @@ export const CMS_COLLECTIONS = [
   "pages",
   "team_members",
   "client_logos",
+  /** Recruitment posters ("Latest requirements") published from a phone; public page /requirements/<slug>. */
+  "requirement_posts",
   ...CMS_SINGLETON_COLLECTIONS,
 ] as const;
 export type CmsCollection = (typeof CMS_COLLECTIONS)[number];

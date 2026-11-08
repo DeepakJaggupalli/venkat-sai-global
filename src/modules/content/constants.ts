@@ -48,6 +48,7 @@ export const CMS_COLLECTION_LABELS = {
   pages: "Pages",
   team_members: "Team members",
   client_logos: "Client logos",
+  requirement_posts: "Requirement posters",
   site_settings: "Site settings",
   homepage: "Homepage",
   navigation: "Navigation",

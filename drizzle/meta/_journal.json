@@ -15,6 +15,13 @@
       "when": 1794057339814,
       "tag": "0001_stage1_domain_services",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794095856334,
+      "tag": "0002_cv_submissions",
+      "breakpoints": true
     }
   ]
 }

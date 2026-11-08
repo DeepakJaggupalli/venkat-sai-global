@@ -196,7 +196,8 @@ describe.skipIf(!enabled)("operations services (PostgreSQL)", async () => {
       const staffJobs = await enqueued("notifications.dispatch_staff", "enquiry.received", { path: "code", value: first.code! });
       expect(staffJobs).toHaveLength(1);
       expect(staffJobs[0]!.payload).toMatchObject({ permission: "leads.view" });
-      const ack = await enqueued("notifications.dispatch", "enquiry.received", { path: "code", value: first.code! });
+      // The business inbox copy (notifications.business_inbox_email) is a second dispatch with forStaff: true.
+      const ack = (await enqueued("notifications.dispatch", "enquiry.received", { path: "code", value: first.code! })).filter((j) => JSON.stringify(j.payload).includes(email));
       expect(ack[0]!.payload).toMatchObject({ recipients: [{ email }], channels: ["email"], data: { forStaff: false } });
     });
 
@@ -245,7 +246,9 @@ describe.skipIf(!enabled)("operations services (PostgreSQL)", async () => {
       const lineRows = await db.select().from(s.requirementLines).where(eq(s.requirementLines.requirementId, req!.id));
       expect(lineRows.find((l) => l.roleTitle === "TIG welder")).toMatchObject({ salaryMinMinor: 180_000, salaryMaxMinor: 240_000, salaryCurrency: "AED" });
       expect(await enqueued("notifications.dispatch_staff", "requirement.received", { path: "code", value: result.code! })).toHaveLength(1);
-      expect((await enqueued("notifications.dispatch", "requirement.received", { path: "code", value: result.code! }))[0]!.payload).toMatchObject({ recipients: [{ email: contactEmail }] });
+      const dispatches = await enqueued("notifications.dispatch", "requirement.received", { path: "code", value: result.code! });
+      expect(dispatches.find((j) => JSON.stringify(j.payload).includes(contactEmail))!.payload).toMatchObject({ recipients: [{ email: contactEmail }] });
+      expect(dispatches.some((j) => JSON.stringify(j.payload).includes("vsweld@gmail.com"))).toBe(true);
 
       const approver = await makeStaff(["approvals.decide", "approvals.view", "requirements.manage", "requirements.view"]);
       await approvals.decideApproval({ requestId: req!.approvalRequestId!, decision: "changes_requested", reason: "Please confirm the joining date.", ctx: approver });

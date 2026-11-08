@@ -5,11 +5,15 @@ import { notFound } from "next/navigation";
 import { SafeHtml } from "@/components/shared/safe-html";
 import { CtaBand, FeatureGrid, ProseSplit } from "@/components/public/blocks";
 import { CmsImage, MediaGallery, pickAsset, pickAssets } from "@/components/public/cms-media";
+import { ContactIcons, ContactList, MapEmbed } from "@/components/public/contact-links";
+import { CtaLink } from "@/components/public/cta-link";
 import { PageHero } from "@/components/public/page-hero";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
+import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
 import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, htmlToText, previewTokenFrom, settle } from "@/components/public/server";
-import { ReachMap } from "@/components/public/visuals";
+import { loadPublicContact } from "@/components/public/services/contact-data";
+import { ServiceIllustration } from "@/components/public/services/service-illustration";
 import { BRAND } from "@/config/site";
 import type { SearchParams } from "@/lib/http";
 import { getSingleton } from "@/modules/content/queries";
@@ -19,11 +23,14 @@ type Props = { searchParams: Promise<SearchParams> };
 
 const loadAbout = (preview: string | null) => settle("about", () => getSingleton("about", { preview }), null);
 
+const DEFAULT_INTRO =
+  "Training, trade testing, overseas employment and manpower supply from Autonagar, Gajuwaka, Visakhapatnam, for welders, fitters, electricians, riggers, scaffolders and other tradespeople.";
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const detail = await loadAbout(previewTokenFrom(await searchParams));
   return buildPageMetadata({
     title: detail?.entry.title && detail.entry.title !== "About page" ? detail.entry.title : "About Venkat Sai",
-    description: detail?.entry.summary || htmlToText(detail?.entry.data.history) || `${BRAND.name} is the technology platform of ${BRAND.legalEntity}, ${BRAND.headquarters}.`,
+    description: detail?.entry.summary || htmlToText(detail?.entry.data.history) || DEFAULT_INTRO,
     path: "/about",
     seo: detail?.entry.seo,
     assets: detail?.assets,
@@ -33,7 +40,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function AboutPage({ searchParams }: Props) {
-  const detail = await loadAbout(previewTokenFrom(await searchParams));
+  const [detail, contact] = await Promise.all([loadAbout(previewTokenFrom(await searchParams)), loadPublicContact()]);
   if (!detail) notFound();
   const { entry, assets, references } = detail;
   const about = entry.data;
@@ -51,21 +58,48 @@ export default async function AboutPage({ searchParams }: Props) {
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
         eyebrow="About Venkat Sai"
         title={entry.title && entry.title !== "About page" ? entry.title : `About ${BRAND.name}`}
-        intro={entry.summary || BRAND.promise}
+        intro={entry.summary || DEFAULT_INTRO}
         media={hero}
+        visual={<ServiceIllustration iconName="flame" className="mx-auto aspect-[4/3] w-full max-w-md" />}
         meta={
           <span className="inline-flex items-center gap-1.5">
             <MapPin aria-hidden="true" className="size-4" />
-            {about.headquarters?.trim() || BRAND.headquarters}
+            {about.headquarters?.trim() || contact.addressLines.join(", ")}
           </span>
+        }
+        actions={
+          <>
+            <CtaLink href="/send-cv" cta="send_cv" location="about_hero" variant="accent" arrow>
+              Send your CV and trade
+            </CtaLink>
+            <CtaLink href="/services" cta="our_services" location="about_hero" variant="onDark">
+              Our services
+            </CtaLink>
+          </>
         }
       />
 
+      <div className="border-b border-border bg-white" data-testid="about-contact-icons">
+        <div className="container-page flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-navy">Find us, WhatsApp, email or call:</p>
+          <ContactIcons contact={contact} labels />
+        </div>
+      </div>
+
       <Section labelledBy="about-history-title">
-        <ProseSplit id="about-history-title" eyebrow="Our background" title="Where we come from">
+        <ProseSplit id="about-history-title" eyebrow="Who we are" title="More than welding">
           <SafeHtml html={about.history} />
         </ProseSplit>
       </Section>
+
+      {about.capabilities?.length ? (
+        <Section tone="subtle" labelledBy="about-capabilities-title">
+          <SectionHeading id="about-capabilities-title" eyebrow="What we do" title="Training, testing, jobs abroad and manpower" />
+          <FeatureGrid items={about.capabilities} columns={about.capabilities.length > 4 ? 3 : 4} className="mt-10" icon={<Building2 />} />
+        </Section>
+      ) : null}
+
+      <LatestRequirements limit={6} heading="Our latest requirements" />
 
       {about.evolution ? (
         <Section tone="subtle" labelledBy="about-evolution-title">
@@ -104,15 +138,8 @@ export default async function AboutPage({ searchParams }: Props) {
         </Section>
       ) : null}
 
-      {about.capabilities?.length ? (
-        <Section labelledBy="about-capabilities-title">
-          <SectionHeading id="about-capabilities-title" eyebrow="Capabilities" title="What we do today" />
-          <FeatureGrid items={about.capabilities} columns={4} className="mt-10" icon={<Building2 />} />
-        </Section>
-      ) : null}
-
       {leadership.length ? (
-        <Section tone="subtle" labelledBy="about-leadership-title">
+        <Section labelledBy="about-leadership-title">
           <SectionHeading id="about-leadership-title" eyebrow="Leadership" title="The people behind Venkat Sai" />
           <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {leadership.map((m) => {
@@ -138,31 +165,38 @@ export default async function AboutPage({ searchParams }: Props) {
 
       {about.infrastructure || photos.length ? (
         <Section labelledBy="about-infrastructure-title">
-          <SectionHeading id="about-infrastructure-title" eyebrow="Infrastructure" title="Facilities and operations" />
+          <SectionHeading id="about-infrastructure-title" eyebrow="Our workshop" title="Facilities and operations" />
           {about.infrastructure ? <SafeHtml html={about.infrastructure} className="mt-8 max-w-3xl" /> : null}
           <MediaGallery assets={photos} className="mt-10" />
         </Section>
       ) : null}
 
-      <Section tone="navy" labelledBy="about-hq-title">
-        <div className="grid items-center gap-10 lg:grid-cols-2">
+      <Section tone="subtle" labelledBy="about-visit-title" id="visit" className="scroll-mt-24">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
           <div>
-            <SectionHeading id="about-hq-title" onDark eyebrow="Headquarters" title="Visakhapatnam, Andhra Pradesh" intro={about.headquarters?.trim() || BRAND.headquarters} />
-            <p className="mt-6 text-base leading-relaxed text-white/75">
-              {BRAND.name} is operated by {BRAND.legalEntity}. Our work starts in Auto Nagar, one of Visakhapatnam&apos;s industrial hubs, and connects people and
-              organisations wherever opportunity is.
-            </p>
+            <SectionHeading id="about-visit-title" eyebrow="Visit us" title="Our centre in Autonagar, Gajuwaka" />
+            <ContactList contact={contact} className="mt-8" />
+            <a
+              href={contact.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-navy/20 bg-white px-5 text-sm font-semibold text-navy hover:border-navy/40"
+            >
+              <MapPin aria-hidden="true" className="size-4" />
+              Open in Google Maps
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
           </div>
-          <ReachMap points={[]} />
+          <MapEmbed contact={contact} />
         </div>
       </Section>
 
       <CtaBand
         location="about_cta_band"
-        heading={BRAND.tagline}
-        body={BRAND.promise}
-        primary={{ label: "Explore opportunities", href: "/jobs", id: "explore_opportunities" }}
-        secondary={{ label: "Work with us", href: "/employers", id: "hire_through_venkat_sai" }}
+        heading="Looking for work in your trade?"
+        body="Send your CV and trade, see our latest requirements, or tell us the workers your company needs."
+        primary={{ label: "Explore jobs", href: "/jobs", id: "explore_jobs" }}
+        secondary={{ label: "Request manpower", href: "/employers/request", id: "submit_workforce_requirement" }}
       />
     </>
   );

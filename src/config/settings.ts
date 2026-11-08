@@ -82,6 +82,10 @@ export const SETTINGS = {
   /** ISO country code of Venkat Sai's home market; jobs outside it are flagged as overseas. */
   "platform.home_country": { default: "IN", label: "Home country (jobs elsewhere are overseas)", group: "Platform" },
 
+  // Notifications
+  /** Business inbox that receives a copy of every new CV, contact enquiry and workforce requirement (blank = off). */
+  "notifications.business_inbox_email": { default: "vsweld@gmail.com", label: "Business inbox for new CVs, enquiries and requirements (blank = none)", group: "Notifications" },
+
   // Support
   "support.sla_hours_urgent": { default: 4, label: "Urgent ticket first-response SLA (hours)", group: "Support" },
   "support.sla_hours_high": { default: 8, label: "High priority SLA (hours)", group: "Support" },

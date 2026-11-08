@@ -5,10 +5,13 @@
 /*
  * Venkat Sai Global design tokens.
  * Change brand colours here only — every component reads these variables.
- * Palette (spec §15.2): navy #101C35, deep navy #091327, teal #16A6A1, light #F6F8FB,
- * secondary text #657187, gold #D5A64A, success #15966A, warning #D99A2B, error #D94B4B.
- * Accessibility: teal (#16A6A1) and gold (#D5A64A) fail WCAG AA as text on white —
- * use --brand-teal-strong / --brand-gold-strong for text; the base hues are for fills/decoration.
+ * Palette (from the Venkat Sai recruitment posters): royal blue #1D3FA8, deep navy #0B1F5C,
+ * golden yellow #FFD000, alert red #E3262E, green #159447.
+ * Legacy token NAMES are kept and remapped so existing classes keep working:
+ *   navy -> deep navy, teal -> royal blue family (accent fills, icons, rings), gold -> golden yellow.
+ * Accessibility: yellow (#FFD000), the bright accent blue (#3D63E0 as --brand-teal) and green (#159447)
+ * are for fills, icons and borders; use the -strong variants for text on white. Yellow is a text colour
+ * only on navy (10.4:1). Navy text on yellow: 10.4:1.
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -18,6 +21,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-heading: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Heavy condensed display face for big public headlines (Anton). */
+  --font-display: var(--font-anton), "Arial Narrow", Impact, var(--font-manrope), sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -72,6 +77,16 @@
   --color-success-strong: var(--success-strong);
   --color-warning-strong: var(--warning-strong);
   --color-danger-strong: var(--danger-strong);
+  --color-royal: var(--brand-royal);
+  --color-yellow: var(--brand-yellow);
+  --color-red: var(--brand-red);
+  --color-red-strong: var(--brand-red-strong);
+  --color-green: var(--brand-green);
+  --color-green-strong: var(--brand-green-strong);
+
+  --animate-marquee: vsg-marquee var(--marquee-duration, 40s) linear infinite;
+  --animate-float-y: vsg-float-y 6s ease-in-out infinite;
+  --animate-pulse-ring: vsg-pulse-ring 2.4s ease-out infinite;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -83,46 +98,55 @@
 }
 
 :root {
-  --brand-navy: #101c35;
-  --brand-navy-deep: #091327;
-  --brand-teal: #16a6a1;
-  --brand-teal-strong: #0a7672;
-  --brand-teal-soft: #e3f5f4;
-  --brand-gold: #d5a64a;
-  --brand-gold-strong: #8a6417;
-  --brand-gold-soft: #fbf3e2;
+  /* Poster palette */
+  --brand-royal: #1d3fa8; /* 9.0:1 on white */
+  --brand-yellow: #ffd000; /* fills; text only on navy */
+  --brand-red: #e3262e; /* fills/badges; white text 4.6:1 */
+  --brand-red-strong: #b3171f;
+  --brand-green: #159447; /* fills/icons */
+  --brand-green-strong: #0e7a3a; /* 5.4:1 on white */
+
+  /* Legacy names, remapped */
+  --brand-navy: #0b1f5c; /* 15.4:1 on white */
+  --brand-navy-deep: #06123a;
+  --brand-teal: #3d63e0; /* bright royal accent: fills, icons, rings (white text 5.2:1) */
+  --brand-teal-strong: #1d3fa8;
+  --brand-teal-soft: #e8eefc;
+  --brand-gold: #ffd000;
+  --brand-gold-strong: #7a5a00; /* 6.4:1 on white */
+  --brand-gold-soft: #fff6cc;
 
   --background: #ffffff;
-  --foreground: #13203a;
+  --foreground: #0f1b3d;
   --surface: #ffffff;
-  --surface-subtle: #f6f8fb;
+  --surface-subtle: #f4f6fc;
   --card: #ffffff;
-  --card-foreground: #13203a;
+  --card-foreground: #0f1b3d;
   --popover: #ffffff;
-  --popover-foreground: #13203a;
-  --primary: #101c35;
+  --popover-foreground: #0f1b3d;
+  --primary: #1d3fa8;
   --primary-foreground: #ffffff;
-  --secondary: #eef2f7;
-  --secondary-foreground: #101c35;
-  --muted: #f6f8fb;
-  --muted-foreground: #5b677d;
-  --accent: #e3f5f4;
-  --accent-foreground: #0b4f4c;
-  --destructive: #c43d3d;
-  --danger-soft: #fbeaea;
-  --success: #15966a;
-  --success-soft: #e4f5ee;
+  --secondary: #edf1fb;
+  --secondary-foreground: #0b1f5c;
+  --muted: #f4f6fc;
+  --muted-foreground: #4f5b78;
+  --accent: #e8eefc;
+  --accent-foreground: #142e80;
+  --destructive: #c81e26;
+  --danger-soft: #fde8e9;
+  --success: #159447;
+  --success-soft: #e3f5ea;
   --warning: #b97d14;
   --warning-soft: #fbf1df;
-  --info: #2563a8;
-  --info-soft: #e7f0fa;
+  --info: #1d3fa8;
+  --info-soft: #e8eefc;
   /* AA-safe TEXT variants (≥ 4.5:1 on white and on their -soft backgrounds). */
-  --success-strong: #0c6e4d;
+  --success-strong: #0e7a3a;
   --warning-strong: #7d530a;
-  --danger-strong: #aa3434;
-  --border: #e3e8ef;
-  --input: #d5dce6;
-  --ring: #16a6a1;
+  --danger-strong: #b3171f;
+  --border: #dfe5f2;
+  --input: #cfd7e8;
+  --ring: #1d3fa8;
 
   /* Validated categorical palette (CVD + contrast checked, see src/components/shared/charts/palette.ts). */
   --chart-1: #16a6a1;
@@ -134,18 +158,23 @@
   --radius: 0.625rem;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #13203a;
-  --sidebar-primary: #101c35;
+  --sidebar-foreground: #0f1b3d;
+  --sidebar-primary: #1d3fa8;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2f7;
-  --sidebar-accent-foreground: #101c35;
-  --sidebar-border: #e3e8ef;
-  --sidebar-ring: #16a6a1;
+  --sidebar-accent: #edf1fb;
+  --sidebar-accent-foreground: #0b1f5c;
+  --sidebar-border: #dfe5f2;
+  --sidebar-ring: #1d3fa8;
+}
+
+/* Dark bands (public hero, footer, navy sections): yellow focus ring so focus stays visible on navy. */
+.band-dark {
+  --ring: #ffd000;
 }
 
 /* Optional dark theme (user-selectable later — not applied by default; spec §15.2). */
 .dark {
-  --background: #091327;
+  --background: #06123a;
   --foreground: #e8edf5;
   --surface: #0f1b33;
   --surface-subtle: #0c1730;
@@ -164,9 +193,9 @@
   --destructive: #e26a6a;
   --border: #22314f;
   --input: #2a3a5b;
-  --ring: #2fc2bc;
-  --brand-teal-strong: #4fd1cb;
-  --brand-gold-strong: #e6c27a;
+  --ring: #ffd000;
+  --brand-teal-strong: #8fb0ff;
+  --brand-gold-strong: #ffd000;
   --success-strong: #5fd3a6;
   --warning-strong: #f0c062;
   --danger-strong: #f08a8a;
@@ -214,7 +243,13 @@
     outline-offset: 2px;
   }
   ::selection {
-    background: color-mix(in oklab, var(--brand-teal) 25%, transparent);
+    background: color-mix(in oklab, var(--brand-yellow) 45%, transparent);
+  }
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    line-height: 1;
   }
 }
 
@@ -242,9 +277,122 @@
   .text-pretty {
     text-wrap: pretty;
   }
+
+  /* Infinite marquee: the track holds the item list twice and slides by half its width. */
+  .marquee-mask {
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: var(--animate-marquee);
+  }
+  .marquee-track[data-reverse="true"] {
+    animation-direction: reverse;
+  }
+  .marquee-mask:hover .marquee-track,
+  .marquee-mask:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* Scroll reveal (see components/public/reveal.tsx). Content stays visible without JavaScript. */
+  .js-reveal [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .js-reveal [data-reveal="2"] {
+    transition-delay: 90ms;
+  }
+  .js-reveal [data-reveal="3"] {
+    transition-delay: 180ms;
+  }
+  .js-reveal [data-reveal="4"] {
+    transition-delay: 270ms;
+  }
+  .js-reveal [data-reveal][data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Hover lift for cards. */
+  .lift {
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .lift:hover,
+  .lift:focus-within {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -22px rgb(11 31 92 / 0.45);
+  }
+
+  /* Diagonal "hazard" stripe used as a section divider (yellow/navy, like the posters). */
+  .stripe-hazard {
+    background-image: repeating-linear-gradient(-45deg, var(--brand-yellow) 0 14px, var(--brand-navy) 14px 28px);
+  }
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .text-stroke-yellow {
+    -webkit-text-stroke: 2px var(--brand-yellow);
+    color: transparent;
+  }
+}
+
+@keyframes vsg-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes vsg-float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes vsg-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    width: auto;
+    justify-content: center;
+  }
+  .marquee-track [data-marquee-copy] {
+    display: none;
+  }
+  .js-reveal [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  .lift:hover,
+  .lift:focus-within {
+    transform: none;
+  }
   *,
   *::before,
   *::after {

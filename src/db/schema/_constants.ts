@@ -88,6 +88,8 @@ export const FILE_PURPOSES = [
   "cms_media",
   "ticket_attachment",
   "message_attachment",
+  /** CV sent through the public "Send your CV" form (no account; staff-only, sensitive). */
+  "cv_submission",
   "invoice",
   "data_export",
   "other",

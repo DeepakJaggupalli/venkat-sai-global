@@ -255,6 +255,7 @@ const siteSettings = defineCollection({
         address: field.textarea({ label: "Address", maxLength: 500, rows: 3 }),
         businessHours: field.textarea({ label: "Business hours", maxLength: 300, rows: 2, placeholder: "Monday to Saturday, 9:30 am to 6:00 pm IST" }),
         mapEmbedUrl: field.url({ label: "Map embed link", urlKind: "map", help: "Google Maps → Share → Embed a map → copy the src link, or an OpenStreetMap embed link." }),
+        whatsappGroupUrl: field.url({ label: "WhatsApp group link", help: "Invite link (https://chat.whatsapp.com/…) for the group where new requirements are shared. Leave empty to hide the \"Join our WhatsApp group\" buttons." }),
       },
     }),
     socialLinks: field.list({
@@ -894,6 +895,41 @@ const clientLogos = defineCollection({
   },
 });
 
+// Recruitment posters ("Latest requirements"). Staff usually publish them from a phone at
+// /admin/requirements/posters/new (or by sharing a photo to the installed app); this editor is for corrections.
+const requirementPosts = defineCollection({
+  key: "requirement_posts",
+  label: "Requirement posters",
+  singularLabel: "Requirement poster",
+  description: "Recruitment posters for current overseas requirements (poster image, country, trades and benefits).",
+  singleton: false,
+  defaultSort: "newest",
+  consentRequired: false,
+  searchable: true,
+  usesHero: false,
+  categoryField: "countryCode",
+  publicPath: (slug) => `/requirements/${slug}`,
+  fields: {
+    posterAssetId: field.asset({ label: "Poster image", kinds: ["image"], required: true, help: "The recruitment poster as shared on WhatsApp. Its text alternative should name the trade and country." }),
+    countryCode: field.country({ label: "Destination country" }),
+    companyName: field.text({ label: "Company name", maxLength: 160, help: "Only when the employer allows its name to be shown." }),
+    trades: field.list({
+      label: "Trades",
+      itemLabel: "Trade",
+      titleField: "trade",
+      maxItems: 30,
+      fields: {
+        trade: field.text({ label: "Trade", maxLength: 120, required: true, placeholder: "Mechanical helper" }),
+        salary: field.text({ label: "Salary", maxLength: 160, placeholder: "900 + food allowance 350" }),
+        currency: field.text({ label: "Currency", maxLength: 3, pattern: "^[A-Za-z]{3}$", patternMessage: "Use a 3-letter currency code such as AED", placeholder: "AED" }),
+      },
+    }),
+    benefits: field.textlist({ label: "Benefits", maxItems: 20, maxLength: 160, help: "For example: free accommodation, medical, transport, 8 hours + overtime." }),
+    description: field.textarea({ label: "Short description", maxLength: 2_000, rows: 4 }),
+    applyBy: field.date({ label: "Apply by", help: "Optional closing date shown on the poster page." }),
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
@@ -913,6 +949,7 @@ export const COLLECTIONS = {
   pages,
   team_members: teamMembers,
   client_logos: clientLogos,
+  requirement_posts: requirementPosts,
   site_settings: siteSettings,
   homepage,
   navigation,
@@ -942,6 +979,7 @@ export type VideoData = CollectionData<"videos">;
 export type PageData = CollectionData<"pages">;
 export type TeamMemberData = CollectionData<"team_members">;
 export type ClientLogoData = CollectionData<"client_logos">;
+export type RequirementPostData = CollectionData<"requirement_posts">;
 
 export function getCollection(key: CmsCollection): CollectionDefinition {
   return COLLECTIONS[key];

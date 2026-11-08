@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Anton, Inter, Manrope } from "next/font/google";
 
 import { AnalyticsTracker } from "@/components/analytics/analytics-tracker";
 import { ConsentBanner } from "@/components/privacy/consent-banner";
@@ -12,6 +12,8 @@ import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], display: "swap", weight: ["500", "600", "700", "800"] });
+/** Heavy condensed display face for big public headlines (`font-display`). */
+const anton = Anton({ variable: "--font-anton", subsets: ["latin"], display: "swap", weight: "400" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#101C35",
+  themeColor: "#0B1F5C",
   width: "device-width",
   initialScale: 1,
 };
@@ -36,7 +38,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={`${inter.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${manrope.variable} ${anton.variable}`} suppressHydrationWarning>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <a
           href="#main-content"

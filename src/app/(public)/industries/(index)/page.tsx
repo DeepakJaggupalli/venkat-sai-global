@@ -51,7 +51,7 @@ export default async function IndustriesPage() {
         heading="Hiring for your industry?"
         body="Share the roles, numbers and timelines and we will plan sourcing, screening and trade testing with you."
         primary={{ label: "Submit a workforce requirement", href: "/employers/request", id: "submit_workforce_requirement" }}
-        secondary={{ label: "Explore opportunities", href: "/jobs", id: "explore_opportunities" }}
+        secondary={{ label: "Explore jobs", href: "/jobs", id: "explore_jobs" }}
       />
     </>
   );

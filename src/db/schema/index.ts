@@ -19,3 +19,4 @@ export * from "./commercial"; // 13
 export * from "./notifications"; // 14
 export * from "./content"; // 15
 export * from "./analytics"; // 16
+export * from "./cv-submissions"; // 17

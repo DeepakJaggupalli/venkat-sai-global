@@ -18,6 +18,7 @@ import {
   Coins,
   CreditCard,
   FileText,
+  FileUser,
   FolderKanban,
   Gauge,
   GraduationCap,
@@ -218,6 +219,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       title: "Recruitment",
       items: [
         { title: "Requirements", href: "/admin/requirements", icon: HardHat, permission: "requirements.view" },
+        { title: "CV submissions", href: "/admin/cv-submissions", icon: FileUser, permission: "candidates.view" },
         { title: "Jobs", href: "/admin/jobs", icon: Briefcase, permission: "jobs.view" },
         { title: "Candidates", href: "/admin/candidates", icon: Users, permission: "candidates.view" },
         { title: "Pipeline", href: "/admin/pipeline", icon: KanbanSquare, permission: "recruitment.view" },
@@ -249,6 +251,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       title: "Website",
       items: [
         { title: "Content", href: "/admin/content", icon: Newspaper, permission: "content.view" },
+        { title: "Requirement posters", href: "/admin/requirements/posters", icon: Megaphone, permission: "content.view" },
         { title: "Media library", href: "/admin/media", icon: ImageIcon, permission: "media.manage" },
         { title: "Announcements", href: "/admin/announcements", icon: Megaphone, permission: "announcements.manage" },
         { title: "Public statistics", href: "/admin/public-metrics", icon: Activity, permission: "metrics.public_manage" },
@@ -274,37 +277,13 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
   ],
 };
 
-/** Public website header navigation (dropdown groups); labels/links can be overridden from the CMS. */
+/** Public website header navigation (flat, seven items); labels/links can be overridden from the CMS. */
 export const PUBLIC_NAV = [
-  { title: "About Us", href: "/about" },
-  {
-    title: "What We Do",
-    href: "/services",
-    children: [
-      { title: "Recruitment & placements", href: "/services/recruitment-and-placements" },
-      { title: "Overseas employment", href: "/services/overseas-employment" },
-      { title: "Bulk manpower supply", href: "/services/bulk-manpower-supply" },
-      { title: "Training & skill development", href: "/services/professional-training" },
-      { title: "Welding & industrial testing", href: "/services/welding-and-industrial-testing" },
-      { title: "All services", href: "/services" },
-    ],
-  },
-  {
-    title: "Opportunities",
-    href: "/jobs",
-    children: [
-      { title: "Jobs", href: "/jobs" },
-      { title: "Overseas jobs", href: "/jobs?overseas=1" },
-      { title: "Internships", href: "/jobs?type=internship" },
-      { title: "Apprenticeships", href: "/jobs?type=apprenticeship" },
-      { title: "Training programmes", href: "/training" },
-      { title: "Events & hiring drives", href: "/events" },
-    ],
-  },
-  { title: "Industries", href: "/industries" },
-  { title: "Global Reach", href: "/global-reach" },
-  { title: "Employers", href: "/employers" },
-  { title: "Partners", href: "/partners" },
-  { title: "Success Stories", href: "/success-stories" },
+  { title: "Home", href: "/" },
+  { title: "Jobs", href: "/jobs" },
+  { title: "Training", href: "/training" },
+  { title: "Services", href: "/services" },
+  { title: "Requirements", href: "/requirements" },
+  { title: "About", href: "/about" },
   { title: "Contact", href: "/contact" },
 ] as const;

@@ -295,6 +295,12 @@ export const DEFAULT_TEMPLATES: Partial<Record<NotificationEvent, DefaultTemplat
     sms: "{{#forStaff}}New enquiry {{code}} received.{{/forStaff}}{{^forStaff}}Venkat Sai Global: we received your enquiry. Your reference is {{code}}.{{/forStaff}}",
     sample: { forStaff: true, senderName: "Sender name", organizationName: S.organizationName, code: "VSG-ENQ-000123", type: "employer", subject: "Sample subject" },
   },
+  "cv.received": {
+    subject: "New CV {{code}}: {{trade}}{{#name}} - {{name}}{{/name}}",
+    body: "A CV has been sent through the website{{#name}} by **{{name}}**{{/name}}.\n\n- Reference: {{code}}\n- Trade: {{trade}}{{#phone}}\n- Mobile / WhatsApp: {{phone}}{{/phone}}{{#experienceYears}}\n- Experience: {{experienceYears}} years{{/experienceYears}}{{#countryName}}\n- Preferred country: {{countryName}}{{/countryName}}{{#passport}}\n- Passport: {{passport}}{{/passport}}{{#requirementTitle}}\n- Requirement: {{requirementTitle}}{{/requirementTitle}}\n\nOpen the CV in the Command Centre (sign-in required).",
+    cta: "Open CV submissions",
+    sample: { code: "VSG-CV-000123", name: "Candidate name", trade: "Sample trade", phone: "+91 90000 00000", experienceYears: 5, countryName: "Sample country", passport: "Yes", requirementTitle: "Sample requirement" },
+  },
 
   // -------------------------------------------------------------------------
   // Recruitment partners

@@ -7,6 +7,8 @@ import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { WhatsAppIcon } from "@/components/public/contact-links";
+import { whatsappHref } from "@/config/contact";
 import { BRAND } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +39,7 @@ function MobileLink({
       onNavigate={onNavigate}
       aria-current={current ? "page" : undefined}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className={cn(ROW, current && "bg-teal-soft", className)}
+      className={cn(ROW, current && "bg-teal-soft shadow-[inset_3px_0_0_var(--brand-red)]", className)}
     >
       <span className="min-w-0 flex-1">{link.title}</span>
       {external && (
@@ -130,15 +132,22 @@ export function PublicMobileNav({
             </Link>
           </Button>
         ) : (
-          <Button asChild size="lg" className="h-11 w-full text-[15px]">
+          <Button asChild size="lg" className="h-11 w-full bg-yellow text-[15px] font-semibold text-navy hover:bg-yellow/90">
             <Link href={PUBLIC_CTA.join} onNavigate={close}>
-              Join Venkat Sai
+              Sign up
             </Link>
           </Button>
         )}
+        <Button asChild size="lg" className="h-11 w-full bg-green-strong text-[15px] text-white hover:bg-green-strong/90">
+          <a href={whatsappHref("Hello Venkat Sai, I would like to know about current job requirements.")} target="_blank" rel="noopener noreferrer">
+            <WhatsAppIcon className="size-5" />
+            WhatsApp us
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </Button>
         <Button asChild size="lg" variant="outline" className="h-11 w-full bg-white text-[15px]">
           <Link href={PUBLIC_CTA.postRequirement} onNavigate={close}>
-            Post a Requirement
+            Request workers
           </Link>
         </Button>
         {!account && (
