@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { DataTable } from "@/components/shared/data-table";
 import { DateText } from "@/components/shared/date-text";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -40,6 +41,7 @@ export default async function PartnerSubmissionsPage({ searchParams }: { searchP
         title="Submission review"
         description="Candidates submitted by partners. Check duplicates, attribution and consent, then accept into the pipeline or reject with feedback."
         breadcrumbs={[{ label: "Command Centre", href: "/admin" }, { label: "Partners", href: "/admin/partners" }, { label: "Submissions" }]}
+        actions={<DownloadExcelButton href="/admin/partners/submissions/export" searchParams={params} keys={["status", "partner", "assignment"]} />}
       />
       <PartnerTabs />
       <FilterScope>

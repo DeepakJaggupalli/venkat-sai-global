@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, UserRound } from "lucide-react";
+import { ArrowRight, Menu, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
@@ -23,14 +23,11 @@ export type PublicHeaderProps = {
   navItems?: readonly PublicNavItem[];
   /** Optional site-wide announcement shown above the header. */
   announcement?: Announcement | null;
-  /** Signed-in visitor: swaps "Sign in / Sign up" for a link to their portal. */
+  /** Signed-in visitor: swaps "Sign in" for a link to their portal. */
   account?: HeaderAccount | null;
 };
 
-const SCROLL_THRESHOLD = 24;
-
-/** Routes whose first band is a dark hero that the header floats over (the hero pulls itself up underneath). */
-const OVER_HERO_ROUTES = new Set(["/"]);
+const SCROLL_THRESHOLD = 8;
 
 function subscribeToScroll(onChange: () => void): () => void {
   window.addEventListener("scroll", onChange, { passive: true });
@@ -45,67 +42,74 @@ function useScrolled(): boolean {
   );
 }
 
+/** Black pill / white outline pill used in the header (kept small: h-10). */
+const PILL = "inline-flex h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2";
+
 /**
- * Public website header: one navy row with the logo, seven top-level links and Sign in / Sign up. Sticky.
- * Over the homepage hero it starts transparent and turns solid navy once the page scrolls; on every other
- * page it is solid from the start. Below xl the navigation moves into a sheet.
+ * Public website header: white and sticky, with a hairline bottom border once the page scrolls. Logo left, the
+ * main links in the centre (xl+), "Sign in" (outline pill) and "Send your CV" (black pill) on the right.
+ * Below xl the links move into a sheet. The logo is the way home, so a "Home" item is not repeated in the bar.
  */
 export function PublicHeader({ navItems, announcement = null, account = null }: PublicHeaderProps) {
   const pathname = usePathname();
   const scrolled = useScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
   const items = useMemo(() => sanitizeNavItems(navItems ?? DEFAULT_PUBLIC_NAV), [navItems]);
-  const transparent = OVER_HERO_ROUTES.has(pathname) && !scrolled && !menuOpen;
+  const barItems = useMemo(() => items.filter((item) => item.href !== "/"), [items]);
 
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
       {announcement && <AnnouncementBar announcement={announcement} />}
       <header
-        data-transparent={transparent ? "true" : undefined}
+        data-scrolled={scrolled ? "true" : undefined}
         className={cn(
-          "band-dark sticky top-0 z-40 text-white transition-[background-color,box-shadow,border-color] duration-300 motion-reduce:transition-none",
-          transparent
-            ? "border-b border-transparent bg-transparent"
-            : "border-b border-white/10 bg-navy-deep/95 shadow-[0_10px_30px_-18px_rgb(6_18_58/0.8)] backdrop-blur-lg supports-[backdrop-filter]:bg-navy-deep/85",
+          "sticky top-0 z-40 border-b bg-white/90 backdrop-blur-md transition-[border-color,background-color] duration-200 supports-[backdrop-filter]:bg-white/80 motion-reduce:transition-none",
+          scrolled || menuOpen ? "border-border" : "border-transparent",
         )}
       >
-        <div className="mx-auto flex h-16 max-w-[96rem] items-center gap-3 px-4 sm:px-6 lg:px-8 xl:h-[4.5rem] xl:gap-6">
+        <div className="container-page flex h-16 items-center gap-4 xl:h-[4.5rem]">
           <Link href="/" className="shrink-0 rounded-md">
             <span className="sr-only">{`${BRAND.name} home`}</span>
-            <Logo variant="onDark" decorative className="h-8 w-auto xl:h-9" />
+            <Logo decorative className="h-8 w-auto" />
           </Link>
 
-          <PublicDesktopNav items={items} pathname={pathname} signedIn={!!account} className="hidden min-w-0 flex-1 justify-center xl:flex" />
+          <PublicDesktopNav items={barItems} pathname={pathname} signedIn={!!account} className="hidden min-w-0 flex-1 justify-center xl:flex" />
 
           <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
             {account ? (
               <>
                 <Link
                   href="/account"
-                  className="hidden h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white xl:inline-flex"
+                  className={cn(PILL, "hidden text-muted-foreground hover:bg-surface-subtle hover:text-foreground xl:inline-flex")}
                 >
                   <UserRound className="size-4" aria-hidden />
-                  <span className="max-w-[10rem] truncate">{account.name}</span>
+                  <span className="max-w-[9rem] truncate">{account.name}</span>
                 </Link>
-                <Button asChild className="hidden h-10 rounded-lg bg-yellow px-4 font-semibold text-navy hover:bg-yellow/90 sm:inline-flex">
-                  <Link href={account.href}>Go to {account.portalLabel}</Link>
-                </Button>
+                <Link href={account.href} className={cn(PILL, "hidden bg-foreground text-white hover:bg-[#26262b] sm:inline-flex")}>
+                  Go to {account.portalLabel}
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
               </>
             ) : (
               <>
-                <Button asChild variant="ghost" className="hidden h-10 rounded-lg px-3.5 font-semibold text-white hover:bg-white/10 hover:text-white sm:inline-flex">
-                  <Link href={PUBLIC_CTA.signIn}>Sign in</Link>
-                </Button>
-                <Button asChild className="hidden h-10 rounded-lg bg-yellow px-5 font-semibold text-navy shadow-[0_6px_18px_-8px_rgb(255_208_0/0.7)] hover:bg-yellow/90 sm:inline-flex">
-                  <Link href={PUBLIC_CTA.join}>Sign up</Link>
-                </Button>
+                <Link href={PUBLIC_CTA.signIn} className={cn(PILL, "hidden border border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle sm:inline-flex")}>
+                  Sign in
+                </Link>
+                <Link
+                  href="/send-cv"
+                  className={cn(PILL, "group/cv hidden bg-foreground text-white hover:bg-[#26262b] min-[420px]:inline-flex")}
+                  data-testid="header-send-cv"
+                >
+                  Send your CV
+                  <ArrowRight className="size-4 transition-transform duration-150 group-hover/cv:translate-x-0.5 motion-reduce:transition-none" aria-hidden />
+                </Link>
               </>
             )}
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="-mr-2 size-11 rounded-full text-white hover:bg-white/10 hover:text-white xl:hidden [&_svg:not([class*='size-'])]:size-6"
+                className="-mr-2 size-11 rounded-full text-foreground hover:bg-surface-subtle xl:hidden [&_svg:not([class*='size-'])]:size-6"
                 aria-label="Open menu"
               >
                 <Menu aria-hidden />

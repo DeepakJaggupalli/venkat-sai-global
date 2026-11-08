@@ -229,6 +229,19 @@ ticket lifecycle with internal notes hidden from requesters, attachments shared,
 SLA watch (breach once, escalation, no repeated notifications); thread access across organisations, candidates
 and partner permissions with unread counts; notes visibility; lead pipeline; task reminders sent once.
 
+## Send your CV: documents and packs
+
+- `cv-submissions.ts`: public `submitCvSubmission` (returns a 2-hour `uploadToken`), staff list/detail/status/remarks,
+  `listCvSubmissionsForExport` (Excel rows).
+- `cv-submission-documents.ts`: one-file-per-request documents (`cv_submission_documents`, file purpose
+  `cv_submission_document`): `addCvSubmissionDocument` (candidate via signed link, rate limited; or staff with
+  candidates.manage), `listCvSubmissionDocuments`, `moveCvSubmissionDocument`, `deleteCvSubmissionDocument`,
+  `issueCvDocumentUploadLink` (fresh 7-day link), `resolveCvDocumentLink`, `listDocumentsForLink`.
+  Single kinds (passport cover / first / last page, photo) replace the previous file.
+- `cv-document-tokens.ts`: HMAC upload tokens (`src/lib/signed-token.ts`, purpose `cv_submission_documents`).
+- `cv-pack.ts`: `buildCvSubmissionPack(ctx, id, "cv" | "visa")` — resume (generated resume from the resume service when
+  present), certificates, licences, other, passport cover, first page, last page, photo; logged download.
+
 ## Open items
 
 - `operations.reminders` needs `{ type: "operations.reminders", everyMinutes: 30 }` in `src/server/tasks/schedule.ts`.

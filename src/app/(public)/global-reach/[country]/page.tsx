@@ -8,7 +8,8 @@ import { SafeHtml } from "@/components/shared/safe-html";
 import { CheckList, CtaBand, EntryCard } from "@/components/public/blocks";
 import { pickAsset } from "@/components/public/cms-media";
 import { CtaLink } from "@/components/public/cta-link";
-import { flagEmoji, REACH_GROUP_LABELS, reachGroupFor } from "@/components/public/geo";
+import { Flag } from "@/components/public/flag";
+import { REACH_GROUP_LABELS, reachGroupFor } from "@/components/public/geo";
 import { SAFE_RECRUITMENT_PATH } from "@/components/public/links";
 import { JobMiniCard } from "@/components/public/opportunity-cards";
 import { PageHero } from "@/components/public/page-hero";
@@ -16,7 +17,7 @@ import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, htmlToText, previewTokenFrom, settle } from "@/components/public/server";
 import { TrackEvent } from "@/components/public/track-event";
-import { ReachMap } from "@/components/public/visuals";
+import { stockPhoto } from "@/content/stock-photos";
 import type { SearchParams } from "@/lib/http";
 import { getPublishedEntryBySlug } from "@/modules/content/queries";
 import type { PublishedEntry } from "@/modules/content/types";
@@ -101,14 +102,14 @@ export default async function DestinationPage({ params, searchParams }: Props) {
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Global reach", href: "/global-reach" }, { label: entry.title }]}
         eyebrow={`${REACH_GROUP_LABELS[reachGroupFor(d.region)]} · Country guide`}
         title={
-          <span className="inline-flex flex-wrap items-center gap-3">
-            <span aria-hidden="true">{flagEmoji(code)}</span>
+          <span className="inline-flex flex-wrap items-center gap-4">
+            <Flag code={code} className="h-9 w-[3.375rem] rounded-md sm:h-11 sm:w-[4.125rem]" />
             {entry.title}
           </span>
         }
         intro={entry.summary}
         media={pickAsset(assets, entry.heroAssetId)}
-        visual={<ReachMap points={[{ code, label: countryName, region: d.region }]} />}
+        photo={reachGroupFor(d.region) === "gcc" ? stockPhoto("overseas") : stockPhoto("departure")}
         meta={
           reviewed ? (
             <>
@@ -251,7 +252,7 @@ export default async function DestinationPage({ params, searchParams }: Props) {
       <Section labelledBy="destination-jobs-title">
         <SectionHeading
           id="destination-jobs-title"
-          eyebrow="Opportunities"
+          eyebrow="Open jobs"
           title={`Open jobs in ${countryName}`}
           action={
             <CtaLink href={jobsHref} cta="destination_all_jobs" location="destination_jobs" variant="link">

@@ -35,6 +35,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   if (filters.toIso) query.set("to", filters.toIso);
   if (filters.jobId) query.set("jobId", filters.jobId);
   const exportHref = (report: string) => `/employer/reports/export?${new URLSearchParams({ ...Object.fromEntries(query), report }).toString()}`;
+  const xlsxHref = (report: string) => `/employer/reports/export/xlsx?${new URLSearchParams({ ...Object.fromEntries(query), report }).toString()}`;
+  const exportLinks = (report: string, csvLabel = "CSV") => (
+    <div className="flex flex-wrap gap-2">
+      <ExportLink href={exportHref(report)} label={csvLabel} report={report} />
+      <ExportLink href={xlsxHref(report)} label={csvLabel === "CSV" ? "Excel" : csvLabel.replace("CSV", "Excel")} report={report} file="employer_report_xlsx" />
+    </div>
+  );
   const hasActivity = model.totals.applied > 0 || model.interviewTotal > 0 || model.timeToHire.hires > 0;
 
   return (
@@ -42,7 +49,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       <PageHeader
         title="Recruitment reports"
         description="Live figures from your own jobs and the applications shared with you. Dates filter by application, interview or placement date."
-        actions={<ExportLink href={exportHref("jobs")} label="Export jobs CSV" report="jobs" />}
+        actions={exportLinks("jobs", "Export jobs CSV")}
       />
       <FilterBar paramKeys={["from", "to", "jobId"]}>
         <DateRangeFilter label="Period" emptyLabel="All time" />
@@ -77,7 +84,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             />
           </SectionCard>
 
-          <SectionCard title="Funnel by job" flush action={<ExportLink href={exportHref("jobs")} label="CSV" report="jobs" />}>
+          <SectionCard title="Funnel by job" flush action={exportLinks("jobs")}>
             <DataTable<JobReportRow>
               caption="Funnel conversion and time to fill per job"
               rows={model.rows}
@@ -107,7 +114,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </SectionCard>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title="Source of hire" description="Hires from recruitment partners are counted under Venkat Sai." action={<ExportLink href={exportHref("sources")} label="CSV" report="sources" />}>
+            <SectionCard title="Source of hire" description="Hires from recruitment partners are counted under Venkat Sai." action={exportLinks("sources")}>
               <BarChart
                 title="Hires by source"
                 index="source"
@@ -118,7 +125,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 emptyText="No hires in this period."
               />
             </SectionCard>
-            <SectionCard title="Interview outcomes" description={`${model.interviewTotal} ${model.interviewTotal === 1 ? "interview" : "interviews"} in this period.`} action={<ExportLink href={exportHref("interviews")} label="CSV" report="interviews" />}>
+            <SectionCard title="Interview outcomes" description={`${model.interviewTotal} ${model.interviewTotal === 1 ? "interview" : "interviews"} in this period.`} action={exportLinks("interviews")}>
               <BarChart
                 title="Interviews by status"
                 index="status"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { arcPath, coordsFor, flagEmoji, groupByReach, MAP_HEIGHT, project, reachGroupFor } from "./geo";
+import { groupByReach, reachGroupFor } from "./geo";
 import { resolveHomepageSections } from "./home/sections";
 import { buildRequirementPayload, emptyLine } from "./forms/requirement-lines";
 
@@ -43,27 +43,6 @@ describe("geo helpers", () => {
     );
     expect(groups.map((g) => g.group)).toEqual(["gcc", "europe", "other"]);
     expect(groups[0]?.items.map((i) => i.c)).toEqual(["QA", "AE"]);
-  });
-
-  it("projects inside the frame and falls back to the region centre", () => {
-    const qa = coordsFor("qa");
-    expect(qa).toEqual({ lon: 51.2, lat: 25.3 });
-    expect(coordsFor("ZZ", "europe")).toEqual({ lon: 12, lat: 50 });
-    expect(coordsFor("ZZ", null)).toBeNull();
-    const p = project({ lon: 500, lat: -90 });
-    expect(p.x).toBe(1000);
-    expect(p.y).toBe(MAP_HEIGHT);
-  });
-
-  it("draws arcs that bend upwards", () => {
-    const d = arcPath({ x: 0, y: 100 }, { x: 200, y: 100 });
-    const cy = Number(d.split("Q")[1]?.split(" ")[1]);
-    expect(cy).toBeLessThan(100);
-  });
-
-  it("builds flag emoji only for valid codes", () => {
-    expect(flagEmoji("in")).toBe("🇮🇳");
-    expect(flagEmoji("123")).toBe("");
   });
 });
 

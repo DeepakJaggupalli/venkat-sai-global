@@ -58,21 +58,19 @@ export default async function ContactPage({ searchParams }: { searchParams: Page
         title="Talk to Venkat Sai"
         description="Call, WhatsApp or email us, visit our centre in Autonagar, Gajuwaka, or send a message below. We reply to every message."
         breadcrumbs={[{ label: "Contact" }]}
-      />
-
-      <div className="container-page pt-8 sm:pt-10">
-        <div className="flex flex-wrap gap-3" data-testid="contact-quick-actions">
+      >
+        <div className="mt-8 flex flex-wrap gap-3" data-testid="contact-quick-actions">
           <a
             href={whatsappHref(DEFAULT_WHATSAPP_MESSAGE, contact.whatsapp.e164)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-navy px-5 text-sm font-semibold text-white hover:bg-navy-deep"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b]"
           >
             <WhatsAppIcon className="size-5" />
             WhatsApp {contact.whatsapp.display}
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
-          <a href={telHref(mainPhone.e164)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-navy/20 bg-white px-5 text-sm font-semibold text-navy hover:border-navy/40">
+          <a href={telHref(mainPhone.e164)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle">
             <Phone aria-hidden="true" className="size-4" />
             Call {mainPhone.display}
           </a>
@@ -80,31 +78,31 @@ export default async function ContactPage({ searchParams }: { searchParams: Page
             href={contact.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-navy/20 bg-white px-5 text-sm font-semibold text-navy hover:border-navy/40"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle"
           >
             <MapPin aria-hidden="true" className="size-4" />
             Open in Google Maps
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
         </div>
-      </div>
+      </PublicHero>
 
-      <div className="container-page grid gap-10 py-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="min-w-0 rounded-xl border border-border/80 bg-card p-5 shadow-xs sm:p-8">
+      <div className="container-page grid gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="card-surface min-w-0 self-start rounded-3xl p-5 sm:p-8">
           <ContactForm initialType={initialType} />
         </div>
 
         <aside className="space-y-6" aria-label="Contact details">
-          <section aria-labelledby="contact-details-title" className="rounded-xl border border-border/80 bg-card p-6" data-testid="contact-details">
-            <h2 id="contact-details-title" className="font-heading text-lg font-semibold text-navy">
+          <section aria-labelledby="contact-details-title" className="card-surface rounded-3xl p-6" data-testid="contact-details">
+            <h2 id="contact-details-title" className="font-heading text-lg font-bold tracking-tight text-foreground">
               Contact details
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{name}</p>
             <ContactList contact={contact} className="mt-5" />
           </section>
 
-          <section aria-labelledby="contact-quick-title" className="rounded-xl border border-border/80 bg-surface-subtle p-6">
-            <h2 id="contact-quick-title" className="flex items-center gap-2 font-heading text-lg font-semibold text-navy">
+          <section aria-labelledby="contact-quick-title" className="rounded-3xl border border-border bg-surface-subtle p-6">
+            <h2 id="contact-quick-title" className="flex items-center gap-2 font-heading text-lg font-bold tracking-tight text-foreground">
               <Handshake className="size-5 text-teal-strong" aria-hidden="true" />
               Looking for something specific?
             </h2>
@@ -115,7 +113,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Page
                     {link.icon}
                   </span>
                   <div>
-                    <Link href={link.href} className="font-semibold text-navy underline-offset-4 hover:underline">
+                    <Link href={link.href} className="font-semibold text-foreground underline-offset-4 hover:underline">
                       {link.title}
                     </Link>
                     <p className="text-sm text-muted-foreground">{link.description}</p>
@@ -127,12 +125,13 @@ export default async function ContactPage({ searchParams }: { searchParams: Page
         </aside>
       </div>
 
-      <section aria-labelledby="contact-map-title" className="container-page pb-14 sm:pb-20">
-        <h2 id="contact-map-title" className="font-heading text-xl font-semibold text-navy">
+      <section aria-labelledby="contact-map-title" className="container-page pt-6 pb-16 sm:pb-24">
+        <p className="label-dot">Visit us</p>
+        <h2 id="contact-map-title" className="mt-4 font-display text-[2rem] text-foreground sm:text-[2.75rem]">
           Find our centre
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{contact.addressLines.join(", ")}</p>
-        <MapEmbed contact={contact} className="mt-5" frameClassName="sm:aspect-[21/9]" />
+        <p className="mt-3 text-base text-muted-foreground">{contact.addressLines.join(", ")}</p>
+        <MapEmbed contact={contact} className="mt-8 shadow-card" frameClassName="sm:aspect-[21/9]" />
       </section>
     </>
   );

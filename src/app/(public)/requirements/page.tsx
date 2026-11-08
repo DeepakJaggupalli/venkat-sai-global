@@ -1,8 +1,9 @@
-import { Megaphone } from "lucide-react";
+import { ArrowRight, Megaphone } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PageHero } from "@/components/public/page-hero";
-import { CallButton, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
+import { CallButton, CONTACT_BUTTON_STYLES, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { loadPosterCountries, loadPosterPage, whatsappGroupUrlFrom } from "@/components/public/requirements/data";
 import { getSiteSettings } from "@/components/public/site-data";
 import { PosterGrid } from "@/components/public/requirements/poster-card";
@@ -12,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LinkTabs } from "@/components/shared/link-tabs";
 import { Pagination } from "@/components/shared/pagination";
 import { sp as pick, type SearchParams } from "@/lib/http";
+import { cn } from "@/lib/utils";
 
 type Props = { searchParams: Promise<SearchParams> };
 
@@ -46,12 +48,16 @@ export default async function RequirementsPage({ searchParams }: Props) {
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Requirements" }]}
         actions={
           <>
+            <Link href="/send-cv" className={cn(CONTACT_BUTTON_STYLES.call, "group/cv")}>
+              Send your CV
+              <ArrowRight aria-hidden="true" className="size-4! transition-transform duration-150 group-hover/cv:translate-x-0.5 motion-reduce:transition-none" />
+            </Link>
             <WhatsAppButton message="Hello Venkat Sai, I would like to know about your latest requirements." />
-            <CallButton className="border border-white/30 bg-white/5 hover:bg-white/10" />
+            <CallButton className={CONTACT_BUTTON_STYLES.outline} />
           </>
         }
       />
-      <div className="container-page py-10 sm:py-14">
+      <div className="container-page pb-12 sm:pb-16">
         {countries.length > 1 ? (
           <LinkTabs
             label="Filter by country"
@@ -86,7 +92,7 @@ export default async function RequirementsPage({ searchParams }: Props) {
           />
         )}
       </div>
-      <div className="container-page pb-10">
+      <div className="container-page pb-16">
         <FollowWhatsAppLink groupUrl={whatsappGroupUrlFrom(settings)} className="w-full sm:w-auto" />
       </div>
       <QuickCvCta />

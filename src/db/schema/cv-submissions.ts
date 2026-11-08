@@ -8,9 +8,9 @@
  * `ipHash` only (never the raw IP).
  */
 import { sql } from "drizzle-orm";
-import { boolean, check, index, pgTable, smallint, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgTable, smallint, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { countryCode, pk, timestamps, tstz } from "./_shared";
+import { countryCode, createdAtOnly, pk, timestamps, tstz } from "./_shared";
 import { cmsEntries } from "./content";
 import { files, users } from "./core";
 import { countries, jobCategories } from "./taxonomy";
@@ -92,5 +92,45 @@ export const cvSubmissions = pgTable(
     check("cv_submissions_name_chk", sql`btrim(${t.name}) <> ''`),
     check("cv_submissions_trade_chk", sql`btrim(${t.tradeLabel}) <> ''`),
     check("cv_submissions_experience_chk", sql`${t.experienceYears} is null or ${t.experienceYears} between 0 and 60`),
+  ],
+);
+
+/**
+ * Extra documents attached to a CV submission, one file per upload (certificates, licences, passport pages, photo).
+ * Uploaded by the candidate through a signed, short-lived link (uploadedByUserId null) or by staff on their behalf.
+ * Files use purpose `cv_submission_document` (private, sensitive, same staff read permissions as the CV).
+ */
+export const CV_SUBMISSION_DOCUMENT_KINDS = [
+  "certificate",
+  "licence",
+  "passport_cover",
+  "passport_first_page",
+  "passport_last_page",
+  "photo",
+  "other",
+] as const;
+export type CvSubmissionDocumentKind = (typeof CV_SUBMISSION_DOCUMENT_KINDS)[number];
+
+export const cvSubmissionDocuments = pgTable(
+  "cv_submission_documents",
+  {
+    id: pk(),
+    submissionId: uuid()
+      .notNull()
+      .references(() => cvSubmissions.id, { onDelete: "cascade" }),
+    kind: text({ enum: CV_SUBMISSION_DOCUMENT_KINDS }).notNull(),
+    fileId: uuid()
+      .notNull()
+      .references(() => files.id),
+    /** Order within the kind (certificates and licences keep the order staff set; CV pack follows it). */
+    sortOrder: integer().notNull().default(0),
+    /** null = the candidate, through the upload link. */
+    uploadedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    ...createdAtOnly,
+  },
+  (t) => [
+    index("cv_submission_documents_submission_idx").on(t.submissionId, t.kind, t.sortOrder),
+    index("cv_submission_documents_file_idx").on(t.fileId),
+    index("cv_submission_documents_uploaded_by_idx").on(t.uploadedByUserId),
   ],
 );

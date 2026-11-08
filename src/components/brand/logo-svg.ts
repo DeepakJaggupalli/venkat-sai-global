@@ -12,11 +12,11 @@ export type LogoSvgOptions = {
   layout?: "full" | "mark";
   /** Rendered height in px (width follows the aspect ratio). Default 48. */
   height?: number;
-  /** Font stack for the wordmark when the SVG is used outside the app (Manrope is not guaranteed there). */
+  /** Font stack for the wordmark when the SVG is used outside the app (Figtree is not guaranteed there). */
   fontFamily?: string;
 };
 
-const DEFAULT_FONT_STACK = "Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+const DEFAULT_FONT_STACK = "Figtree, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
 function markMarkup(variant: LogoVariant): string {
   const p = logoPalette(variant);

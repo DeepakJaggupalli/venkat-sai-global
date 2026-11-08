@@ -1,24 +1,25 @@
-import { ImageIcon, MapPin } from "lucide-react";
+import { ArrowRight, ImageIcon } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
 import { CmsImage } from "../cms-media";
+import { Flag } from "../flag";
 import type { PosterCard as PosterCardData } from "./data";
 
-/** One requirement poster in a grid: the poster (whole, never cropped), title, country and trades. */
+/** One requirement poster in a grid: the poster (whole, never cropped) on a grey mat, then country, title and trades. */
 export function PosterCard({ poster, headingLevel = "h3", priority = false }: { poster: PosterCardData; headingLevel?: "h2" | "h3"; priority?: boolean }) {
   const Heading = headingLevel;
   const trades = poster.trades.slice(0, 3);
   return (
-    <article className="group relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow duration-200 focus-within:ring-2 focus-within:ring-ring hover:shadow-md" data-testid="poster-card">
-      <div className="relative aspect-[4/5] overflow-hidden bg-surface-subtle">
+    <article className="card-surface lift group relative flex w-full min-w-0 flex-col overflow-hidden rounded-2xl focus-within:ring-2 focus-within:ring-ring" data-testid="poster-card">
+      <div className="relative aspect-[4/5] overflow-hidden border-b border-border bg-surface-subtle">
         {poster.poster ? (
           <CmsImage
             asset={{ ...poster.poster, alt: poster.alt }}
             size="md"
             priority={priority}
-            className="object-contain transition-transform duration-200 motion-safe:group-hover:scale-[1.02]"
+            className="absolute inset-0 object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.02]"
             sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 480px) 50vw, 100vw"
           />
         ) : (
@@ -27,14 +28,14 @@ export function PosterCard({ poster, headingLevel = "h3", priority = false }: { 
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-5">
         {poster.countryName ? (
-          <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-teal-strong">
-            <MapPin className="size-3.5" aria-hidden="true" />
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Flag code={poster.countryCode} />
             {poster.countryName}
           </p>
         ) : null}
-        <Heading className="font-heading text-base font-semibold leading-snug text-navy">
+        <Heading className="font-heading text-lg leading-snug font-bold tracking-tight text-foreground">
           <Link href={poster.href} className="after:absolute after:inset-0 focus-visible:outline-none">
             {poster.title}
           </Link>
@@ -44,12 +45,15 @@ export function PosterCard({ poster, headingLevel = "h3", priority = false }: { 
             {trades.map((t, i) => (
               <li key={`${t.trade}-${i}`} className="flex flex-wrap gap-x-2">
                 <span className="font-medium">{t.trade}</span>
-                {t.pay ? <span className="text-muted-foreground">{t.pay}</span> : null}
+                {t.pay ? <span className="text-muted-foreground tabular-nums">{t.pay}</span> : null}
               </li>
             ))}
             {poster.trades.length > trades.length ? <li className="text-muted-foreground">and {poster.trades.length - trades.length} more</li> : null}
           </ul>
         ) : null}
+        <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-3 text-sm font-semibold text-foreground">
+          View details <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+        </span>
       </div>
     </article>
   );
@@ -57,7 +61,7 @@ export function PosterCard({ poster, headingLevel = "h3", priority = false }: { 
 
 export function PosterGrid({ posters, label, className, headingLevel = "h3" }: { posters: PosterCardData[]; label: string; className?: string; headingLevel?: "h2" | "h3" }) {
   return (
-    <ul aria-label={label} className={cn("grid gap-5 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4", className)}>
+    <ul aria-label={label} className={cn("grid gap-6 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4", className)}>
       {posters.map((p, i) => (
         <li key={p.id} className="flex">
           <PosterCard poster={p} headingLevel={headingLevel} priority={i < 2} />

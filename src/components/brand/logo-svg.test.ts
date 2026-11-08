@@ -23,7 +23,8 @@ describe("getLogoSvg", () => {
   it("switches palette and tile for dark backgrounds", () => {
     const light = getLogoSvg({ variant: "onLight" });
     const dark = getLogoSvg({ variant: "onDark" });
-    expect(light).toContain('fill="#0B1F5C"');
+    expect(light).toContain('fill="#0A0A0B"');
+    expect(light).toContain('stroke="#0EA5E9"');
     expect(dark).toContain('fill-opacity="0.08"');
     expect(dark).toContain('fill="#FFFFFF" font-weight="800"');
   });

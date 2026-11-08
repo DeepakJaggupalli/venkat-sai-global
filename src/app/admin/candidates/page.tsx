@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterBar, FilterChips, FilterPendingRegion, FilterScope, FilterSelect, SearchInput } from "@/components/shared/filters";
@@ -82,6 +83,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
         title="Candidates"
         description="Search every candidate profile. Results are masked: contact details and documents need a permission and a recorded reason."
         breadcrumbs={[{ label: "Command Centre", href: "/admin" }, { label: "Candidates" }]}
+        actions={<DownloadExcelButton href="/admin/candidates/export" searchParams={params} keys={paramKeys} />}
       />
       <FilterScope>
         <FilterBar paramKeys={paramKeys} search={<SearchInput label="Search by role, skill, headline or city" />}>

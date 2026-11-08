@@ -1,14 +1,16 @@
+import { IMAGE_CREDITS } from "@/content/image-credits";
+
 import { CheckList } from "../blocks";
 import { CtaLink } from "../cta-link";
 import { Section, SectionHeading } from "../section";
-import { AudienceGlyph, BeadPattern, ReachMap } from "../visuals";
+import { StockImage } from "../stock-image";
 
 /**
  * "For employers / candidates / partners / institutions" homepage sections. The copy describes what the
  * platform does today (features, not results) — no figures, client names or promises.
  */
 
-type AudienceKey = "employers" | "candidates" | "partners" | "institutions";
+export type AudienceKey = "employers" | "candidates" | "partners" | "institutions";
 
 type AudienceCopy = {
   eyebrow: string;
@@ -71,63 +73,50 @@ export const AUDIENCE_COPY: Record<AudienceKey, AudienceCopy> = {
   },
 };
 
-export function AudienceSection({ audience, heading, intro, tone = "white", reverse = false }: { audience: AudienceKey; heading?: string | null; intro?: string | null; tone?: "white" | "subtle"; reverse?: boolean }) {
-  const copy = AUDIENCE_COPY[audience];
-  const id = `home-${audience}-title`;
-  return (
-    <Section tone={tone} labelledBy={id} data-testid={`home-${audience}`}>
-      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className={reverse ? "lg:order-2" : undefined}>
-          <SectionHeading id={id} eyebrow={copy.eyebrow} title={heading || copy.title} intro={intro || copy.intro} />
-          <CheckList items={copy.points} className="mt-8" />
-          <div className="mt-8 flex flex-wrap gap-3">
-            <CtaLink href={copy.primary.href} cta={copy.primary.cta} location={`home_${audience}`} variant="primary" arrow>
-              {copy.primary.label}
-            </CtaLink>
-            {copy.secondary ? (
-              <CtaLink href={copy.secondary.href} cta={copy.secondary.cta} location={`home_${audience}`} variant="outline">
-                {copy.secondary.label}
-              </CtaLink>
-            ) : null}
-          </div>
-        </div>
-        <div className={reverse ? "lg:order-1" : undefined}>
-          <AudiencePanel audience={audience} />
-        </div>
-      </div>
-    </Section>
-  );
-}
+const AUDIENCE_PHOTO: Record<AudienceKey, string> = {
+  employers: "/images/stock/crew-2.webp",
+  candidates: "/images/stock/welding-3.webp",
+  partners: "/images/stock/crew-3.webp",
+  institutions: "/images/stock/training-2.webp",
+};
 
-/** Designed panel next to each audience section (no photos of people until real, consented media exists). */
-function AudiencePanel({ audience }: { audience: AudienceKey }) {
-  const steps: Record<AudienceKey, string[]> = {
-    employers: ["Requirement received", "Sourcing and screening", "Trade test and interviews", "Offers and mobilisation"],
-    candidates: ["Create your profile", "Discover and apply", "Assessment and interview", "Offer and onboarding"],
-    partners: ["Apply and verify", "Agree terms", "Receive requirements", "Submit and track candidates"],
-    institutions: ["Register your institution", "Publish courses and drives", "Connect learners to employers"],
-  };
+/**
+ * The audience sections the CMS homepage switches on (partners, institutions), shown together as one calm row
+ * of photo cards instead of one big section each. Copy describes features, never results.
+ */
+export function AudienceCards({ audiences, heading, intro, tone = "white" }: { audiences: readonly AudienceKey[]; heading?: string | null; intro?: string | null; tone?: "white" | "subtle" }) {
+  if (!audiences.length) return null;
   return (
-    <div className="relative isolate overflow-hidden rounded-3xl bg-navy-deep p-8 text-white shadow-xl sm:p-10">
-      <BeadPattern />
-      {audience === "employers" ? <ReachMap points={[]} showLabels={false} className="absolute inset-x-0 bottom-0 -z-10 opacity-60" /> : null}
-      <div className="flex items-center gap-4">
-        <span className="flex size-14 items-center justify-center rounded-2xl bg-white">
-          <AudienceGlyph variant={audience} className="size-10" />
-        </span>
-        <p className="font-heading text-lg font-semibold">{AUDIENCE_COPY[audience].eyebrow}</p>
-      </div>
-      <ol className="relative mt-8 space-y-5 border-l border-white/15 pl-6">
-        {steps[audience].map((step, i) => (
-          <li key={step} className="relative">
-            <span aria-hidden="true" className="absolute top-1 -left-[1.92rem] flex size-4 items-center justify-center rounded-full border-2 border-teal bg-navy-deep">
-              {i === steps[audience].length - 1 ? <span className="size-1.5 rounded-full bg-gold" /> : null}
-            </span>
-            <p className="text-sm text-white/60">Step {i + 1}</p>
-            <p className="font-medium">{step}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <Section tone={tone} labelledBy="home-audiences-title" data-testid="home-audiences">
+      <SectionHeading id="home-audiences-title" eyebrow="Work with us" title={heading || "Partners and institutions"} intro={intro || "Recruitment agencies, colleges and training institutes work with Venkat Sai through their own portals."} />
+      <ul className={audiences.length > 1 ? "mt-12 grid gap-6 md:grid-cols-2" : "mt-12 grid max-w-2xl gap-6"}>
+        {audiences.map((audience) => {
+          const copy = AUDIENCE_COPY[audience];
+          const photo = IMAGE_CREDITS.find((c) => c.src === AUDIENCE_PHOTO[audience]);
+          return (
+            <li key={audience} data-testid={`home-${audience}`}>
+              <article className="card-surface flex h-full flex-col overflow-hidden rounded-3xl">
+                {photo ? (
+                  <div className="relative aspect-[16/9] bg-surface-subtle">
+                    <StockImage photo={photo} decorative sizes="(min-width: 768px) 50vw, 100vw" />
+                  </div>
+                ) : null}
+                <div className="flex flex-1 flex-col p-6 sm:p-8">
+                  <p className="label-dot">{copy.eyebrow}</p>
+                  <h3 className="mt-3 font-display text-2xl text-foreground sm:text-[1.75rem]">{copy.title}</h3>
+                  <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{copy.intro}</p>
+                  <CheckList items={copy.points.slice(0, 3)} className="mt-6 text-[15px]" />
+                  <div className="mt-auto pt-8">
+                    <CtaLink href={copy.primary.href} cta={copy.primary.cta} location={`home_${audience}`} variant="outline" arrow>
+                      {copy.primary.label}
+                    </CtaLink>
+                  </div>
+                </div>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }

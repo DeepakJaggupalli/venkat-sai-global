@@ -130,7 +130,7 @@ export default async function IndustryPage({ params, searchParams }: Props) {
       <Section labelledBy="industry-jobs-title">
         <SectionHeading
           id="industry-jobs-title"
-          eyebrow="Opportunities"
+          eyebrow="Open jobs"
           title={`Open jobs in ${entry.title}`}
           action={
             <CtaLink href={jobsHref} cta="industry_all_jobs" location="industry_jobs" variant="link">

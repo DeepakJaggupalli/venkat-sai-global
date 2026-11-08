@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ActionForm } from "@/components/admin/action-form";
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterBar, FilterChips, FilterPendingRegion, FilterScope, FilterSelect, SearchInput } from "@/components/shared/filters";
@@ -54,6 +55,7 @@ export default async function CvSubmissionsPage({ searchParams }: { searchParams
       <PageHeader
         title="CV submissions"
         description="CVs sent through the website's Send your CV form. Call or WhatsApp the candidate, then update the status."
+        actions={<DownloadExcelButton href="/admin/cv-submissions/export" searchParams={sp} keys={["q", "status", "trade", "country"]} />}
       />
       {!canContact ? <p className="text-sm text-muted-foreground">Phone numbers are hidden: they need the permission to view candidate contact details.</p> : null}
 

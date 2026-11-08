@@ -93,7 +93,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       ],
     },
     {
-      title: "Opportunities",
+      title: "Jobs",
       items: [
         { title: "Find jobs", href: "/talent/jobs", icon: Search, i18nKey: "nav.jobs" },
         { title: "Saved jobs", href: "/talent/saved", icon: Bookmark, i18nKey: "nav.saved" },
@@ -220,6 +220,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Requirements", href: "/admin/requirements", icon: HardHat, permission: "requirements.view" },
         { title: "CV submissions", href: "/admin/cv-submissions", icon: FileUser, permission: "candidates.view" },
+        { title: "Resume requests", href: "/admin/resume-requests", icon: FileText, permission: "candidates.manage" },
         { title: "Jobs", href: "/admin/jobs", icon: Briefcase, permission: "jobs.view" },
         { title: "Candidates", href: "/admin/candidates", icon: Users, permission: "candidates.view" },
         { title: "Pipeline", href: "/admin/pipeline", icon: KanbanSquare, permission: "recruitment.view" },

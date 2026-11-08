@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ExternalLink, X } from "lucide-react";
+import { ArrowRight, ChevronDown, ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
@@ -18,7 +18,10 @@ import { isCurrentPage, isSectionActive } from "./public-nav";
 import type { HeaderAccount, PublicNavItem, PublicNavLink } from "./types";
 
 const ROW =
-  "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-[15px] font-medium text-navy transition-colors hover:bg-surface-subtle focus-visible:-outline-offset-2";
+  "flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-base font-medium text-foreground transition-colors hover:bg-surface-subtle focus-visible:-outline-offset-2";
+
+const PILL =
+  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-4 text-[15px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
 
 function MobileLink({
   link,
@@ -39,7 +42,7 @@ function MobileLink({
       onNavigate={onNavigate}
       aria-current={current ? "page" : undefined}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className={cn(ROW, current && "bg-teal-soft shadow-[inset_3px_0_0_var(--brand-red)]", className)}
+      className={cn(ROW, current && "bg-surface-subtle shadow-[inset_3px_0_0_var(--accent-fill)]", className)}
     >
       <span className="min-w-0 flex-1">{link.title}</span>
       {external && (
@@ -124,39 +127,44 @@ export function PublicMobileNav({
         </ul>
       </nav>
 
-      <div className="shrink-0 space-y-2 border-t border-border bg-surface-subtle p-4">
+      <div className="shrink-0 space-y-2 border-t border-border p-4">
         {account ? (
-          <Button asChild size="lg" className="h-11 w-full text-[15px]">
-            <Link href={account.href} onNavigate={close}>
-              Go to {account.portalLabel}
-            </Link>
-          </Button>
+          <Link href={account.href} onNavigate={close} className={cn(PILL, "bg-foreground text-white hover:bg-[#26262b]")}>
+            Go to {account.portalLabel}
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
         ) : (
-          <Button asChild size="lg" className="h-11 w-full bg-yellow text-[15px] font-semibold text-navy hover:bg-yellow/90">
-            <Link href={PUBLIC_CTA.join} onNavigate={close}>
-              Sign up
-            </Link>
-          </Button>
+          <Link href="/send-cv" onNavigate={close} className={cn(PILL, "bg-foreground text-white hover:bg-[#26262b]")}>
+            Send your CV
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
         )}
-        <Button asChild size="lg" className="h-11 w-full bg-green-strong text-[15px] text-white hover:bg-green-strong/90">
-          <a href={whatsappHref("Hello Venkat Sai, I would like to know about current job requirements.")} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon className="size-5" />
-            WhatsApp us
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={whatsappHref("Hello Venkat Sai, I would like to know about current job requirements.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(PILL, "border border-border bg-white text-foreground hover:bg-surface-subtle")}
+          >
+            <WhatsAppIcon className="size-5 text-green-strong" />
+            WhatsApp
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
-        </Button>
-        <Button asChild size="lg" variant="outline" className="h-11 w-full bg-white text-[15px]">
-          <Link href={PUBLIC_CTA.postRequirement} onNavigate={close}>
-            Request workers
-          </Link>
-        </Button>
-        {!account && (
-          <Button asChild size="lg" variant="ghost" className="h-11 w-full text-[15px]">
-            <Link href={PUBLIC_CTA.signIn} onNavigate={close}>
+          {account ? (
+            <Link href={PUBLIC_CTA.postRequirement} onNavigate={close} className={cn(PILL, "border border-border bg-white text-foreground hover:bg-surface-subtle")}>
+              Request workers
+            </Link>
+          ) : (
+            <Link href={PUBLIC_CTA.signIn} onNavigate={close} className={cn(PILL, "border border-border bg-white text-foreground hover:bg-surface-subtle")}>
               Sign in
             </Link>
-          </Button>
-        )}
+          )}
+        </div>
+        {!account ? (
+          <Link href={PUBLIC_CTA.postRequirement} onNavigate={close} className="flex min-h-11 items-center justify-center rounded-full text-sm font-semibold text-teal-strong underline-offset-4 hover:underline">
+            Employer? Request workers
+          </Link>
+        ) : null}
       </div>
     </SheetContent>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { listStaffOptions } from "@/components/admin/queries";
 import { Callout } from "@/components/shared/callout";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -113,7 +114,10 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
         title="Pipeline"
         description="Every application across jobs and requirements. Filter, then move stages in bulk or share Venkat Sai-managed applications with the employer."
         breadcrumbs={[{ label: "Command Centre", href: "/admin" }, { label: "Pipeline" }]}
-        actions={canManage ? [{ label: "Assign a candidate", href: "/admin/candidates", variant: "outline" }] : undefined}
+        actions={[
+          <DownloadExcelButton key="excel" href="/admin/pipeline/export" searchParams={params} keys={["requirement", "job", "partner", "owner", "stage", "status", "source", "shared", "q"]} />,
+          ...(canManage ? [{ label: "Assign a candidate", href: "/admin/candidates", variant: "outline" as const }] : []),
+        ]}
       />
       <LinkTabs
         label="View"

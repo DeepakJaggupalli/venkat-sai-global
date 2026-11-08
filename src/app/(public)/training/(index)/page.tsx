@@ -33,23 +33,23 @@ export default async function PublicTrainingPage({ searchParams }: PageProps) {
 
   return (
     <TrainingI18n className="bg-surface-subtle">
-      <section className="border-b bg-navy text-white">
-        <div className="container-page py-8 sm:py-10">
-          <p className="text-sm font-medium text-white/80">{t("public.eyebrow")}</p>
-          <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">{t("public.title")}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">{t("public.description")}</p>
-          <p className="mt-4 inline-flex max-w-2xl items-start gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm text-white">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      <section className="border-b border-border bg-white">
+        <div className="container-page pt-10 pb-10 sm:pt-14 sm:pb-12">
+          <p className="label-dot">{t("public.eyebrow")}</p>
+          <h1 className="mt-4 font-display text-[2.5rem] text-foreground sm:text-5xl lg:text-6xl">{t("public.title")}</h1>
+          <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">{t("public.description")}</p>
+          <p className="mt-6 inline-flex max-w-2xl items-start gap-2 rounded-2xl border border-border bg-surface-subtle px-4 py-3 text-sm text-foreground">
+            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-teal-strong" />
             <span>
               {t("public.honesty")}{" "}
-              <Link href="/verify-certificate" className="font-medium underline underline-offset-2">
+              <Link href="/verify-certificate" className="font-semibold text-teal-strong underline underline-offset-2">
                 {t("public.verifyLink")}
               </Link>
             </span>
           </p>
         </div>
       </section>
-      <div className="container-page py-6 sm:py-8">
+      <div className="container-page py-8 sm:py-10">
         <CourseCatalogue
           result={result}
           options={options}

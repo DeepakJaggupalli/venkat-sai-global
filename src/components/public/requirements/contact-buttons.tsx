@@ -1,28 +1,32 @@
-import { Mail, MessageCircle, Phone, Users } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 
 import { CONTACT, mailtoHref, telHref, whatsappHref } from "@/config/contact";
 import { cn } from "@/lib/utils";
 
+import { WhatsAppIcon } from "../contact-links";
+
 /**
  * WhatsApp / call / email buttons with the business contact details (src/config/contact.ts). Plain links (no
  * client JavaScript), so they work in server components, in client success screens and without JavaScript.
- * Colours: navy-deep text on WhatsApp green (≈ 9:1) and white on navy, both AA.
+ * Pills: WhatsApp is a white pill with the green WhatsApp glyph, call a black pill, email an outline pill.
  */
 
 const BASE =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 text-base font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:size-5 [&_svg]:shrink-0";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:size-5 [&_svg]:shrink-0";
+
+const OUTLINE = `${BASE} border border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle`;
 
 export const CONTACT_BUTTON_STYLES = {
-  whatsapp: `${BASE} bg-[#25D366] text-navy-deep hover:bg-[#1fbd5a]`,
-  call: `${BASE} bg-navy text-white hover:bg-navy-deep`,
-  email: `${BASE} border border-navy/20 bg-white text-navy hover:border-navy/40 hover:bg-surface-subtle`,
-  outline: `${BASE} border border-navy/20 bg-white text-navy hover:border-navy/40 hover:bg-surface-subtle`,
+  whatsapp: OUTLINE,
+  call: `${BASE} bg-foreground text-white hover:bg-[#26262b]`,
+  email: OUTLINE,
+  outline: OUTLINE,
 } as const;
 
 export function WhatsAppButton({ message, label = "Chat on WhatsApp", className }: { message?: string; label?: string; className?: string }) {
   return (
     <a href={whatsappHref(message)} target="_blank" rel="noopener noreferrer" className={cn(CONTACT_BUTTON_STYLES.whatsapp, className)} data-testid="whatsapp-button">
-      <MessageCircle aria-hidden="true" />
+      <WhatsAppIcon className="text-green-strong" />
       <span>{label}</span>
       <span className="sr-only"> (opens WhatsApp)</span>
     </a>
@@ -56,7 +60,7 @@ export function FollowWhatsAppLink({ groupUrl, className }: { groupUrl?: string 
   const label = groupUrl ? "Join our WhatsApp group for latest requirements" : "Follow our WhatsApp channel for latest requirements";
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={cn(CONTACT_BUTTON_STYLES.outline, className)} data-testid="whatsapp-follow">
-      <Users aria-hidden="true" />
+      <WhatsAppIcon className="text-green-strong" />
       <span>{label}</span>
       <span className="sr-only"> (opens WhatsApp)</span>
     </a>

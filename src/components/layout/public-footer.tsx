@@ -1,10 +1,10 @@
-import { ArrowRight, BellRing } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/brand/logo";
-import { ContactIcons, ContactList, DEFAULT_WHATSAPP_MESSAGE, MapEmbed, resolveContact, WhatsAppIcon, type ResolvedContact } from "@/components/public/contact-links";
-import { CONTACT, whatsappHref } from "@/config/contact";
+import { ContactIcons, ContactList, MapEmbed, resolveContact, WhatsAppIcon, type ResolvedContact } from "@/components/public/contact-links";
+import { CONTACT } from "@/config/contact";
 import { BRAND } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -60,13 +60,16 @@ function FooterAnchor({ link, className, children }: { link: FooterLink; classNa
   );
 }
 
-const LINK_CLASS = "inline-flex items-center gap-1.5 rounded-sm text-sm text-white/75 transition-colors hover:text-yellow";
-const HEADING_CLASS = "font-display text-lg uppercase tracking-wide text-white";
+const LINK_CLASS = "inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground";
+const HEADING_CLASS = "text-sm font-semibold text-foreground";
+
+/** Always offered next to the legal links: CC BY photographs must be credited. */
+const IMAGE_CREDITS_LINK: FooterLink = { title: "Image credits", href: "/legal/image-credits" };
 
 /**
- * Public website footer: a yellow "send your CV" strip, then the navy footer with the brand, quick contact
- * buttons, link columns, every phone number and email, the Google Map, the WhatsApp group (when configured),
- * legal links and copyright. Nothing is invented: contact details come from the business config / CMS.
+ * Public website footer: calm light-grey band with the brand, quick contact buttons, the WhatsApp channel (or
+ * the CMS group link), link columns, every phone number and email, the Google Map, legal links (always with
+ * "Image credits") and copyright. Nothing is invented: contact details come from the business config / CMS.
  */
 export function PublicFooter({
   columns = DEFAULT_FOOTER_COLUMNS,
@@ -82,59 +85,36 @@ export function PublicFooter({
     .map((link) => ({ ...link, href: sanitizeHref(link.href) }))
     .filter((link): link is SocialLink => !!link.href && isExternalHref(link.href));
   const safeLegal = sanitizeFooterLinks(legalLinks);
+  const legal = safeLegal.some((l) => l.href === IMAGE_CREDITS_LINK.href) ? safeLegal : [...safeLegal, IMAGE_CREDITS_LINK];
+  const channelUrl = contact.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl;
 
   return (
-    <footer className="band-dark relative overflow-hidden bg-navy-deep text-white" aria-labelledby="site-footer-title">
+    <footer className="border-t border-border bg-surface-subtle" aria-labelledby="site-footer-title">
       <h2 id="site-footer-title" className="sr-only">
         {BRAND.name} — site information
       </h2>
 
-      <div className="bg-yellow text-navy">
-        <div className="mx-auto flex max-w-[96rem] flex-col gap-4 px-4 py-6 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p className="font-display text-2xl uppercase sm:text-3xl">Looking for work abroad? Send your CV today.</p>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/send-cv"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-navy px-5 text-sm font-semibold text-white transition-colors hover:bg-navy-deep focus-visible:outline-navy"
-            >
-              Send your CV
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-            <a
-              href={whatsappHref(DEFAULT_WHATSAPP_MESSAGE, contact.whatsapp.e164)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border-2 border-navy px-5 text-sm font-semibold text-navy transition-colors hover:bg-navy hover:text-white focus-visible:outline-navy"
-            >
-              <WhatsAppIcon className="size-5" />
-              WhatsApp {contact.whatsapp.display}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </div>
-        </div>
-      </div>
-      <div aria-hidden="true" className="stripe-hazard h-1.5" />
-
-      <div className="relative mx-auto grid max-w-[96rem] gap-12 px-4 pt-14 pb-12 sm:px-6 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pt-16">
-        <div className="lg:col-span-4">
+      <div className="container-page grid gap-12 pt-16 pb-12 lg:grid-cols-12 lg:gap-10 lg:pt-20">
+        <div className="lg:col-span-3">
           <Link href="/" className="inline-flex rounded-md">
             <span className="sr-only">{`${BRAND.name} home`}</span>
-            <Logo variant="onDark" decorative className="h-10 w-auto" />
+            <Logo decorative className="h-9 w-auto" />
           </Link>
-          <p className="mt-6 max-w-sm text-[15px] leading-7 text-white/75">
+          <p className="mt-5 max-w-sm text-[15px] leading-7 text-muted-foreground">
             {contact.businessName}, Autonagar, Visakhapatnam. Training, trade testing and overseas placement for skilled tradespeople.
           </p>
-          <ContactIcons contact={contact} variant="dark" className="mt-6" />
-          {contact.whatsappGroupUrl || CONTACT.whatsappChannelUrl ? (
+          <ContactIcons contact={contact} className="mt-6" />
+          {channelUrl ? (
             <a
-              href={contact.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl}
+              href={channelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-green-strong px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-strong/90"
+              className="group mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5]"
               data-testid="footer-whatsapp-group"
             >
-              <BellRing aria-hidden="true" className="size-4 shrink-0" />
-              {contact.whatsappGroupUrl ? "Join our WhatsApp group for the latest requirements" : "Follow our WhatsApp channel for the latest requirements"}
+              <WhatsAppIcon className="size-5 shrink-0 text-green-strong" />
+              {contact.whatsappGroupUrl ? "Join our WhatsApp group" : "Follow our WhatsApp channel"}
+              <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
@@ -146,7 +126,7 @@ export function PublicFooter({
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center rounded-full border border-white/15 px-3.5 text-xs font-medium text-white/80 transition-colors hover:border-yellow hover:text-white"
+                    className="inline-flex h-9 items-center rounded-full border border-border bg-white px-3.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.label?.trim() || SOCIAL_LABEL[link.platform]}
                     <span className="sr-only"> (opens in a new tab)</span>
@@ -158,8 +138,8 @@ export function PublicFooter({
         </div>
 
         {safeColumns.length > 0 && (
-          <nav aria-label="Footer" className="lg:col-span-4">
-            <div className={cn("grid grid-cols-2 gap-x-6 gap-y-10", safeColumns.length >= 3 && "sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3")}>
+          <nav aria-label="Footer" className="lg:col-span-5">
+            <div className={cn("grid grid-cols-2 gap-x-6 gap-y-10", safeColumns.length >= 3 && "sm:grid-cols-3")}>
               {safeColumns.map((column) => (
                 <div key={column.title} className="min-w-0">
                   <h3 className={HEADING_CLASS}>{column.title}</h3>
@@ -178,26 +158,26 @@ export function PublicFooter({
 
         <div className="min-w-0 lg:col-span-4">
           <h3 className={HEADING_CLASS}>Contact</h3>
-          <ContactList contact={contact} variant="dark" className="mt-4" />
-          <MapEmbed contact={contact} variant="dark" className="mt-6" frameClassName="aspect-[16/9] sm:aspect-[16/9]" />
+          <ContactList contact={contact} className="mt-4" />
+          <MapEmbed contact={contact} className="mt-6 bg-white" frameClassName="aspect-[16/9] sm:aspect-[16/9]" />
         </div>
       </div>
 
-      <div className="relative border-t border-white/10">
+      <div className="border-t border-border">
         {/* Extra bottom padding on phones keeps the legal links clear of the floating WhatsApp button. */}
-        <div className="mx-auto flex max-w-[96rem] flex-col gap-5 px-4 pt-6 pb-24 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:pb-6">
-          <div className="space-y-1 text-xs leading-5 text-white/65">
+        <div className="container-page flex flex-col gap-5 pt-6 pb-24 lg:flex-row lg:items-center lg:justify-between lg:pb-8">
+          <div className="space-y-1 text-xs leading-5 text-muted-foreground">
             <p>
               © {currentYear()} {legalEntity}. All rights reserved.
             </p>
-            <p>Candidates never pay to apply for a job through Venkat Sai.</p>
+            <p>Candidates never pay to apply or to be placed through Venkat Sai.</p>
           </div>
-          {safeLegal.length > 0 && (
-            <nav aria-label="Legal" className="lg:pr-48">
+          {legal.length > 0 && (
+            <nav aria-label="Legal" className="lg:pr-20">
               <ul role="list" className="flex flex-wrap gap-x-5 gap-y-2">
-                {safeLegal.map((link) => (
+                {legal.map((link) => (
                   <li key={link.href}>
-                    <FooterAnchor link={link} className="rounded-sm text-xs text-white/70 transition-colors hover:text-yellow" />
+                    <FooterAnchor link={link} className="rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground" />
                   </li>
                 ))}
               </ul>

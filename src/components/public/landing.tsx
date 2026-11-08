@@ -1,14 +1,13 @@
-import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { SafeHtml } from "@/components/shared/safe-html";
 
-import { CheckList, CtaBand, FeatureGrid, StepList, type TitledItem } from "./blocks";
+import { CheckList, CtaBand, FaqSummary, FeatureGrid, StepList, type TitledItem } from "./blocks";
 import { CtaLink } from "./cta-link";
 import { PageHero, type Crumb } from "./page-hero";
 import { Section, SectionHeading } from "./section";
 import { settle } from "./server";
-import { AudienceGlyph } from "./visuals";
+import { IMAGE_CREDITS } from "@/content/image-credits";
 import { getPublishedEntries } from "@/modules/content/queries";
 
 /**
@@ -18,6 +17,14 @@ import { getPublishedEntries } from "@/modules/content/queries";
  */
 
 export type LandingCta = { label: string; href: string; id: string };
+
+/** Stock photograph per audience (CMS media is not used on these pages). */
+const AUDIENCE_PHOTO: Record<LandingCopy["audience"], string> = {
+  employers: "/images/stock/crew-2.webp",
+  candidates: "/images/stock/welding-3.webp",
+  partners: "/images/stock/crew-3.webp",
+  institutions: "/images/stock/training-2.webp",
+};
 
 export type LandingCopy = {
   audience: "employers" | "candidates" | "partners" | "institutions";
@@ -42,14 +49,11 @@ async function AudienceFaqs({ audience }: { audience: LandingCopy["faqAudience"]
     <Section tone="white" labelledBy="landing-faq-title">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
         <SectionHeading id="landing-faq-title" eyebrow="Questions" title="Frequently asked questions" />
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-white" data-testid="landing-faqs">
+        <div className="divide-y divide-border self-start border-y border-border" data-testid="landing-faqs">
           {faqs.map((f) => (
             <details key={f.id} className="group">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-heading text-base font-semibold text-navy focus-visible:outline-2 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden">
-                <span>{f.title}</span>
-                <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
-              </summary>
-              <SafeHtml html={f.data.answer} className="px-5 pb-5 text-sm" />
+              <FaqSummary>{f.title}</FaqSummary>
+              <SafeHtml html={f.data.answer} className="max-w-2xl pb-6 text-[15px]" />
             </details>
           ))}
         </div>
@@ -67,15 +71,7 @@ export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy;
         eyebrow={copy.eyebrow}
         title={copy.title}
         intro={copy.intro}
-        visual={
-          <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center">
-            <div aria-hidden="true" className="absolute inset-6 rounded-full border border-white/10" />
-            <div aria-hidden="true" className="absolute inset-16 rounded-full border border-dashed border-teal/40" />
-            <span className="flex size-40 items-center justify-center rounded-[2.5rem] bg-white shadow-2xl shadow-black/30">
-              <AudienceGlyph variant={copy.audience} className="size-28" />
-            </span>
-          </div>
-        }
+        photo={IMAGE_CREDITS.find((c) => c.src === AUDIENCE_PHOTO[copy.audience]) ?? null}
         actions={
           <>
             <CtaLink href={copy.primary.href} cta={copy.primary.id} location={`${location}_hero`} variant="accent" arrow data-testid="landing-primary-cta">
@@ -104,9 +100,9 @@ export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy;
         </Section>
       ) : null}
 
-      <Section tone="navy" labelledBy="landing-steps-title">
-        <SectionHeading id="landing-steps-title" onDark eyebrow="How it works" title={copy.steps.title} intro={copy.steps.intro} />
-        <StepList steps={copy.steps.items} onDark className="mt-12" />
+      <Section tone={copy.eligible ? "subtle" : "white"} labelledBy="landing-steps-title">
+        <SectionHeading id="landing-steps-title" eyebrow="How it works" title={copy.steps.title} intro={copy.steps.intro} />
+        <StepList steps={copy.steps.items} className="mt-14" />
         {afterSteps}
       </Section>
 
@@ -114,7 +110,7 @@ export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy;
 
       <AudienceFaqs audience={copy.faqAudience} />
 
-      <CtaBand location={`${location}_cta_band`} heading={copy.cta.heading} body={copy.cta.body} primary={copy.cta.primary} secondary={copy.cta.secondary} />
+      <CtaBand tone="subtle" location={`${location}_cta_band`} heading={copy.cta.heading} body={copy.cta.body} primary={copy.cta.primary} secondary={copy.cta.secondary} />
     </>
   );
 }

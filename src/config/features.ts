@@ -22,6 +22,8 @@ export const FEATURES = {
   "talent.training": { default: true, name: "Training discovery and enrolment", category: "People Portal" },
   "talent.career_services": { default: true, name: "Career services (resume, counselling, interview prep)", category: "People Portal" },
   "talent.overseas": { default: true, name: "Overseas opportunities", category: "People Portal" },
+  "services.resume_writing": { default: true, name: "Paid “Prepare my resume” service (/resume-service)", category: "People Portal" },
+  "services.resume_online_payments": { default: false, name: "Online payment for the resume service (also needs Razorpay keys and online payments on)", category: "Commercial" },
 
   // Employer services
   "employer.self_serve_jobs": { default: true, name: "Employers can post jobs themselves", category: "Employer Portal" },

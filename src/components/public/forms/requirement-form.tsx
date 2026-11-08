@@ -142,7 +142,7 @@ export function RequirementForm({ options, utm, sourcePage = "/employers/request
           <li>Once agreed, we start sourcing, screening and, where needed, trade testing candidates.</li>
         </ol>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/sign-up?intent=employer" className="inline-flex min-h-11 items-center rounded-lg bg-navy px-5 text-sm font-semibold text-white hover:bg-navy-deep">
+          <Link href="/sign-up?intent=employer" className="inline-flex min-h-11 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b]">
             Create an employer account to track it
           </Link>
           <Link href="/services" className="inline-flex min-h-11 items-center rounded-lg border border-navy/20 bg-white px-5 text-sm font-semibold text-navy hover:bg-surface-subtle">

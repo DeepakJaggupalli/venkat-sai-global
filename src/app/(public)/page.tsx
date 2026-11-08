@@ -1,12 +1,14 @@
 import { Megaphone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { CtaBand } from "@/components/public/blocks";
 import { resolveContact } from "@/components/public/contact-links";
-import { AudienceSection } from "@/components/public/home/audiences";
-import { ContactBand, WhatsAppGroupBand } from "@/components/public/home/bands";
-import { AboutTeaser, GlobalReachSection, IndustriesSection, NewsSection, SuccessStoriesSection } from "@/components/public/home/content-sections";
+import { AudienceCards, type AudienceKey } from "@/components/public/home/audiences";
+import { ContactBand } from "@/components/public/home/bands";
+import { AboutTeaser, IndustriesSection, NewsSection, SuccessStoriesSection } from "@/components/public/home/content-sections";
+import { HomeFaqSection } from "@/components/public/home/faq";
 import { FeaturedServicesSection } from "@/components/public/home/featured-services";
 import { HomeHero, usableHeroCta } from "@/components/public/home/hero";
 import { EmployerBand, HowItWorksSection, TrainingTeaser } from "@/components/public/home/journey";
@@ -16,9 +18,10 @@ import { OpportunitiesSection } from "@/components/public/home/opportunities";
 import { resolveHomepageSections, type ResolvedSection } from "@/components/public/home/sections";
 import { JsonLd } from "@/components/public/json-ld";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
+import { loadPosterPage } from "@/components/public/requirements/data";
 import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
-import { QuickCvCta } from "@/components/public/requirements/quick-cv-cta";
 import { RevealScope } from "@/components/public/reveal";
+import type { SectionTone } from "@/components/public/section";
 import { buildPageMetadata, previewTokenFrom, settle } from "@/components/public/server";
 import { getHomepageBanners, getSiteSettings } from "@/components/public/site-data";
 import { sanitizeHref } from "@/components/layout/public-nav";
@@ -73,7 +76,7 @@ export default async function HomePage({ searchParams }: Props) {
   const featuredIndustries = referenced(detail?.references, home?.featuredIndustryIds, "industries");
   const featuredStories = referenced(detail?.references, home?.featuredCaseStudyIds, "case_studies");
 
-  const [banners, settings, metrics, about, services, industries, destinations, stories, news, homepageJobs, latestJobs, internships, courses, countries] = await Promise.all([
+  const [banners, settings, metrics, about, services, industries, destinations, stories, news, homepageJobs, latestJobs, internships, courses, countries, faqs, posters] = await Promise.all([
     getHomepageBanners(),
     getSiteSettings(),
     has("metrics") ? settle("metrics", () => getPublicMetrics(), []) : Promise.resolve([]),
@@ -88,6 +91,8 @@ export default async function HomePage({ searchParams }: Props) {
     has("opportunities") ? settle("jobs.internships", () => searchJobs(parseJobSearchParams({ type: "internship", sort: "newest", pageSize: "3" }), { kind: "public" }), null) : Promise.resolve(null),
     has("opportunities") ? settle("courses", () => listPublicCourses({}, { page: 1, pageSize: 3, offset: 0 }), null) : Promise.resolve(null),
     settle("countries", () => listCountries(), []),
+    settle("faqs.home", () => getPublishedEntries("faqs", { limit: 6 }), EMPTY_PAGE),
+    loadPosterPage({ pageSize: 1 }),
   ]);
 
   const assets: AssetMap = { ...(detail?.assets ?? {}), ...services.assets, ...stories.assets, ...news.assets };
@@ -101,14 +106,20 @@ export default async function HomePage({ searchParams }: Props) {
   const heroMedia = home?.hero?.mediaAssetId ? (assets[home.hero.mediaAssetId] ?? null) : null;
   const ctaBand = home?.ctaBand;
   const contactDetails = resolveContact(settings?.contact);
-  const marqueeCountries = destinations.items.map((d) => ({ code: d.data.countryCode, name: countryNames[d.data.countryCode] ?? d.title }));
+  const marqueeCountries = destinations.items.map((d) => ({
+    code: d.data.countryCode,
+    name: countryNames[d.data.countryCode] ?? d.title,
+    href: d.path ?? `/global-reach/${d.slug}`,
+  }));
+  const latestPoster = posters.items.find((p) => p.poster) ?? posters.items[0] ?? null;
   const section = (key: ResolvedSection["key"]) => sections.find((s) => s.key === key) ?? null;
   // The designed core of the page renders in a fixed order (visibility and headings still come from the CMS);
-  // the remaining content sections follow in the CMS order.
-  const CORE = new Set<ResolvedSection["key"]>(["metrics", "services", "opportunities", "employers", "candidates", "cta_band"]);
+  // the remaining content sections follow in the CMS order. Bands alternate white / light grey.
+  const CORE = new Set<ResolvedSection["key"]>(["metrics", "services", "opportunities", "employers", "candidates", "cta_band", "global_reach", "partners", "institutions"]);
   const tail = sections.filter((s) => !CORE.has(s.key));
   // The specification seed's closing band is treated as "not customised" so the new defaults show.
-  const ctaCustomised = Boolean(ctaBand?.heading?.trim() && ctaBand.heading.trim() !== BRAND.tagline);
+  const LEGACY_CTA_HEADINGS = new Set([BRAND.tagline, "Your next job could be abroad"]);
+  const ctaCustomised = Boolean(ctaBand?.heading?.trim() && !LEGACY_CTA_HEADINGS.has(ctaBand.heading.trim()));
   const ctaPrimary = usableHeroCta(ctaCustomised ? ctaBand?.primaryCta : null, { label: "Send your CV", href: "/send-cv" });
   const ctaSecondary = usableHeroCta(ctaCustomised ? ctaBand?.secondaryCta : null, { label: "Explore jobs", href: "/jobs" });
   const servicesSection = section("services");
@@ -117,29 +128,50 @@ export default async function HomePage({ searchParams }: Props) {
   const opportunitiesSection = section("opportunities");
   const employersSection = section("employers");
   const ctaSection = section("cta_band");
+  const reachSection = section("global_reach");
+  const audiences = (["partners", "institutions"] as const).filter((k): k is AudienceKey & ("partners" | "institutions") => has(k));
+  const hasOpportunities = jobs.length > 0 || (internships?.items.length ?? 0) > 0 || (courses?.items.length ?? 0) > 0;
 
-  const renderTail = (item: ResolvedSection, index: number) => {
+  type Block = { key: string; render: (tone: SectionTone) => ReactNode };
+  const blocks: Block[] = [];
+  if (servicesSection) blocks.push({ key: "services", render: (tone) => <FeaturedServicesSection key="services" tone={tone} services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} /> });
+  blocks.push({ key: "requirements", render: (tone) => <LatestRequirements key="requirements" limit={6} tone={tone === "subtle" ? "subtle" : "white"} /> });
+  if (candidatesSection) blocks.push({ key: "candidates", render: (tone) => <HowItWorksSection key="candidates" tone={tone} heading={candidatesSection.heading} intro={candidatesSection.intro} /> });
+  blocks.push({ key: "training", render: (tone) => <TrainingTeaser key="training" tone={tone} /> });
+  if (metricsSection && metrics.length) blocks.push({ key: "metrics", render: (tone) => <MetricsSection key="metrics" tone={tone} metrics={metrics} heading={metricsSection.heading} intro={metricsSection.intro} /> });
+  if (opportunitiesSection && hasOpportunities)
+    blocks.push({
+      key: "opportunities",
+      render: (tone) => (
+        <OpportunitiesSection key="opportunities" tone={tone} jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} intro={opportunitiesSection.intro} />
+      ),
+    });
+  if (employersSection) blocks.push({ key: "employers", render: (tone) => <EmployerBand key="employers" tone={tone} heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} /> });
+  for (const item of tail) {
     const text = { heading: item.heading, intro: item.intro };
-    const tone = index % 2 ? "subtle" : "white";
     switch (item.key) {
       case "about":
-        return <AboutTeaser key={item.key} about={about} {...text} />;
+        blocks.push({ key: item.key, render: (tone) => <AboutTeaser key={item.key} tone={tone} about={about} {...text} /> });
+        break;
       case "industries":
-        return <IndustriesSection key={item.key} industries={industryList} {...text} />;
-      case "global_reach":
-        return <GlobalReachSection key={item.key} destinations={destinations.items} countryNames={countryNames} {...text} />;
-      case "partners":
-        return <AudienceSection key={item.key} audience="partners" tone={tone} {...text} />;
-      case "institutions":
-        return <AudienceSection key={item.key} audience="institutions" reverse tone={tone} {...text} />;
+        if (industryList.length) blocks.push({ key: item.key, render: (tone) => <IndustriesSection key={item.key} tone={tone} industries={industryList} {...text} /> });
+        break;
       case "success_stories":
-        return <SuccessStoriesSection key={item.key} stories={storyList} assets={assets} {...text} />;
+        if (storyList.length) blocks.push({ key: item.key, render: (tone) => <SuccessStoriesSection key={item.key} tone={tone} stories={storyList} assets={assets} {...text} /> });
+        break;
       case "news":
-        return <NewsSection key={item.key} news={news.items} assets={assets} {...text} />;
+        if (news.items.length) blocks.push({ key: item.key, render: (tone) => <NewsSection key={item.key} tone={tone} news={news.items} assets={assets} {...text} /> });
+        break;
       default:
-        return null;
+        break;
     }
-  };
+  }
+  if (audiences.length) blocks.push({ key: "audiences", render: (tone) => <AudienceCards key="audiences" tone={tone === "subtle" ? "subtle" : "white"} audiences={audiences} /> });
+  if (faqs.items.length) blocks.push({ key: "faq", render: (tone) => <HomeFaqSection key="faq" tone={tone} faqs={faqs.items} /> });
+  // The rails band after the hero is grey, so the first block is white and they alternate from there.
+  const toneAt = (index: number): SectionTone => (index % 2 === 0 ? "white" : "subtle");
+  const closingTone = toneAt(blocks.length);
+  const contactTone = toneAt(blocks.length + 1);
 
   const sameAs = (settings?.socialLinks ?? []).map((s) => s.url).filter((u): u is string => typeof u === "string" && /^https?:\/\//.test(u));
   const organization: Record<string, unknown> = {
@@ -168,19 +200,19 @@ export default async function HomePage({ searchParams }: Props) {
       {detail?.preview ? null : <JsonLd data={organization} />}
       <PreviewRibbon show={Boolean(detail?.preview)} />
       <RevealScope>
-        <HomeHero hero={home?.hero} media={heroMedia} whatsappE164={contactDetails.whatsapp.e164} />
+        <HomeHero hero={home?.hero} media={heroMedia} poster={latestPoster} openRequirements={posters.total} />
         {banners.length ? (
-          <div className="border-b border-gold/40 bg-gold-soft" data-testid="homepage-banners">
-            <ul className="container-page divide-y divide-gold/30">
+          <div className="border-y border-border bg-teal-soft/60" data-testid="homepage-banners">
+            <ul className="container-page divide-y divide-border">
               {banners.map((b) => {
                 const href = sanitizeHref(b.linkUrl);
                 return (
-                  <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm text-navy">
-                    <Megaphone aria-hidden="true" className="size-4 shrink-0 text-gold-strong" />
+                  <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm text-foreground">
+                    <Megaphone aria-hidden="true" className="size-4 shrink-0 text-teal-strong" />
                     <strong className="font-semibold">{b.title}</strong>
-                    {b.body ? <span className="text-navy/80">{b.body}</span> : null}
+                    {b.body ? <span className="text-muted-foreground">{b.body}</span> : null}
                     {href ? (
-                      <Link href={href} className="font-semibold text-navy underline underline-offset-4">
+                      <Link href={href} className="font-semibold text-teal-strong underline underline-offset-4">
                         {b.linkLabel?.trim() || "Learn more"}
                       </Link>
                     ) : null}
@@ -190,30 +222,28 @@ export default async function HomePage({ searchParams }: Props) {
             </ul>
           </div>
         ) : null}
-        <DestinationMarquees countries={marqueeCountries} />
-        {servicesSection ? <FeaturedServicesSection services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} /> : null}
-        <LatestRequirements limit={6} />
-        {candidatesSection ? <HowItWorksSection heading={candidatesSection.heading} intro={candidatesSection.intro} /> : null}
-        <TrainingTeaser />
-        <QuickCvCta />
-        {metricsSection ? <MetricsSection metrics={metrics} heading={metricsSection.heading} intro={metricsSection.intro} /> : null}
-        {opportunitiesSection ? (
-          <OpportunitiesSection jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} intro={opportunitiesSection.intro} />
-        ) : null}
-        {employersSection ? <EmployerBand heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} /> : null}
-        {tail.map(renderTail)}
-        <WhatsAppGroupBand url={contactDetails.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl} kind={contactDetails.whatsappGroupUrl ? "group" : "channel"} />
+        <DestinationMarquees
+          countries={marqueeCountries}
+          heading={reachSection?.heading}
+          intro={reachSection?.intro}
+          guidesHref={reachSection && destinations.items.length ? "/global-reach" : null}
+        />
+        {blocks.map((block, index) => block.render(toneAt(index)))}
         {ctaSection ? (
           <CtaBand
             location="home_cta_band"
-            eyebrow="Free to apply"
-            heading={ctaSection.heading || (ctaCustomised ? ctaBand?.heading?.trim() : null) || "Your next job could be abroad"}
-            body={ctaSection.intro || (ctaCustomised ? ctaBand?.body?.trim() : null) || "Send your CV and trade today. We call you when a matching requirement opens."}
+            tone={closingTone === "subtle" ? "subtle" : "white"}
+            heading={ctaSection.heading || (ctaCustomised ? ctaBand?.heading?.trim() : null) || "Your trade can take you anywhere."}
+            body={ctaSection.intro || (ctaCustomised ? ctaBand?.body?.trim() : null) || "Send your CV and trade today. We call you when a matching requirement opens. Applying is always free."}
             primary={{ ...ctaPrimary, id: "cta_band_primary" }}
             secondary={{ ...ctaSecondary, id: "cta_band_secondary" }}
           />
         ) : null}
-        <ContactBand contact={contactDetails} />
+        <ContactBand
+          tone={ctaSection ? contactTone : closingTone}
+          contact={contactDetails}
+          channel={{ url: contactDetails.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl, kind: contactDetails.whatsappGroupUrl ? "group" : "channel" }}
+        />
       </RevealScope>
     </>
   );

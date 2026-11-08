@@ -1,151 +1,174 @@
-import { Building2, ClipboardCheck, FileText, Flame, PhoneCall, PlaneTakeoff, Stamp, Users, Wrench, Zap } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 
 import { whatsappHref } from "@/config/contact";
+import { IMAGE_CREDITS, type ImageCredit } from "@/content/image-credits";
+import { stockPhoto } from "@/content/stock-photos";
 
 import { WhatsAppIcon } from "../contact-links";
 import { CtaLink } from "../cta-link";
-import { Section, SectionHeading } from "../section";
+import { Section, SectionHeading, type SectionTone } from "../section";
+import { StockImage } from "../stock-image";
 
 type Text = { heading?: string | null; intro?: string | null };
 
+function photoBySrc(name: string): ImageCredit {
+  return IMAGE_CREDITS.find((c) => c.src === `/images/stock/${name}.webp`) ?? stockPhoto("workshop");
+}
+
 const STEPS = [
-  { title: "Send your CV and trade", body: "Online, on WhatsApp or at our Autonagar office. Tell us your trade and experience.", icon: FileText },
-  { title: "We call you", body: "Our team talks you through the openings that match your trade and experience.", icon: PhoneCall },
-  { title: "Trade test or training", body: "Show your skill in a trade test, or train with us first to reach the level employers ask for.", icon: ClipboardCheck },
-  { title: "Visa, ticket, documents", body: "We guide you through medicals, visa, PDOT (Pre-Departure Orientation Training) and travel papers.", icon: Stamp },
-  { title: "Fly to work", body: "You travel to your new job with your contract and contacts in hand.", icon: PlaneTakeoff },
+  { title: "Send your CV and trade", body: "Online, on WhatsApp or at our Autonagar office. Tell us your trade and experience." },
+  { title: "We call you", body: "Our team talks you through the openings that match your trade and experience." },
+  { title: "Trade test or training", body: "Show your skill in a trade test, or train with us first to reach the level employers ask for." },
+  { title: "Visa, ticket, documents", body: "We guide you through medicals, visa, pre-departure orientation and travel papers." },
+  { title: "Fly to work", body: "You travel to your new job with your contract and contacts in hand." },
 ] as const;
 
-/** Five-step candidate journey on navy, with numbered display figures and a connecting line. */
-export function HowItWorksSection({ heading, intro }: Text) {
+/** Candidate journey: heading, CTA and a photograph on the left, five numbered steps on a hairline on the right. */
+export function HowItWorksSection({ tone = "white", heading, intro }: Text & { tone?: SectionTone }) {
   return (
-    <Section tone="navy" labelledBy="home-how-title" data-testid="home-how-it-works" className="overflow-hidden">
-      <div aria-hidden="true" className="bg-grid-dark absolute inset-0 [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
-      <div className="relative" data-reveal>
-        <SectionHeading
-          id="home-how-title"
-          onDark
-          eyebrow="For candidates"
-          title={<span className="uppercase">{heading || "From your CV to your flight"}</span>}
-          intro={intro || "A clear path with one team beside you. You never pay to apply for a job."}
-          action={
-            <CtaLink href="/send-cv" cta="how_send_cv" location="home_how_it_works" variant="accent" arrow>
+    <Section tone={tone} labelledBy="home-how-title" data-testid="home-how-it-works">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-20">
+        <div className="lg:sticky lg:top-28 lg:self-start" data-reveal>
+          <SectionHeading
+            id="home-how-title"
+            eyebrow="For candidates"
+            title={heading || "From your CV to your flight"}
+            intro={intro || "A clear path with one team beside you. You never pay to apply for a job."}
+          />
+          <div className="mt-8">
+            <CtaLink href="/send-cv" cta="how_send_cv" location="home_how_it_works" variant="primary" arrow className="min-h-12 px-6 text-[15px]">
               Send your CV
+            </CtaLink>
+          </div>
+          <div className="relative mt-10 hidden aspect-[16/10] overflow-hidden rounded-3xl border border-border bg-surface-subtle lg:block">
+            <StockImage photo={stockPhoto("departure")} sizes="(min-width: 1024px) 40vw, 100vw" />
+          </div>
+        </div>
+        <ol className="relative">
+          {STEPS.map((step, i) => (
+            <li key={step.title} className="relative grid grid-cols-[3rem_minmax(0,1fr)] gap-x-5 pb-10 last:pb-0" data-reveal={String(Math.min(i + 1, 4))}>
+              {i < STEPS.length - 1 ? <span aria-hidden="true" className="absolute top-12 bottom-0 left-6 w-px bg-border" /> : null}
+              <span aria-hidden="true" className="relative flex size-12 items-center justify-center rounded-full border border-border bg-white font-display text-base text-foreground tabular-nums">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="pt-2.5">
+                <h3 className="font-heading text-xl font-bold tracking-tight text-foreground">
+                  <span className="sr-only">Step {i + 1}: </span>
+                  {step.title}
+                </h3>
+                <p className="mt-2 max-w-md text-[15px] leading-relaxed text-muted-foreground">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </Section>
+  );
+}
+
+/** Trades trained at the workshop, each with a photograph and a link to its training family page. */
+const TRADE_TILES = [
+  { title: "Welding 3G / 4G", body: "Plate and positional welding for structural work.", href: "/services/welding-training", photo: "welding-1" },
+  { title: "Welding 5G / 6G", body: "Pipe welding in the positions overseas tests ask for.", href: "/services/welding-training", photo: "welding-3" },
+  { title: "Pipe fitting", body: "Pipe fit-up, alignment and reading isometrics.", href: "/services/pipe-fitting-training", photo: "pipe-1" },
+  { title: "Electrical", body: "Industrial wiring, panels and safe isolation.", href: "/services/electrical-training", photo: "electrical-1" },
+  { title: "Rigging", body: "Slinging, signalling and safe lifting.", href: "/services/rigging-training", photo: "rigging-2" },
+  { title: "Scaffolding", body: "Erecting and inspecting tube and system scaffolds.", href: "/services/scaffolding-training", photo: "scaffolding-2" },
+  { title: "NDT awareness", body: "How welds are inspected and tested.", href: "/services/ndt-awareness-training", photo: "inspection-1" },
+  { title: "HSE and safety", body: "Site safety, PPE and permits to work.", href: "/services/hse-safety-training", photo: "safety-1" },
+] as const;
+
+export function TrainingTeaser({ tone = "subtle", heading, intro }: Text & { tone?: SectionTone }) {
+  return (
+    <Section tone={tone} labelledBy="home-training-title" data-testid="home-training">
+      <div data-reveal>
+        <SectionHeading
+          id="home-training-title"
+          eyebrow="Train with us"
+          title={heading || "Learn the trade in a real workshop"}
+          intro={intro || "Practical training at the Venkat Sai Welding Works and Testing Center in Autonagar, Gajuwaka. Results are recorded as Venkat Sai assessments."}
+          action={
+            <CtaLink href="/training" cta="training_courses" location="home_training" variant="outline" arrow>
+              Training courses
             </CtaLink>
           }
         />
       </div>
-      <ol className="relative mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-5">
-        <span aria-hidden="true" className="absolute top-7 right-[10%] left-[10%] hidden h-0.5 bg-gradient-to-r from-yellow via-white/30 to-yellow lg:block" />
-        {STEPS.map((step, i) => {
-          const Icon = step.icon;
-          return (
-            <li key={step.title} className="relative" data-reveal={String(Math.min(i + 1, 4))}>
-              <span aria-hidden="true" className="relative flex size-14 items-center justify-center rounded-2xl bg-yellow text-navy shadow-[0_0_0_6px_rgb(6_18_58)] [&_svg]:size-6">
-                <Icon />
-              </span>
-              <p aria-hidden="true" className="mt-5 font-display text-5xl text-white/15">
-                0{i + 1}
-              </p>
-              <h3 className="-mt-6 font-display text-2xl uppercase text-white">
-                <span className="sr-only">Step {i + 1}: </span>
-                {step.title}
+      <ul className="mt-14 grid grid-cols-1 gap-x-6 gap-y-10 min-[480px]:grid-cols-2 lg:grid-cols-4">
+        {TRADE_TILES.map((t, i) => (
+          <li key={t.title} data-reveal={String((i % 4) + 1)}>
+            <article className="group relative">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-white">
+                <StockImage
+                  photo={photoBySrc(t.photo)}
+                  decorative
+                  sizes="(min-width: 1024px) 25vw, (min-width: 480px) 50vw, 100vw"
+                  className="transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none"
+                />
+              </div>
+              <h3 className="mt-4 font-heading text-lg font-bold tracking-tight text-foreground">
+                <Link href={t.href} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
+                  {t.title}
+                </Link>
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/75">{step.body}</p>
-            </li>
-          );
-        })}
-      </ol>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
+            </article>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
 
-const COURSES = [
-  { title: "Welding 3G / 4G", body: "Plate and positional welding for structural work.", icon: Flame },
-  { title: "Welding 5G / 6G", body: "Pipe welding in the positions overseas trade tests ask for.", icon: Flame },
-  { title: "Electrical", body: "Industrial wiring, panels and safe working practice.", icon: Zap },
-  { title: "Fitter and piping", body: "Pipe and structural fitting, drawings and alignment.", icon: Wrench },
-] as const;
+const EMPLOYER_POINTS = ["Trade-tested before you interview", "Single trades or full project crews", "Paperwork handled with you"] as const;
 
-/** Training teaser: four course tiles and links to the training catalogue and the training service. */
-export function TrainingTeaser({ heading, intro }: Text) {
+/** Employer band: two columns, copy and actions on the left, a photograph on the right. */
+export function EmployerBand({ tone = "white", heading, intro, whatsappE164 }: Text & { whatsappE164?: string } & { tone?: SectionTone }) {
   return (
-    <Section tone="subtle" labelledBy="home-training-title" data-testid="home-training">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
+    <Section tone={tone} labelledBy="home-employers-title" data-testid="home-employers">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
         <div data-reveal>
           <SectionHeading
-            id="home-training-title"
-            eyebrow="Train with us"
-            title={<span className="uppercase">{heading || "Learn the trade in a real workshop"}</span>}
-            intro={intro || "Practical training at the Venkat Sai Welding Works and Testing Center in Autonagar, Gajuwaka. Results are recorded as Venkat Sai assessments."}
+            id="home-employers-title"
+            eyebrow="For employers"
+            title={heading || "Need welders, fitters or a full crew?"}
+            intro={intro || "Tell us the trades, numbers, location and start date. We shortlist trade-tested candidates and handle the paperwork with you."}
           />
-          <div className="mt-8 flex flex-wrap gap-3">
-            <CtaLink href="/training" cta="training_courses" location="home_training" variant="primary" arrow>
-              See training courses
-            </CtaLink>
-            <CtaLink href="/services/technical-training" cta="training_service" location="home_training" variant="outline">
-              About our training
-            </CtaLink>
-          </div>
-        </div>
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {COURSES.map((c, i) => {
-            const Icon = c.icon;
-            return (
-              <li key={c.title} data-reveal={String(i + 1)} className="lift relative overflow-hidden rounded-2xl border border-border bg-white p-6">
-                <span aria-hidden="true" className="absolute -top-6 -right-6 size-24 rounded-full bg-yellow/30" />
-                <span aria-hidden="true" className="relative flex size-12 items-center justify-center rounded-xl bg-navy text-yellow [&_svg]:size-6">
-                  <Icon />
+          <ul className="mt-8 space-y-3">
+            {EMPLOYER_POINTS.map((p) => (
+              <li key={p} className="flex items-center gap-3 text-base text-foreground">
+                <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-soft text-teal-strong">
+                  <Check className="size-3" strokeWidth={3} />
                 </span>
-                <h3 className="relative mt-4 font-display text-2xl uppercase text-navy">{c.title}</h3>
-                <p className="relative mt-1.5 text-sm leading-relaxed text-muted-foreground">{c.body}</p>
+                {p}
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <CtaLink href="/employers/request" cta="employer_request" location="home_employers" variant="primary" arrow className="min-h-12 px-6 text-[15px]">
+              Request workers
+            </CtaLink>
+            <a
+              href={whatsappHref("Hello Venkat Sai, we need workers for a project.", whatsappE164)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-border bg-white px-6 text-[15px] font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <WhatsAppIcon className="size-5 text-green-strong" />
+              WhatsApp our team
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
+          <Link href="/employers" className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-teal-strong underline-offset-4 hover:underline">
+            How hiring works
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </div>
+        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-border bg-surface-subtle" data-reveal="2">
+          <StockImage photo={stockPhoto("plant")} sizes="(min-width: 1024px) 45vw, 100vw" />
+        </div>
       </div>
     </Section>
-  );
-}
-
-/** Employer band: tell us the trades and numbers you need. */
-export function EmployerBand({ heading, intro, whatsappE164 }: Text & { whatsappE164?: string }) {
-  return (
-    <section aria-labelledby="home-employers-title" className="band-dark relative isolate overflow-hidden bg-royal py-16 text-white sm:py-20" data-testid="home-employers">
-      <div aria-hidden="true" className="absolute inset-y-0 right-0 -z-10 hidden w-1/2 bg-[repeating-linear-gradient(-45deg,rgb(255_255_255/0.06)_0_2px,transparent_2px_18px)] lg:block" />
-      <div className="container-page grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center">
-        <div data-reveal>
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-yellow">
-            <Building2 aria-hidden="true" className="size-4" />
-            For employers
-          </p>
-          <h2 id="home-employers-title" className="mt-3 text-balance font-display text-4xl uppercase sm:text-6xl">
-            {heading || "Need welders, fitters or a full crew?"}
-          </h2>
-          <p className="mt-4 max-w-2xl text-pretty text-lg leading-relaxed text-white/85">
-            {intro || "Tell us the trades, numbers, location and start date. We shortlist trade-tested candidates and handle the paperwork with you."}
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row lg:flex-col" data-reveal="2">
-          <CtaLink href="/employers/request" cta="employer_request" location="home_employers" variant="accent" arrow className="min-h-14 text-base">
-            Tell us the trades you need
-          </CtaLink>
-          <CtaLink
-            href={whatsappHref("Hello Venkat Sai, we need workers for a project.", whatsappE164)}
-            cta="employer_whatsapp"
-            location="home_employers"
-            variant="onDark"
-            className="min-h-14 text-base"
-          >
-            <WhatsAppIcon className="size-5" />
-            WhatsApp our team
-          </CtaLink>
-          <p className="flex items-center gap-2 text-sm text-white/80">
-            <Users aria-hidden="true" className="size-4 text-yellow" />
-            Single trades or full project crews
-          </p>
-        </div>
-      </div>
-    </section>
   );
 }

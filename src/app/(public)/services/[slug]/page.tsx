@@ -1,4 +1,4 @@
-import { CircleSlash, MessageCircle } from "lucide-react";
+import { CircleSlash } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -14,7 +14,6 @@ import {
   FeatureGrid,
   StepList,
 } from "@/components/public/blocks";
-import { CmsIcon } from "@/components/public/cms-icon";
 import {
   MediaGallery,
   pickAsset,
@@ -42,7 +41,6 @@ import {
   serviceWhatsappMessage,
   type ServiceAudience,
 } from "@/components/public/services/service-contact-panel";
-import { ServiceIllustration } from "@/components/public/services/service-illustration";
 import {
   FeeNote,
   primaryMedia,
@@ -50,7 +48,9 @@ import {
 } from "@/components/public/services/service-media";
 import { TrackEvent } from "@/components/public/track-event";
 import { CourseFamilyGrid } from "@/components/public/training-catalog/course-family-grid";
+import { WhatsAppIcon } from "@/components/public/contact-links";
 import { whatsappHref } from "@/config/contact";
+import { stockPhotoFor } from "@/content/stock-photos";
 import { BRAND } from "@/config/site";
 import { absoluteUrl } from "@/lib/env";
 import type { SearchParams } from "@/lib/http";
@@ -199,21 +199,11 @@ export default async function ServicePage({ params, searchParams }: Props) {
             : []),
           { label: entry.title },
         ]}
-        eyebrow={
-          <span className="inline-flex items-center gap-2">
-            <CmsIcon name={s.iconName} className="size-4" />{" "}
-            {isCourse ? "Training course" : "Service"}
-          </span>
-        }
+        eyebrow={isCourse ? "Training course" : "Service"}
         title={entry.title}
         intro={entry.summary}
         media={media?.kind === "image" ? media : null}
-        visual={
-          <ServiceIllustration
-            iconName={s.iconName}
-            className="mx-auto aspect-[4/3] w-full max-w-md"
-          />
-        }
+        photo={stockPhotoFor({ slug: entry.slug, iconName: s.iconName })}
         actions={
           offered ? (
             <>
@@ -221,21 +211,22 @@ export default async function ServicePage({ params, searchParams }: Props) {
                 cta={s.cta}
                 id={`service_cta:${entry.slug}`}
                 location="service_hero"
-                variant="accent"
+                variant="primary"
+                fallback={audience === "company" ? { label: "Request workers", href: "/employers/request" } : { label: "Send your CV", href: "/send-cv" }}
               />
               <a
                 href={whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/5 px-5 text-sm font-semibold text-white hover:border-white/60 hover:bg-white/10"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle"
               >
-                <MessageCircle aria-hidden="true" className="size-4" />
+                <WhatsAppIcon className="size-5 text-green-strong" />
                 WhatsApp us
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
               <a
                 href="#enquire"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/30 bg-white/5 px-5 text-sm font-semibold text-white hover:border-white/60 hover:bg-white/10"
+                className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
               >
                 Send an enquiry
               </a>
@@ -266,11 +257,12 @@ export default async function ServicePage({ params, searchParams }: Props) {
       <Section labelledBy="service-overview-title">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="min-w-0">
+            <p className="label-dot">Overview</p>
             <h2
               id="service-overview-title"
-              className="font-heading text-2xl font-bold text-navy sm:text-3xl"
+              className="mt-4 font-display text-[2rem] text-foreground sm:text-[2.5rem]"
             >
-              Overview
+              What this involves
             </h2>
             <SafeHtml html={s.overview} className="mt-6" />
           </div>
@@ -278,22 +270,20 @@ export default async function ServicePage({ params, searchParams }: Props) {
             className="space-y-6"
             aria-label="Photos, benefits and requirements"
           >
-            <ServiceMedia
-              asset={media}
-              iconName={s.iconName}
-              title={entry.title}
-            />
+            {media && media.kind !== "image" ? (
+              <ServiceMedia asset={media} iconName={s.iconName} slug={entry.slug} />
+            ) : null}
             {s.benefits?.length ? (
-              <div className="rounded-2xl border border-border bg-surface-subtle p-6">
-                <h3 className="font-heading text-lg font-semibold text-navy">
+              <div className="rounded-3xl border border-border bg-surface-subtle p-6 sm:p-7">
+                <h3 className="font-heading text-lg font-bold tracking-tight text-foreground">
                   Benefits
                 </h3>
                 <CheckList items={s.benefits} className="mt-4" />
               </div>
             ) : null}
             {s.requirements?.length ? (
-              <div className="rounded-2xl border border-border bg-white p-6">
-                <h3 className="font-heading text-lg font-semibold text-navy">
+              <div className="card-surface rounded-3xl p-6 sm:p-7">
+                <h3 className="font-heading text-lg font-bold tracking-tight text-foreground">
                   What you will need
                 </h3>
                 <CheckList items={s.requirements} className="mt-4" />
@@ -335,9 +325,9 @@ export default async function ServicePage({ params, searchParams }: Props) {
             action={
               <Link
                 href="/training"
-                className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-strong underline-offset-4 hover:underline"
+                className="inline-flex min-h-11 items-center rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle"
               >
-                See scheduled courses and batches
+                Courses and batches
               </Link>
             }
           />
@@ -350,14 +340,13 @@ export default async function ServicePage({ params, searchParams }: Props) {
       ) : null}
 
       {s.processSteps?.length ? (
-        <Section tone="navy" labelledBy="service-process-title">
+        <Section tone={isHub && courseFamilies.length ? "white" : "subtle"} labelledBy="service-process-title">
           <SectionHeading
             id="service-process-title"
-            onDark
             eyebrow="How it works"
             title="The process, step by step"
           />
-          <StepList steps={s.processSteps} onDark className="mt-12" />
+          <StepList steps={s.processSteps} className="mt-14" />
         </Section>
       ) : null}
 
@@ -384,7 +373,7 @@ export default async function ServicePage({ params, searchParams }: Props) {
               <li key={i.id}>
                 <Link
                   href={i.path ?? `/industries/${i.slug}`}
-                  className="inline-flex min-h-11 items-center rounded-full border border-border bg-white px-4 text-sm font-medium text-navy hover:border-teal hover:bg-teal-soft/50"
+                  className="inline-flex min-h-11 items-center rounded-full border border-border bg-white px-4 text-sm font-medium text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle"
                 >
                   {i.title}
                 </Link>

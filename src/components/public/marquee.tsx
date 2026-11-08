@@ -3,16 +3,17 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Infinite horizontal marquee (CSS only, server component). The list is rendered twice; the second copy is
+ * Infinite horizontal rail (CSS only, server component). The list is rendered twice; the second copy is
  * hidden from assistive technology and, for reduced-motion visitors, not shown at all (the first copy wraps
- * into a static row instead). Hovering or focusing inside pauses the motion.
+ * into a static, centred row instead). Hovering or focusing inside pauses the motion, and a surrounding
+ * `PausableRails` adds a pause button (WCAG 2.2.2). Edges fade out (mask).
  *
  * `speed` maps to a few fixed durations so no inline style is needed.
  */
 const SPEED = {
-  slow: "[--marquee-duration:70s]",
-  normal: "[--marquee-duration:45s]",
-  fast: "[--marquee-duration:30s]",
+  slow: "[--marquee-duration:90s]",
+  normal: "[--marquee-duration:60s]",
+  fast: "[--marquee-duration:40s]",
 } as const;
 
 export function Marquee<T>({

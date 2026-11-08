@@ -22,6 +22,7 @@ export type SettingMeta = {
 /** Groups edited on their own pages (not on the settings home). */
 export const DEDICATED_GROUPS: Record<string, { href: string; label: string }> = {
   Security: { href: "/admin/settings/security", label: "Security" },
+  "Resume service": { href: "/admin/resume-requests", label: "Resume service" },
 };
 
 /** Validation bounds and hints. Anything not listed gets the defaults derived from its type. */

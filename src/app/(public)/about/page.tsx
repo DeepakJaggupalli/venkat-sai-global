@@ -1,4 +1,4 @@
-import { Building2, Compass, Eye, MapPin, Target } from "lucide-react";
+import { Eye, MapPin, Target } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,8 +13,8 @@ import { LatestRequirements } from "@/components/public/requirements/latest-requ
 import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, htmlToText, previewTokenFrom, settle } from "@/components/public/server";
 import { loadPublicContact } from "@/components/public/services/contact-data";
-import { ServiceIllustration } from "@/components/public/services/service-illustration";
 import { BRAND } from "@/config/site";
+import { IMAGE_CREDITS } from "@/content/image-credits";
 import type { SearchParams } from "@/lib/http";
 import { getSingleton } from "@/modules/content/queries";
 import type { PublishedEntry } from "@/modules/content/types";
@@ -60,7 +60,7 @@ export default async function AboutPage({ searchParams }: Props) {
         title={entry.title && entry.title !== "About page" ? entry.title : `About ${BRAND.name}`}
         intro={entry.summary || DEFAULT_INTRO}
         media={hero}
-        visual={<ServiceIllustration iconName="flame" className="mx-auto aspect-[4/3] w-full max-w-md" />}
+        photo={IMAGE_CREDITS.find((c) => c.src === "/images/stock/welding-1.webp") ?? null}
         meta={
           <span className="inline-flex items-center gap-1.5">
             <MapPin aria-hidden="true" className="size-4" />
@@ -79,9 +79,9 @@ export default async function AboutPage({ searchParams }: Props) {
         }
       />
 
-      <div className="border-b border-border bg-white" data-testid="about-contact-icons">
+      <div className="border-y border-border bg-surface-subtle" data-testid="about-contact-icons">
         <div className="container-page flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-medium text-navy">Find us, WhatsApp, email or call:</p>
+          <p className="text-sm font-medium text-foreground">Find us, WhatsApp, email or call</p>
           <ContactIcons contact={contact} labels />
         </div>
       </div>
@@ -95,7 +95,7 @@ export default async function AboutPage({ searchParams }: Props) {
       {about.capabilities?.length ? (
         <Section tone="subtle" labelledBy="about-capabilities-title">
           <SectionHeading id="about-capabilities-title" eyebrow="What we do" title="Training, testing, jobs abroad and manpower" />
-          <FeatureGrid items={about.capabilities} columns={about.capabilities.length > 4 ? 3 : 4} className="mt-10" icon={<Building2 />} />
+          <FeatureGrid items={about.capabilities} columns={about.capabilities.length > 4 ? 3 : 4} className="mt-10" />
         </Section>
       ) : null}
 
@@ -114,16 +114,16 @@ export default async function AboutPage({ searchParams }: Props) {
           <SectionHeading id="about-purpose-title" eyebrow="Purpose" title="Mission and vision" />
           <div className="mt-10 grid gap-5 md:grid-cols-2">
             {about.mission?.trim() ? (
-              <div className="rounded-2xl border border-border bg-white p-8">
-                <Target aria-hidden="true" className="size-7 text-teal-strong" />
-                <h3 className="mt-4 font-heading text-xl font-semibold text-navy">Our mission</h3>
+              <div className="card-surface rounded-3xl p-8">
+                <Target aria-hidden="true" className="size-6 text-teal-strong" />
+                <h3 className="mt-5 font-display text-2xl text-foreground">Our mission</h3>
                 <p className="mt-3 text-base leading-relaxed text-muted-foreground">{about.mission}</p>
               </div>
             ) : null}
             {about.vision?.trim() ? (
-              <div className="rounded-2xl border border-border bg-white p-8">
-                <Eye aria-hidden="true" className="size-7 text-teal-strong" />
-                <h3 className="mt-4 font-heading text-xl font-semibold text-navy">Our vision</h3>
+              <div className="card-surface rounded-3xl p-8">
+                <Eye aria-hidden="true" className="size-6 text-teal-strong" />
+                <h3 className="mt-5 font-display text-2xl text-foreground">Our vision</h3>
                 <p className="mt-3 text-base leading-relaxed text-muted-foreground">{about.vision}</p>
               </div>
             ) : null}
@@ -134,7 +134,7 @@ export default async function AboutPage({ searchParams }: Props) {
       {about.values?.length ? (
         <Section tone="subtle" labelledBy="about-values-title">
           <SectionHeading id="about-values-title" eyebrow="Values" title="What we stand for" />
-          <FeatureGrid items={about.values} className="mt-10" icon={<Compass />} />
+          <FeatureGrid items={about.values} className="mt-10" />
         </Section>
       ) : null}
 
@@ -145,14 +145,14 @@ export default async function AboutPage({ searchParams }: Props) {
             {leadership.map((m) => {
               const photo = pickAsset(detail.assets, m.data.photoAssetId);
               return (
-                <li key={m.id} className="overflow-hidden rounded-2xl border border-border bg-white">
+                <li key={m.id} className="card-surface overflow-hidden rounded-3xl">
                   {photo ? (
                     <div className="aspect-[4/3] bg-surface-subtle">
                       <CmsImage asset={photo} size="md" sizes="(min-width: 1024px) 33vw, 50vw" />
                     </div>
                   ) : null}
                   <div className="p-6">
-                    <h3 className="font-heading text-lg font-semibold text-navy">{m.title}</h3>
+                    <h3 className="font-heading text-lg font-bold tracking-tight text-foreground">{m.title}</h3>
                     <p className="text-sm font-medium text-teal-strong">{m.data.role}</p>
                     {m.data.bio ? <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{m.data.bio}</p> : null}
                   </div>
@@ -180,14 +180,14 @@ export default async function AboutPage({ searchParams }: Props) {
               href={contact.mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-navy/20 bg-white px-5 text-sm font-semibold text-navy hover:border-navy/40"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle"
             >
               <MapPin aria-hidden="true" className="size-4" />
               Open in Google Maps
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           </div>
-          <MapEmbed contact={contact} />
+          <MapEmbed contact={contact} className="bg-white shadow-card" />
         </div>
       </Section>
 

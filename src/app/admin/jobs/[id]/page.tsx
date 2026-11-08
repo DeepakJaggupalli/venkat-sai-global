@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 
 import { ActionButton } from "@/components/admin/action-button";
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { ActionForm } from "@/components/admin/action-form";
 import { InternalNotesPanel } from "@/components/admin/internal-notes";
 import { listStaffOptions } from "@/components/admin/queries";
@@ -81,6 +82,7 @@ export default async function AdminJobDetailPage({ params }: { params: Params })
         actions={[
           ...(live ? [{ label: "View public page", href: `/jobs/${job.slug}`, icon: <ExternalLink />, variant: "outline" as const, external: true }] : []),
           ...(staffCan(ctx, "recruitment.view") ? [{ label: "Pipeline", href: `/admin/pipeline?job=${job.id}`, variant: "outline" as const }] : []),
+          ...(staffCan(ctx, ["recruitment.view", "recruitment.manage"], "any") ? [<DownloadExcelButton key="excel" href="/admin/pipeline/export" searchParams={{ job: job.id }} label="Download applicants (Excel)" />] : []),
         ]}
       />
 

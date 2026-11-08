@@ -48,21 +48,21 @@ export default async function PublicCoursePage({ params }: PageProps) {
     <TrainingI18n className="bg-surface-subtle">
       <JsonLd data={courseJsonLd} />
       <TrackEvent name="course_viewed" props={{ courseId: course.id, category: course.category, surface: "public" }} />
-      <section className="border-b bg-navy text-white">
-        <div className="container-page py-8 sm:py-10">
-          <Breadcrumbs onDark items={[{ label: t("public.breadcrumbHome"), href: "/" }, { label: t("public.title"), href: "/training" }, { label: course.title }]} className="mb-4" />
-          <p className="text-sm font-medium text-white/80">{t(`category.${course.category}`)}</p>
-          <h1 className="mt-1 font-heading text-2xl font-bold text-balance sm:text-3xl">{course.title}</h1>
-          <p className="mt-2 text-sm text-white/85">{t("detail.byProvider", { provider: providerName })}</p>
-          {course.summary ? <p className="mt-3 max-w-3xl text-sm text-white/85 sm:text-base">{course.summary}</p> : null}
+      <section className="border-b border-border bg-white">
+        <div className="container-page pt-10 pb-10 sm:pt-12 sm:pb-12">
+          <Breadcrumbs items={[{ label: t("public.breadcrumbHome"), href: "/" }, { label: t("public.title"), href: "/training" }, { label: course.title }]} className="mb-8" />
+          <p className="label-dot">{t(`category.${course.category}`)}</p>
+          <h1 className="mt-4 font-display text-[2.25rem] text-balance text-foreground sm:text-5xl">{course.title}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("detail.byProvider", { provider: providerName })}</p>
+          {course.summary ? <p className="mt-4 max-w-3xl text-base text-muted-foreground sm:text-lg">{course.summary}</p> : null}
           {course.batches.length ? (
-            <a href="#batches" className="mt-5 inline-flex h-10 items-center rounded-lg bg-white px-4 text-sm font-semibold text-navy hover:bg-white/90 focus-visible:ring-3 focus-visible:ring-white/60 focus-visible:outline-none">
+            <a href="#batches" className="mt-7 inline-flex min-h-11 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b] focus-visible:outline-2 focus-visible:outline-offset-2">
               {t("detail.seeBatches")}
             </a>
           ) : null}
         </div>
       </section>
-      <div className="container-page py-6 sm:py-8">
+      <div className="container-page py-8 sm:py-10">
         <CourseDetail
           course={course}
           today={toIsoDate(new Date())}

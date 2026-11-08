@@ -50,3 +50,8 @@ next-env.d.ts
 /playwright/.cache/
 *.tsbuildinfo
 !.env.example
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+
+# Local design tooling (reinstallable; see docs/DESIGN_TOOLING.md)
+/skills-lock.json

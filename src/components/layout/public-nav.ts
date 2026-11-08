@@ -76,9 +76,9 @@ export function isSectionActive(item: PublicNavItem, pathname: string): boolean 
 // Priority+ desktop navigation
 // ---------------------------------------------------------------------------
 
-/** Rough rendered width of a top-level item: 14px Inter medium (~7.7px per glyph) + padding + chevron. */
+/** Rough rendered width of a top-level item: 15px Inter medium (~8.2px per glyph) + padding + chevron. */
 export function estimateNavItemWidth(item: Pick<PublicNavItem, "title" | "children">): number {
-  return Math.ceil(item.title.length * 7.7) + 24 + (item.children?.length ? 18 : 0);
+  return Math.ceil(item.title.length * 8.2) + 28 + (item.children?.length ? 18 : 0);
 }
 
 export const MORE_TRIGGER_WIDTH = 74;
@@ -99,15 +99,17 @@ export function fitNavItems(items: readonly Pick<PublicNavItem, "title" | "child
 }
 
 /**
- * Desktop nav budgets (px available to top-level items after the logo, primary CTA and gaps):
- * `xl` at a 1280px viewport and `wide` at 1536px. Signed-in visitors see a longer CTA.
+ * Desktop nav budgets (px available to top-level items after the logo, the header actions and gaps):
+ * `xl` at a 1280px viewport and `wide` at 1536px. The header uses the page container (1200px content
+ * at both widths). Signed-in visitors see a longer action group.
  */
 export function desktopNavBudgets(signedIn: boolean): { xl: number; wide: number } {
-  // "Sign in" + "Sign up" ≈ 195px; "Go to <portal>" up to ≈ 175px (h-10 button, px-4).
-  const cta = signedIn ? 180 : 200;
-  // Logo lockup at h-9 (36px tall ≈ 201px wide) + the two 24px gaps either side of the nav.
-  const logoAndGaps = 201 + 48;
-  return { xl: 1216 - logoAndGaps - cta, wide: 1472 - logoAndGaps - cta };
+  // "Sign in" + "Send your CV" pills ≈ 245px; account name + "Go to <portal>" up to ≈ 330px.
+  const cta = signedIn ? 330 : 250;
+  // Logo lockup at h-8 (32px tall ≈ 179px wide) + the two 16px gaps either side of the nav.
+  const logoAndGaps = 179 + 32;
+  const content = 1200;
+  return { xl: content - logoAndGaps - cta, wide: content - logoAndGaps - cta };
 }
 
 // ---------------------------------------------------------------------------

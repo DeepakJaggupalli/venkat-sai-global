@@ -1,4 +1,4 @@
-import { Building2, FileText, Mail, Phone } from "lucide-react";
+import { Building2, FilePen, FileText, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -17,12 +17,12 @@ export function serviceWhatsappMessage(serviceTitle: string, audience: ServiceAu
 
 function Action({ href, icon, label, detail, external, primary }: { href: string; icon: ReactNode; label: string; detail?: string; external?: boolean; primary?: boolean }) {
   const className = cn(
-    "group flex min-h-14 items-center gap-3 rounded-xl border p-3 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2",
-    primary ? "border-navy bg-navy text-white hover:bg-navy-deep" : "border-border bg-white text-navy hover:border-teal hover:bg-teal-soft/40",
+    "group flex min-h-14 items-center gap-3 rounded-2xl border p-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2",
+    primary ? "border-foreground bg-foreground text-white hover:bg-[#26262b]" : "border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle",
   );
   const body = (
     <>
-      <span aria-hidden="true" className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5", primary ? "bg-white/10 text-white" : "bg-teal-soft text-teal-strong")}>
+      <span aria-hidden="true" className={cn("flex size-10 shrink-0 items-center justify-center rounded-full [&_svg]:size-5", primary ? "bg-white/10 text-white" : "bg-teal-soft text-teal-strong")}>
         {icon}
       </span>
       <span className="min-w-0">
@@ -66,8 +66,8 @@ export function ServiceContactPanel({
 }) {
   const subject = audience === "company" ? `Manpower requirement: ${serviceTitle}` : `Enquiry: ${serviceTitle}`;
   return (
-    <div className={cn("rounded-2xl border border-border bg-surface-subtle p-5 sm:p-6", className)}>
-      <h3 id={headingId} className="font-heading text-lg font-semibold text-navy">
+    <div className={cn("rounded-3xl border border-border bg-surface-subtle p-5 sm:p-7", className)}>
+      <h3 id={headingId} className="font-heading text-xl font-bold tracking-tight text-foreground">
         {audience === "company" ? "Tell us the trades and numbers you need" : "Send your CV and trade"}
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -84,6 +84,7 @@ export function ServiceContactPanel({
         <Action href={whatsappHref(serviceWhatsappMessage(serviceTitle, audience), contact.whatsapp.e164)} external icon={<WhatsAppIcon />} label="WhatsApp us" detail={contact.whatsapp.display} />
         <Action href={mailtoHref(contact.emails[0], subject)} icon={<Mail />} label="Email us" detail={contact.emails[0]} />
         <Action href={telHref(contact.phones[0]?.e164 ?? contact.whatsapp.e164)} icon={<Phone />} label="Call us" detail={contact.phones[0]?.display ?? contact.whatsapp.display} />
+        {audience === "candidate" ? <Action href="/resume-service" icon={<FilePen />} label="Prepare my resume" detail="Paid service: Word and PDF" /> : null}
       </div>
     </div>
   );

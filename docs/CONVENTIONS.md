@@ -138,8 +138,8 @@ const [state, formAction, pending] = useActionState(saveJob, null);
 ## 7. UI & design system
 
 - Use shadcn components from `@/components/ui/*` and shared blocks from `@/components/shared/*` (built by the design-system owner — see `src/components/shared/README.md`).
-- Tokens (Tailwind classes): `bg-navy`, `bg-navy-deep`, `text-teal-strong` (AA text), `bg-teal` (fills), `bg-teal-soft`, `text-gold-strong`, `bg-gold-soft`, `bg-surface-subtle`, `text-muted-foreground`, status pairs `bg-success-soft text-success-strong`, `bg-warning-soft text-warning-strong`, `bg-danger-soft text-danger-strong`, `bg-info-soft text-info`. Fonts: `font-heading` (Manrope) for headings, Inter body.
-- **Never put teal (#16A6A1), gold, `text-success` or `text-warning` text on white** — they fail WCAG AA. Use the `-strong` variants for text; the base hues are for fills, icons and borders.
+- Tokens (Tailwind classes): `bg-navy`, `bg-navy-deep`, `text-teal-strong` (AA text), `bg-teal` (fills), `bg-teal-soft`, `text-gold-strong`, `bg-gold-soft`, `bg-surface-subtle`, `text-muted-foreground`, status pairs `bg-success-soft text-success-strong`, `bg-warning-soft text-warning-strong`, `bg-danger-soft text-danger-strong`, `bg-info-soft text-info`. Fonts: `font-heading` / `font-display` (Figtree; 800 with tight tracking for public headlines) and Inter body. The palette is white + near-black + ONE blue-aqua accent (see `DESIGN.md`); the legacy names map onto it (navy → near-black, teal → accent, gold → accent soft).
+- **Never put the accent fill (`text-teal`, #0EA5E9), `text-success` or `text-warning` text on white** — they fail WCAG AA. Use the `-strong` variants for text; the base hues are for fills, icons and borders.
 - Charts: colours from `src/components/shared/charts/palette.ts` (validated for colour-vision deficiency); `--chart-1..5` match it.
 - Upload components live in `@/components/files` (`FileUpload`, `FilePreview`, `FileLink`), not `@/components/shared`.
 - Public legal routes (fixed): `/legal/privacy-policy`, `/legal/terms`, `/legal/cookie-policy`, `/legal/data-rights`, `/legal/accessibility`, `/legal/disclaimers`, `/cookie-preferences`, `/grievance`.

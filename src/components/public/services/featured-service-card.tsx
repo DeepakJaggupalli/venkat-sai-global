@@ -25,16 +25,18 @@ export function FeaturedServiceCard({ entry, assets, className }: { entry: Publi
   const highlights = (entry.data.whatWeProvide ?? []).map((i) => i.title?.trim()).filter((t): t is string => Boolean(t)).slice(0, 4);
   const media = entryMedia(entry, assets);
   return (
-    <article className={cn("group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-xs transition-shadow duration-200 hover:shadow-lg", className)}>
+    <article className={cn("card-surface lift group relative flex h-full flex-col overflow-hidden rounded-3xl", className)}>
       <ServiceMedia
         asset={media?.kind === "image" ? media : null}
         iconName={entry.data.iconName}
-        title={entry.title}
-        className="rounded-none"
+        slug={entry.slug}
+        decorative
+        zoomOnHover
+        className="aspect-[16/10] rounded-none"
         sizes="(min-width: 1024px) 33vw, 100vw"
       />
       <div className="flex flex-1 flex-col p-6 sm:p-7">
-        <h3 className="font-heading text-2xl font-bold text-navy">
+        <h3 className="font-display text-2xl text-foreground sm:text-[1.75rem]">
           <Link href={href} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
             {entry.title}
           </Link>
@@ -50,7 +52,7 @@ export function FeaturedServiceCard({ entry, assets, className }: { entry: Publi
             ))}
           </ul>
         ) : null}
-        <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-semibold text-teal-strong">
+        <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-7 text-sm font-semibold text-foreground">
           Learn more <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </span>
       </div>

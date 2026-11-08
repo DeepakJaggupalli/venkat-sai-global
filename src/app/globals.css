@@ -3,15 +3,11 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Venkat Sai Global design tokens.
- * Change brand colours here only — every component reads these variables.
- * Palette (from the Venkat Sai recruitment posters): royal blue #1D3FA8, deep navy #0B1F5C,
- * golden yellow #FFD000, alert red #E3262E, green #159447.
- * Legacy token NAMES are kept and remapped so existing classes keep working:
- *   navy -> deep navy, teal -> royal blue family (accent fills, icons, rings), gold -> golden yellow.
- * Accessibility: yellow (#FFD000), the bright accent blue (#3D63E0 as --brand-teal) and green (#159447)
- * are for fills, icons and borders; use the -strong variants for text on white. Yellow is a text colour
- * only on navy (10.4:1). Navy text on yellow: 10.4:1.
+ * Venkat Sai Global design tokens (see DESIGN.md). Change brand colours here only — every component reads
+ * these variables. White background, near-black type, ONE blue-aqua accent:
+ *   fill #0EA5E9 (dots, icons, rings — never white text on it), text #0369A1 (AA 5.9:1), soft #E0F2FE.
+ * Legacy token NAMES (navy, teal, gold, royal, yellow, red …) are kept for the portals and remapped:
+ *   navy -> near-black, teal/royal/red -> accent, gold/yellow -> accent soft.
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -20,9 +16,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-heading: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  /* Heavy condensed display face for big public headlines (Anton). */
-  --font-display: var(--font-anton), "Arial Narrow", Impact, var(--font-manrope), sans-serif;
+  /* Figtree: geometric sans for headings (600-700 in the portals, 800 for public display headlines). */
+  --font-heading: var(--font-figtree), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-figtree), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -83,10 +79,13 @@
   --color-red-strong: var(--brand-red-strong);
   --color-green: var(--brand-green);
   --color-green-strong: var(--brand-green-strong);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
 
-  --animate-marquee: vsg-marquee var(--marquee-duration, 40s) linear infinite;
-  --animate-float-y: vsg-float-y 6s ease-in-out infinite;
-  --animate-pulse-ring: vsg-pulse-ring 2.4s ease-out infinite;
+  --animate-marquee: vsg-marquee var(--marquee-duration, 60s) linear infinite;
+  --shadow-card: var(--elev-card);
+  --shadow-card-hover: var(--elev-card-hover);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -98,55 +97,67 @@
 }
 
 :root {
-  /* Poster palette */
-  --brand-royal: #1d3fa8; /* 9.0:1 on white */
-  --brand-yellow: #ffd000; /* fills; text only on navy */
-  --brand-red: #e3262e; /* fills/badges; white text 4.6:1 */
-  --brand-red-strong: #b3171f;
-  --brand-green: #159447; /* fills/icons */
-  --brand-green-strong: #0e7a3a; /* 5.4:1 on white */
+  /*
+   * One accent: blue-aqua. #0EA5E9 is the fill (dots, check icons, small highlights, rings; never white
+   * text on it); #0369A1 is accent TEXT on white (5.9:1); #E0F2FE is the soft tint (selected chips, badges).
+   * #06B6D4 may partner #0EA5E9 in tiny gradient touches only.
+   */
+  --accent-fill: #0ea5e9;
+  --accent-partner: #06b6d4;
+  --accent-text: #0369a1;
+  --accent-soft: #e0f2fe;
+  --elev-card: 0 1px 2px rgb(10 10 11 / 0.04), 0 8px 24px rgb(10 10 11 / 0.06);
+  --elev-card-hover: 0 1px 2px rgb(10 10 11 / 0.05), 0 14px 32px rgb(10 10 11 / 0.09);
 
-  /* Legacy names, remapped */
-  --brand-navy: #0b1f5c; /* 15.4:1 on white */
-  --brand-navy-deep: #06123a;
-  --brand-teal: #3d63e0; /* bright royal accent: fills, icons, rings (white text 5.2:1) */
-  --brand-teal-strong: #1d3fa8;
-  --brand-teal-soft: #e8eefc;
-  --brand-gold: #ffd000;
-  --brand-gold-strong: #7a5a00; /* 6.4:1 on white */
-  --brand-gold-soft: #fff6cc;
+  /* Legacy poster names, remapped onto the palette (portals still use some of them). */
+  --brand-royal: #0369a1;
+  --brand-yellow: #e0f2fe;
+  --brand-red: #0ea5e9;
+  --brand-red-strong: #0369a1;
+  --brand-green: #16a34a; /* WhatsApp / status icons only */
+  --brand-green-strong: #15803d; /* 5.0:1 on white */
+
+  /* Legacy names, remapped: navy -> near-black, teal -> accent, gold -> accent soft. */
+  --brand-navy: #0a0a0b; /* 19.6:1 on white */
+  --brand-navy-deep: #1c1c1f; /* hover step for near-black fills */
+  --brand-teal: #0ea5e9; /* accent fill: icons, rings, dots */
+  --brand-teal-strong: #0369a1; /* accent text on white 5.9:1 */
+  --brand-teal-soft: #e0f2fe;
+  --brand-gold: #e0f2fe;
+  --brand-gold-strong: #0369a1;
+  --brand-gold-soft: #f0f9ff;
 
   --background: #ffffff;
-  --foreground: #0f1b3d;
+  --foreground: #0a0a0b;
   --surface: #ffffff;
-  --surface-subtle: #f4f6fc;
+  --surface-subtle: #f7f8fa;
   --card: #ffffff;
-  --card-foreground: #0f1b3d;
+  --card-foreground: #0a0a0b;
   --popover: #ffffff;
-  --popover-foreground: #0f1b3d;
-  --primary: #1d3fa8;
+  --popover-foreground: #0a0a0b;
+  --primary: #0a0a0b;
   --primary-foreground: #ffffff;
-  --secondary: #edf1fb;
-  --secondary-foreground: #0b1f5c;
-  --muted: #f4f6fc;
-  --muted-foreground: #4f5b78;
-  --accent: #e8eefc;
-  --accent-foreground: #142e80;
+  --secondary: #f4f5f7;
+  --secondary-foreground: #0a0a0b;
+  --muted: #f4f5f7;
+  --muted-foreground: #5b6170; /* 6.3:1 on white, 5.9:1 on #F7F8FA */
+  --accent: #f4f5f7;
+  --accent-foreground: #0a0a0b;
   --destructive: #c81e26;
   --danger-soft: #fde8e9;
-  --success: #159447;
-  --success-soft: #e3f5ea;
+  --success: #16a34a;
+  --success-soft: #e7f6ec;
   --warning: #b97d14;
   --warning-soft: #fbf1df;
-  --info: #1d3fa8;
-  --info-soft: #e8eefc;
-  /* AA-safe TEXT variants (≥ 4.5:1 on white and on their -soft backgrounds). */
-  --success-strong: #0e7a3a;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  /* AA-safe TEXT variants (>= 4.5:1 on white and on their -soft backgrounds). */
+  --success-strong: #15803d;
   --warning-strong: #7d530a;
   --danger-strong: #b3171f;
-  --border: #dfe5f2;
-  --input: #cfd7e8;
-  --ring: #1d3fa8;
+  --border: #e9ebef;
+  --input: #dcdfe5;
+  --ring: #0284c7; /* focus ring: 4.1:1 on white (non-text contrast >= 3:1) */
 
   /* Validated categorical palette (CVD + contrast checked, see src/components/shared/charts/palette.ts). */
   --chart-1: #16a6a1;
@@ -158,44 +169,39 @@
   --radius: 0.625rem;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f1b3d;
-  --sidebar-primary: #1d3fa8;
+  --sidebar-foreground: #0a0a0b;
+  --sidebar-primary: #0369a1;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #edf1fb;
-  --sidebar-accent-foreground: #0b1f5c;
-  --sidebar-border: #dfe5f2;
-  --sidebar-ring: #1d3fa8;
-}
-
-/* Dark bands (public hero, footer, navy sections): yellow focus ring so focus stays visible on navy. */
-.band-dark {
-  --ring: #ffd000;
+  --sidebar-accent: #f4f5f7;
+  --sidebar-accent-foreground: #0a0a0b;
+  --sidebar-border: #e9ebef;
+  --sidebar-ring: #0284c7;
 }
 
 /* Optional dark theme (user-selectable later — not applied by default; spec §15.2). */
 .dark {
-  --background: #06123a;
-  --foreground: #e8edf5;
-  --surface: #0f1b33;
-  --surface-subtle: #0c1730;
-  --card: #0f1b33;
-  --card-foreground: #e8edf5;
-  --popover: #0f1b33;
-  --popover-foreground: #e8edf5;
-  --primary: #e8edf5;
-  --primary-foreground: #101c35;
-  --secondary: #1a2846;
-  --secondary-foreground: #e8edf5;
-  --muted: #13213d;
-  --muted-foreground: #9fabc0;
-  --accent: #123c43;
-  --accent-foreground: #c9f0ee;
+  --background: #0a0a0b;
+  --foreground: #ededef;
+  --surface: #141416;
+  --surface-subtle: #111113;
+  --card: #141416;
+  --card-foreground: #ededef;
+  --popover: #141416;
+  --popover-foreground: #ededef;
+  --primary: #ededef;
+  --primary-foreground: #0a0a0b;
+  --secondary: #1c1c1f;
+  --secondary-foreground: #ededef;
+  --muted: #1c1c1f;
+  --muted-foreground: #a1a6b3;
+  --accent: #1c1c1f;
+  --accent-foreground: #ededef;
   --destructive: #e26a6a;
-  --border: #22314f;
-  --input: #2a3a5b;
-  --ring: #ffd000;
-  --brand-teal-strong: #8fb0ff;
-  --brand-gold-strong: #ffd000;
+  --border: #26262b;
+  --input: #2f2f35;
+  --ring: #38bdf8;
+  --brand-teal-strong: #7dd3fc;
+  --brand-gold-strong: #7dd3fc;
   --success-strong: #5fd3a6;
   --warning-strong: #f0c062;
   --danger-strong: #f08a8a;
@@ -204,14 +210,14 @@
   --chart-3: #b8892c;
   --chart-4: #5b8def;
   --chart-5: #d95926;
-  --sidebar: #0c1730;
-  --sidebar-foreground: #e8edf5;
-  --sidebar-primary: #2fc2bc;
-  --sidebar-primary-foreground: #091327;
-  --sidebar-accent: #1a2846;
-  --sidebar-accent-foreground: #e8edf5;
-  --sidebar-border: #22314f;
-  --sidebar-ring: #2fc2bc;
+  --sidebar: #111113;
+  --sidebar-foreground: #ededef;
+  --sidebar-primary: #38bdf8;
+  --sidebar-primary-foreground: #0a0a0b;
+  --sidebar-accent: #1c1c1f;
+  --sidebar-accent-foreground: #ededef;
+  --sidebar-border: #26262b;
+  --sidebar-ring: #38bdf8;
 }
 
 @layer base {
@@ -221,6 +227,7 @@
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: rgb(14 165 233 / 0.15);
   }
   body {
     @apply bg-background text-foreground;
@@ -238,37 +245,37 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  a,
+  button {
+    touch-action: manipulation;
+  }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
   ::selection {
-    background: color-mix(in oklab, var(--brand-yellow) 45%, transparent);
+    background: color-mix(in oklab, var(--accent-fill) 22%, transparent);
   }
+  /* Big public headlines: heavy geometric sans, tight tracking. */
   .font-display {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: 0.005em;
-    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
   }
 }
 
 @layer utilities {
-  /* Standard page container with the 16px mobile gutter. */
+  /* Standard page container (~1200px content) with the 16px mobile gutter. */
   .container-page {
     margin-inline: auto;
     width: 100%;
-    max-width: 80rem;
+    max-width: 78rem;
     padding-inline: 1rem;
   }
   @media (min-width: 640px) {
     .container-page {
       padding-inline: 1.5rem;
-    }
-  }
-  @media (min-width: 1024px) {
-    .container-page {
-      padding-inline: 2rem;
     }
   }
   .text-balance {
@@ -278,9 +285,36 @@
     text-wrap: pretty;
   }
 
-  /* Infinite marquee: the track holds the item list twice and slides by half its width. */
+  /* Small uppercase section label with the accent dot. */
+  .label-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+  .label-dot::before {
+    content: "";
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--accent-fill);
+    flex-shrink: 0;
+  }
+
+  /* Card surface: white, hairline border, very soft shadow. */
+  .card-surface {
+    background: #fff;
+    border: 1px solid var(--border);
+    box-shadow: var(--elev-card);
+  }
+
+  /* Infinite rail: the track holds the item list twice and slides by half its width. */
   .marquee-mask {
-    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
   }
   .marquee-track {
     display: flex;
@@ -291,58 +325,56 @@
     animation-direction: reverse;
   }
   .marquee-mask:hover .marquee-track,
-  .marquee-mask:focus-within .marquee-track {
+  .marquee-mask:focus-within .marquee-track,
+  [data-paused="true"] .marquee-track {
     animation-play-state: paused;
   }
 
-  /* Scroll reveal (see components/public/reveal.tsx). Content stays visible without JavaScript. */
+  /* Scroll reveal (see components/public/reveal.tsx): a short fade and 12px rise. Visible without JavaScript. */
   .js-reveal [data-reveal] {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(12px);
     transition:
-      opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
-      transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .js-reveal [data-reveal="2"] {
-    transition-delay: 90ms;
+    transition-delay: 70ms;
   }
   .js-reveal [data-reveal="3"] {
-    transition-delay: 180ms;
+    transition-delay: 140ms;
   }
   .js-reveal [data-reveal="4"] {
-    transition-delay: 270ms;
+    transition-delay: 210ms;
   }
   .js-reveal [data-reveal][data-revealed="true"] {
     opacity: 1;
     transform: none;
   }
 
-  /* Hover lift for cards. */
+  /* Hover lift for linked cards: 2px and a slightly deeper soft shadow. */
   .lift {
     transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease,
-      border-color 0.25s ease;
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
   }
   .lift:hover,
   .lift:focus-within {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 40px -22px rgb(11 31 92 / 0.45);
+    transform: translateY(-2px);
+    box-shadow: var(--elev-card-hover);
   }
+}
 
-  /* Diagonal "hazard" stripe used as a section divider (yellow/navy, like the posters). */
-  .stripe-hazard {
-    background-image: repeating-linear-gradient(-45deg, var(--brand-yellow) 0 14px, var(--brand-navy) 14px 28px);
+/* Hero entrance (once, on load): fade and 16px rise. Used as motion-safe:animate-[vsg-enter_…]. */
+@keyframes vsg-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
-  .bg-grid-dark {
-    background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-    background-size: 48px 48px;
-  }
-  .text-stroke-yellow {
-    -webkit-text-stroke: 2px var(--brand-yellow);
-    color: transparent;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -352,26 +384,6 @@
   }
   to {
     transform: translateX(-50%);
-  }
-}
-@keyframes vsg-float-y {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-@keyframes vsg-pulse-ring {
-  0% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  80%,
-  100% {
-    transform: scale(1.7);
-    opacity: 0;
   }
 }
 
@@ -384,6 +396,9 @@
   }
   .marquee-track [data-marquee-copy] {
     display: none;
+  }
+  .marquee-mask {
+    mask-image: none;
   }
   .js-reveal [data-reveal] {
     opacity: 1;

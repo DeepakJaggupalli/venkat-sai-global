@@ -1,4 +1,4 @@
-import { Briefcase, ClipboardCheck, GraduationCap } from "lucide-react";
+import { Briefcase, ClipboardCheck, FileStack, GraduationCap, Stamp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -104,6 +104,16 @@ export default async function CandidateRecordPage({ params }: { params: Promise<
         }
         actions={
           <div className="flex flex-wrap gap-2">
+            {can.open ? (
+              <>
+                <a href={`/admin/candidates/${id}/pack?type=cv`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium hover:bg-surface-subtle" data-testid="candidate-cv-pack">
+                  <FileStack aria-hidden="true" className="size-4" /> Download CV pack
+                </a>
+                <a href={`/admin/candidates/${id}/pack?type=visa`} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium hover:bg-surface-subtle" data-testid="candidate-visa-pack">
+                  <Stamp aria-hidden="true" className="size-4" /> Download visa pack
+                </a>
+              </>
+            ) : null}
             {can.manageRecruitment ? (
               <FormDialog
                 triggerLabel="Assign to job"

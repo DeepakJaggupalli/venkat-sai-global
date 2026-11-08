@@ -19,6 +19,7 @@ import { notifyStaff } from "@/modules/notifications";
 import { getSetting } from "@/modules/settings";
 
 import { notifyBusinessInbox } from "./business-inbox";
+import { issueCvDocumentUploadToken } from "./cv-document-tokens";
 import { CV_MAX_BYTES, OTHER_TRADE, type CvSubmissionFilters, type CvSubmissionInput, type CvSubmissionResult } from "./cv-submission-schemas";
 import type { PublicSubmissionMeta } from "./enquiries";
 import { assertStaff, enforceRateLimits, likePattern } from "./internal";
@@ -77,7 +78,7 @@ export async function findRequirementPoster(slug: string | undefined | null): Pr
 export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpload | null, meta: PublicSubmissionMeta & { sourcePage?: string | null }): Promise<CvSubmissionResult> {
   if (input.website?.trim()) {
     await logSecurityEvent({ type: "form_honeypot_triggered", severity: "info", metadata: { form: "send_cv" } });
-    return { code: null, name: input.name, trade: "", requirementTitle: null };
+    return { code: null, name: input.name, trade: "", requirementTitle: null, uploadToken: null };
   }
   if (!input.consentToContact) invalid({ consentToContact: ["Please agree that we may call or WhatsApp you about jobs"] });
   if (!upload || upload.data.byteLength === 0) invalid({ cv: ["Attach your CV"] });
@@ -166,7 +167,7 @@ export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpl
       await notifyStaff({ event: "cv.received", permission: "candidates.manage", data: { ...data, forStaff: true }, link: CV_SUBMISSIONS_ADMIN_PATH, channels: ["in_app"] }, { tx });
       await notifyBusinessInbox({ event: "cv.received", data: { ...data, phone: input.phone }, link: CV_SUBMISSIONS_ADMIN_PATH }, tx);
 
-      return { code, name: input.name, trade: trade.label, requirementTitle: requirement?.title ?? null };
+      return { code, name: input.name, trade: trade.label, requirementTitle: requirement?.title ?? null, uploadToken: issueCvDocumentUploadToken(row!.id, "candidate").token };
     });
   } catch (error) {
     if (error instanceof FileValidationError) invalid({ cv: [error.message] }, error.message);
@@ -415,5 +416,61 @@ export async function getCvSubmission(ctx: StaffContext, id: string, opts: { rev
     remarksUpdatedByName: row!.remarksBy ?? null,
     canRevealPassport,
     passportNumber,
+  };
+}
+
+export type CvSubmissionExportRow = {
+  code: string;
+  name: string;
+  phone: string | null;
+  tradeLabel: string;
+  experienceYears: number | null;
+  countryName: string | null;
+  requirementTitle: string | null;
+  status: CvSubmissionStatus;
+  passportEncrypted: string | null;
+  passportLast4: string | null;
+  hasPassport: boolean | null;
+  candidateNotes: string | null;
+  staffRemarks: string | null;
+  createdAt: Date;
+};
+
+/**
+ * Rows for the staff Excel download (candidates.view), newest first, with the list's filters. The caller masks phone
+ * and passport numbers per permission and logs the export. Returns the total so the sheet can say it was capped.
+ */
+export async function listCvSubmissionsForExport(ctx: StaffContext, filters: CvSubmissionFilters, limit: number): Promise<{ rows: CvSubmissionExportRow[]; total: number }> {
+  assertStaff(ctx, "candidates.view");
+  const where = filterConditions(filters);
+  const condition = where.length ? and(...where) : undefined;
+  const [rows, totals] = await Promise.all([
+    db
+      .select({ s: cvSubmissions, countryName: countries.name })
+      .from(cvSubmissions)
+      .leftJoin(countries, eq(countries.code, cvSubmissions.preferredCountryCode))
+      .where(condition)
+      .orderBy(desc(cvSubmissions.createdAt))
+      .limit(limit),
+    db.select({ value: count() }).from(cvSubmissions).where(condition),
+  ]);
+  return {
+    total: totals[0]?.value ?? 0,
+    rows: rows.map(({ s, countryName }) => ({
+      code: s.code,
+      name: s.name,
+      phone: s.phone,
+      tradeLabel: s.tradeLabel,
+      experienceYears: s.experienceYears,
+      countryName: countryName ?? null,
+      requirementTitle: s.requirementTitle,
+      status: s.status,
+      passportEncrypted: s.passportNumberEncrypted,
+      passportLast4: s.passportNumberLast4,
+      hasPassport: s.hasPassport,
+      candidateNotes: s.candidateNotes,
+      staffRemarks: s.staffRemarks,
+      createdAt: s.createdAt,
+    })),
   };
 }

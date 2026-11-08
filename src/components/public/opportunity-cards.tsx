@@ -42,7 +42,7 @@ function Chip({ children, tone = "neutral" }: { children: ReactNode; tone?: "neu
 export function JobMiniCard({ job, headingLevel: Heading = "h3" }: { job: JobCard; headingLevel?: "h3" | "h4" }) {
   const closes = shortDate(job.closesAt);
   return (
-    <article className="group relative flex h-full flex-col rounded-xl border border-border bg-white p-5 shadow-xs transition-shadow duration-200 hover:shadow-md" data-testid="job-mini-card">
+    <article className="card-surface lift group relative flex h-full flex-col rounded-2xl p-5" data-testid="job-mini-card">
       <div className="flex flex-wrap gap-1.5">
         {job.isFeatured ? <Chip tone="gold">Featured</Chip> : null}
         {job.isOverseas ? (
@@ -52,7 +52,7 @@ export function JobMiniCard({ job, headingLevel: Heading = "h3" }: { job: JobCar
         ) : null}
         <Chip>{humanize(job.employmentType)}</Chip>
       </div>
-      <Heading className="mt-3 font-heading text-base font-semibold text-navy">
+      <Heading className="mt-3 font-heading text-base font-bold tracking-tight text-foreground">
         <Link href={`/jobs/${job.slug}`} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
           {job.title}
         </Link>
@@ -92,13 +92,13 @@ export function CourseMiniCard({ course, headingLevel: Heading = "h3" }: { cours
   const starts = course.nextBatch?.startsOn ? shortDate(new Date(`${course.nextBatch.startsOn}T00:00:00Z`)) : null;
   const duration = course.durationWeeks ? `${course.durationWeeks} week${course.durationWeeks === 1 ? "" : "s"}` : course.durationHours ? `${course.durationHours} hours` : null;
   return (
-    <article className="group relative flex h-full flex-col rounded-xl border border-border bg-white p-5 shadow-xs transition-shadow duration-200 hover:shadow-md" data-testid="course-mini-card">
+    <article className="card-surface lift group relative flex h-full flex-col rounded-2xl p-5" data-testid="course-mini-card">
       <div className="flex flex-wrap gap-1.5">
         {course.isFeatured ? <Chip tone="gold">Featured</Chip> : null}
         <Chip>{humanize(course.mode)}</Chip>
         {course.feeType === "free" ? <Chip tone="teal">Free</Chip> : null}
       </div>
-      <Heading className="mt-3 font-heading text-base font-semibold text-navy">
+      <Heading className="mt-3 font-heading text-base font-bold tracking-tight text-foreground">
         <Link href={`/training/${course.slug}`} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
           {course.title}
         </Link>

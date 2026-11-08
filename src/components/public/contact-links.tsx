@@ -141,9 +141,9 @@ export function ContactIcons({
   className?: string;
 }) {
   const base = cn(
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-[transform,background-color,border-color] duration-200 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 [&_svg]:size-5 [&_svg]:shrink-0",
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-[background-color,border-color] duration-150 [&_svg]:size-5 [&_svg]:shrink-0",
     labels ? "px-4" : "size-11",
-    variant === "dark" ? "border-white/20 bg-white/5 text-white hover:border-yellow hover:bg-white/10" : "border-border bg-white text-navy hover:border-royal/40 hover:bg-teal-soft",
+    variant === "dark" ? "border-white/20 bg-white/5 text-white hover:border-white/50 hover:bg-white/10" : "border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle",
   );
   const whatsappTone = variant === "dark" ? "" : "text-green-strong";
   return (
@@ -198,7 +198,7 @@ export function MapEmbed({
       />
       <figcaption className={cn("flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm", dark ? "text-white/75" : "text-muted-foreground")}>
         <span className="min-w-0">{contact.addressLines.join(", ")}</span>
-        <a href={contact.mapsUrl} target="_blank" rel="noopener noreferrer" className={cn("inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline", dark ? "text-yellow" : "text-teal-strong")}>
+        <a href={contact.mapsUrl} target="_blank" rel="noopener noreferrer" className={cn("inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline", dark ? "text-white" : "text-teal-strong")}>
           <MapPin aria-hidden="true" className="size-4" />
           Directions
           <span className="sr-only"> (opens Google Maps in a new tab)</span>
@@ -212,14 +212,14 @@ export function MapEmbed({
 export function ContactList({ contact = resolveContact(null), variant = "light", className }: { contact?: ResolvedContact; variant?: "light" | "dark"; className?: string }) {
   const dark = variant === "dark";
   const row = cn("flex items-start gap-3 text-sm leading-6", dark ? "text-white/80" : "text-foreground");
-  const icon = cn("mt-1 size-4 shrink-0", dark ? "text-yellow" : "text-teal-strong");
-  const link = cn("rounded-sm underline-offset-4 hover:underline", dark ? "hover:text-white" : "hover:text-navy");
+  const icon = cn("mt-1 size-4 shrink-0", dark ? "text-white/70" : "text-teal-strong");
+  const link = cn("rounded-sm underline-offset-4 hover:underline", dark ? "hover:text-white" : "hover:text-foreground");
   return (
     <ul role="list" className={cn("space-y-3", className)}>
       <li className={row}>
         <MapPin className={icon} aria-hidden="true" />
         <address className="not-italic">
-          <span className={cn("block font-semibold", dark ? "text-white" : "text-navy")}>{contact.businessName}</span>
+          <span className={cn("block font-semibold", dark ? "text-white" : "text-foreground")}>{contact.businessName}</span>
           {contact.addressLines.map((line) => (
             <span key={line} className="block">
               {line}
@@ -250,7 +250,7 @@ export function ContactList({ contact = resolveContact(null), variant = "light",
         </span>
       </li>
       <li className={row}>
-        <WhatsAppIcon className={cn("mt-0.5 size-5 shrink-0", dark ? "text-yellow" : "text-green-strong")} />
+        <WhatsAppIcon className={cn("mt-0.5 size-5 shrink-0", dark ? "text-white/70" : "text-green-strong")} />
         <a href={whatsappHref(DEFAULT_WHATSAPP_MESSAGE, contact.whatsapp.e164)} target="_blank" rel="noopener noreferrer" className={link}>
           WhatsApp {contact.whatsapp.display}
           <span className="sr-only"> (opens in a new tab)</span>

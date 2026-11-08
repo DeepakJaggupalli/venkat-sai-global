@@ -4,7 +4,7 @@
  */
 import { z } from "zod";
 
-import type { CvSubmissionStatus } from "@/db/schema/cv-submissions";
+import type { CvSubmissionDocumentKind, CvSubmissionStatus } from "@/db/schema/cv-submissions";
 import { f } from "@/lib/validation";
 
 export const CV_SUBMISSION_STATUS_LABELS = {
@@ -96,4 +96,61 @@ export type CvSubmissionResult = {
   name: string;
   trade: string;
   requirementTitle: string | null;
+  /**
+   * Short-lived signed link token for "Add your documents now (optional)" (null when dropped as spam). Valid for
+   * CV_DOCUMENT_CANDIDATE_LINK_HOURS; staff can send a fresh 7-day link from the Command Centre.
+   */
+  uploadToken: string | null;
 };
+
+// ---------------------------------------------------------------------------
+// Further documents (one file per upload)
+// ---------------------------------------------------------------------------
+
+export const CV_DOCUMENT_KIND_LABELS = {
+  certificate: "Certificate",
+  licence: "Licence",
+  passport_cover: "Passport cover (outside, with punched number)",
+  passport_first_page: "Passport first page",
+  passport_last_page: "Passport last page",
+  photo: "Photo on white background",
+  other: "Other document",
+} as const satisfies Record<CvSubmissionDocumentKind, string>;
+
+/** Shown in this order (also the CV pack order after the resume). */
+export const CV_DOCUMENT_KIND_VALUES = Object.keys(CV_DOCUMENT_KIND_LABELS) as [CvSubmissionDocumentKind, ...CvSubmissionDocumentKind[]];
+
+/** Kinds that hold one file: a new upload replaces the previous one. Certificates, licences and "other" hold many. */
+export const CV_DOCUMENT_SINGLE_KINDS: readonly CvSubmissionDocumentKind[] = ["passport_cover", "passport_first_page", "passport_last_page", "photo"];
+
+export const CV_DOCUMENT_KIND_HINTS: Partial<Record<CvSubmissionDocumentKind, string>> = {
+  certificate: "Trade, training or education certificates. Add each one separately.",
+  licence: "Driving or trade licences. Add each one separately.",
+  passport_cover: "The outside cover, showing the punched passport number.",
+  passport_first_page: "The page with your photo and details.",
+  passport_last_page: "The page with your address and family details.",
+  photo: "A recent passport-size photo on a plain white background.",
+};
+
+/** One file per request, well under the 4.5 MB request limit. Larger photos are shrunk in the browser first. */
+export const CV_DOCUMENT_MAX_BYTES = 4 * 1024 * 1024;
+export const CV_DOCUMENT_ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
+export const CV_DOCUMENT_TYPES_LABEL = "PDF, JPG, PNG or WebP";
+export const CV_DOCUMENT_MAX_PER_SUBMISSION = 40;
+export const CV_DOCUMENT_CANDIDATE_LINK_HOURS = 2;
+export const CV_DOCUMENT_STAFF_LINK_DAYS = 7;
+
+export const cvDocumentKindSchema = z.enum(CV_DOCUMENT_KIND_VALUES, { error: "Choose the type of document" });
+
+export const cvDocumentMoveSchema = z.object({
+  id: f.uuid(),
+  direction: z.enum(["up", "down"]),
+});
+
+export const cvDocumentDeleteSchema = z.object({
+  id: f.uuid(),
+});
+
+export const cvUploadLinkSchema = z.object({
+  id: f.uuid(),
+});

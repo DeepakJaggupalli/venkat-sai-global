@@ -1,8 +1,10 @@
 import { BadgeCheck, Briefcase, Compass, Globe2, GraduationCap, Layers, ShieldCheck, TrendingUp } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
 import { BRAND } from "@/config/site";
+import { IMAGE_CREDITS } from "@/content/image-credits";
 import type { TFunction } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -25,33 +27,39 @@ const JOURNEY = [
   { key: "grow", icon: TrendingUp },
 ] as const;
 
-/** Left-hand brand panel of the auth layout (large screens). */
+const PANEL_PHOTO = IMAGE_CREDITS.find((c) => c.src === "/images/stock/welding-3.webp");
+
+/** Left-hand brand panel of the auth layout (large screens): light grey, one photograph, the promises. */
 export function BrandPanel({ t }: { t: TFunction }) {
   return (
     <aside
       aria-label={t("brand.asideLabel")}
-      className="relative hidden overflow-hidden bg-navy-deep text-white lg:flex lg:flex-col lg:justify-between lg:gap-10 lg:p-10 xl:p-14"
+      className="relative hidden overflow-hidden border-r border-border bg-surface-subtle text-foreground lg:flex lg:flex-col lg:justify-between lg:gap-10 lg:p-10 xl:p-14"
     >
-      <div aria-hidden className="pointer-events-none absolute -top-32 -right-32 size-96 rounded-full bg-teal/10 blur-3xl" />
       <Link href="/" className="relative w-fit rounded-md focus-visible:outline-offset-4">
-        <Wordmark inverted />
+        <Wordmark />
         <span className="sr-only">{t("layout.home")}</span>
       </Link>
 
-      <div className="relative max-w-md space-y-8">
+      <div className="relative max-w-lg space-y-8">
+        {PANEL_PHOTO ? (
+          <div className="relative aspect-[16/10] overflow-hidden rounded-3xl border border-border bg-white shadow-card">
+            <Image src={PANEL_PHOTO.src} alt="" fill sizes="(min-width: 1024px) 36vw, 1px" className="object-cover" priority />
+          </div>
+        ) : null}
         <div className="space-y-3">
-          <p className="text-sm font-semibold tracking-widest text-teal uppercase">{t("brand.category")}</p>
-          <p className="font-heading text-3xl leading-tight font-bold text-balance xl:text-4xl">{t("brand.statement")}</p>
+          <p className="label-dot">{t("brand.category")}</p>
+          <p className="font-display text-3xl text-balance xl:text-[2.5rem]">{t("brand.statement")}</p>
         </div>
-        <ul className="space-y-5">
+        <ul className="space-y-4">
           {PROMISES.map(({ key, icon: Icon }) => (
             <li key={key} className="flex gap-3">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg bg-white/10">
-                <Icon className="size-5 text-teal" aria-hidden />
+              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-border bg-white">
+                <Icon className="size-4 text-teal-strong" aria-hidden />
               </span>
               <div>
                 <p className="font-semibold">{t(`brand.promise.${key}.title`)}</p>
-                <p className="text-sm text-white/75">{t(`brand.promise.${key}.body`)}</p>
+                <p className="text-sm text-muted-foreground">{t(`brand.promise.${key}.body`)}</p>
               </div>
             </li>
           ))}
@@ -59,16 +67,16 @@ export function BrandPanel({ t }: { t: TFunction }) {
       </div>
 
       <div className="relative space-y-4">
-        <p className="text-sm font-medium text-white/85">{t("brand.journeyLabel")}</p>
+        <p className="text-sm font-medium text-foreground">{t("brand.journeyLabel")}</p>
         <ol className="flex flex-wrap gap-2">
           {JOURNEY.map(({ key, icon: Icon }) => (
-            <li key={key} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm">
-              <Icon className="size-3.5 text-teal" aria-hidden />
+            <li key={key} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1 text-sm">
+              <Icon className="size-3.5 text-teal-strong" aria-hidden />
               {t(`brand.journey.${key}`)}
             </li>
           ))}
         </ol>
-        <p className="text-xs text-white/60">
+        <p className="text-xs text-muted-foreground">
           {BRAND.legalEntity} · {BRAND.headquarters}
         </p>
       </div>

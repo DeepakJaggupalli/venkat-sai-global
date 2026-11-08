@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { getLogoDataUri } from "@/components/brand/logo-svg";
 
-/** App icon generated from the brand mark (the mark's own navy tile, so it reads on any tab or home screen). */
+/** App icon generated from the brand mark (the mark's own near-black tile, so it reads on any tab or home screen). */
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 

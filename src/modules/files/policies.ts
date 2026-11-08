@@ -423,6 +423,36 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
     upload: [{ kind: "system" }],
     staffView: ["candidates.view_documents", "recruitment.manage"],
   },
+  // Further documents for a CV submission (src/modules/operations/cv-submission-documents.ts): uploaded one file
+  // at a time by the candidate through a signed link or by staff, always through that module's route handlers
+  // (never POST /api/v1/uploads). Same staff readers as the CV.
+  cv_submission_document: {
+    ...base,
+    purpose: "cv_submission_document",
+    label: "Document",
+    allowedMimeTypes: [MIME.pdf, MIME.jpeg, MIME.png, MIME.webp],
+    maxBytes: 4 * MB,
+    imageVariants: ["thumb"],
+    sensitive: true,
+    dataCategory: "documents",
+    upload: [{ kind: "system" }],
+    staffView: ["candidates.view_documents", "recruitment.manage"],
+  },
+  // "Prepare my resume" (src/modules/resume-service): the candidate's photo (public form, no account) and the
+  // generated resume (DOCX and PDF). Staff with candidates.manage read them; the candidate downloads the generated
+  // documents through a signed link served by that module.
+  resume_service: {
+    ...base,
+    purpose: "resume_service",
+    label: "Resume",
+    allowedMimeTypes: [MIME.jpeg, MIME.png, MIME.pdf, MIME.docx],
+    maxBytes: 10 * MB,
+    imageVariants: ["thumb"],
+    sensitive: true,
+    dataCategory: "documents",
+    upload: [{ kind: "system" }],
+    staffView: ["candidates.manage"],
+  },
   invoice: {
     ...base,
     purpose: "invoice",

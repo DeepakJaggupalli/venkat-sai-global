@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import type { AssetMap, PublishedEntry } from "@/modules/content/types";
 
 /**
- * One card per training course family (services tagged "training-course"): the business's photo or the designed
- * illustration, the summary and the sub-categories (processes, positions, topics) as chips.
+ * One card per training course family (services tagged "training-course"): the business's photo or a credited
+ * stock photograph, the summary and the sub-categories (processes, positions, topics) as chips.
  */
 export function CourseFamilyGrid({
   families,
@@ -32,16 +32,18 @@ export function CourseFamilyGrid({
         const media = entryMedia(f, assets);
         return (
           <li key={f.id}>
-            <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-white shadow-xs transition-shadow duration-200 hover:shadow-md">
+            <article className="card-surface lift group relative flex h-full flex-col overflow-hidden rounded-2xl">
               <ServiceMedia
                 asset={media?.kind === "image" ? media : null}
                 iconName={f.data.iconName}
-                title={f.title}
-                className={cn("rounded-none", compact && "aspect-[16/9]")}
+                slug={f.slug}
+                decorative
+                zoomOnHover
+                className={cn("rounded-none", compact ? "aspect-[16/10]" : "aspect-[4/3]")}
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
               />
               <div className="flex flex-1 flex-col p-5">
-                <Heading className="font-heading text-lg font-semibold text-navy">
+                <Heading className="font-heading text-lg font-bold tracking-tight text-foreground">
                   <Link href={f.path ?? `/services/${f.slug}`} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
                     {f.title}
                   </Link>
@@ -50,13 +52,13 @@ export function CourseFamilyGrid({
                 {!compact && topics.length ? (
                   <ul className="mt-4 flex flex-wrap gap-1.5" aria-label={`${f.title}: what is covered`}>
                     {topics.slice(0, 8).map((t) => (
-                      <li key={t} className="rounded-full bg-surface-subtle px-2.5 py-1 text-xs font-medium text-navy">
+                      <li key={t} className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground">
                         {t}
                       </li>
                     ))}
                   </ul>
                 ) : null}
-                <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-teal-strong">
+                <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-foreground">
                   Course details <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </span>
               </div>

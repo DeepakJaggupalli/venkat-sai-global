@@ -301,6 +301,12 @@ export const DEFAULT_TEMPLATES: Partial<Record<NotificationEvent, DefaultTemplat
     cta: "Open CV submissions",
     sample: { code: "VSG-CV-000123", name: "Candidate name", trade: "Sample trade", phone: "+91 90000 00000", experienceYears: 5, countryName: "Sample country", passport: "Yes", requirementTitle: "Sample requirement" },
   },
+  "resume.requested": {
+    subject: "Resume request {{code}}{{#name}} - {{name}}{{/name}}",
+    body: "A candidate asked us to prepare their resume{{#name}}: **{{name}}**{{/name}}.\n\n- Reference: {{code}}{{#post}}\n- Post applied for: {{post}}{{/post}}{{#phone}}\n- Mobile / WhatsApp: {{phone}}{{/phone}}\n- Price: {{price}}\n- Status: {{statusLabel}}\n\nContact the candidate to collect the payment, then mark it paid in the Command Centre (sign-in required).",
+    cta: "Open resume requests",
+    sample: { code: "VSG-RES-000123", name: "Candidate name", post: "Sample post", phone: "+91 90000 00000", price: "Price on request", statusLabel: "Awaiting payment" },
+  },
 
   // -------------------------------------------------------------------------
   // Recruitment partners

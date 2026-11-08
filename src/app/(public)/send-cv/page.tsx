@@ -1,4 +1,5 @@
-import { Clock, PhoneCall, ShieldCheck } from "lucide-react";
+import { Clock, FilePen, PhoneCall, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import { PageHero } from "@/components/public/page-hero";
@@ -85,6 +86,16 @@ export default async function SendCvPage({ searchParams }: { searchParams: Promi
               <span>We never charge candidates to apply. Your CV is only seen by our recruitment team.</span>
             </li>
           </ul>
+          <div className="rounded-xl border border-border bg-surface-subtle p-4">
+            <h3 className="flex items-center gap-2 font-heading text-base font-semibold text-navy">
+              <FilePen className="size-5 shrink-0" aria-hidden="true" />
+              No proper CV yet?
+            </h3>
+            <p className="mt-1 text-sm text-foreground">We can prepare a professional resume for you in Word and PDF. This is an optional paid service, separate from any job application.</p>
+            <Link href="/resume-service" className="mt-2 inline-flex min-h-10 items-center text-sm font-semibold text-navy underline underline-offset-4" data-testid="resume-service-link">
+              Prepare my resume
+            </Link>
+          </div>
         </aside>
       </div>
     </>

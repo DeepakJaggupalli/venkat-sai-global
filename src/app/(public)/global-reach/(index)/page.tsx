@@ -4,12 +4,14 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { CtaBand } from "@/components/public/blocks";
-import { flagEmoji, groupByReach, REACH_GROUP_LABELS, REACH_GROUPS } from "@/components/public/geo";
+import { Flag } from "@/components/public/flag";
+import { groupByReach } from "@/components/public/geo";
+import { DEFAULT_DESTINATION_COUNTRIES } from "@/components/public/home/marquees";
 import { SAFE_RECRUITMENT_PATH } from "@/components/public/links";
 import { PageHero } from "@/components/public/page-hero";
 import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, settle } from "@/components/public/server";
-import { ReachMap } from "@/components/public/visuals";
+import { stockPhoto } from "@/content/stock-photos";
 import { getPublishedEntries } from "@/modules/content/queries";
 import { listCountries } from "@/modules/taxonomy/queries";
 
@@ -29,7 +31,9 @@ export default async function GlobalReachPage() {
   const destinations = page?.items ?? [];
   const names = Object.fromEntries(countries.map((c) => [c.code, c.name]));
   const groups = groupByReach(destinations, (d) => d.data.region);
-  const points = destinations.map((d) => ({ code: d.data.countryCode, label: names[d.data.countryCode] ?? d.title, region: d.data.region }));
+  const countryChips = destinations.length
+    ? destinations.map((d) => ({ code: d.data.countryCode, name: names[d.data.countryCode] ?? d.title }))
+    : DEFAULT_DESTINATION_COUNTRIES.filter((c) => c.code !== "IN");
 
   return (
     <>
@@ -38,7 +42,7 @@ export default async function GlobalReachPage() {
         eyebrow="Global reach"
         title="From Visakhapatnam to the world"
         intro="Country guides for the destinations we recruit for — the industries hiring, the documents candidates are usually asked for, and employment guidance that is reviewed and sourced."
-        visual={<ReachMap points={points} showLabels={false} />}
+        photo={stockPhoto("doha")}
       />
 
       <Section labelledBy="reach-map-title" className="pb-8 sm:pb-10 lg:pb-12">
@@ -52,12 +56,14 @@ export default async function GlobalReachPage() {
               : undefined
           }
         />
-        {destinations.length ? (
-          <div className="mt-10 rounded-2xl border border-border bg-navy-deep p-4 sm:p-6">
-            <ReachMap points={points} />
-          </div>
-        ) : null}
-        <p className="mt-4 text-sm text-muted-foreground">Regions: {REACH_GROUPS.map((g) => REACH_GROUP_LABELS[g]).join(" · ")}</p>
+        <ul className="mt-10 flex flex-wrap gap-2.5" aria-label="Countries">
+          {countryChips.map((c) => (
+            <li key={c.code + c.name} className="inline-flex h-11 items-center gap-2.5 rounded-full border border-border bg-white px-4 text-[15px] font-medium text-foreground">
+              <Flag code={c.code} />
+              {c.name}
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section tone="subtle" labelledBy="reach-groups-title" className="pt-10 sm:pt-12 lg:pt-14">
@@ -68,7 +74,7 @@ export default async function GlobalReachPage() {
           <div className="space-y-12" data-testid="destination-groups">
             {groups.map((g) => (
               <section key={g.group} aria-labelledby={`reach-${g.group}`}>
-                <h3 id={`reach-${g.group}`} className="font-heading text-xl font-semibold text-navy">
+                <h3 id={`reach-${g.group}`} className="font-heading text-xl font-bold tracking-tight text-foreground">
                   {g.label}
                 </h3>
                 <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -78,13 +84,11 @@ export default async function GlobalReachPage() {
                       <li key={d.id}>
                         <Link
                           href={d.path ?? `/global-reach/${d.slug}`}
-                          className="group flex h-full flex-col rounded-xl border border-border bg-white p-5 shadow-xs transition-shadow duration-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2"
+                          className="card-surface lift group flex h-full flex-col rounded-2xl p-5 focus-visible:outline-2 focus-visible:outline-offset-2"
                         >
                           <span className="flex items-center gap-3">
-                            <span aria-hidden="true" className="text-2xl leading-none">
-                              {flagEmoji(d.data.countryCode)}
-                            </span>
-                            <span className="font-heading text-lg font-semibold text-navy">{d.title}</span>
+                            <Flag code={d.data.countryCode} className="h-5 w-7" />
+                            <span className="font-heading text-lg font-bold tracking-tight text-foreground">{d.title}</span>
                             <ArrowRight aria-hidden="true" className="ml-auto size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
                           </span>
                           {d.summary ? <span className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{d.summary}</span> : null}

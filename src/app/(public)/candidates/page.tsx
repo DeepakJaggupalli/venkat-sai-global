@@ -86,7 +86,7 @@ export default function CandidatesPage() {
               jobs, check that the recruiting agent is registered on the Government of India&apos;s eMigrate portal.
             </p>
           </div>
-          <Link href={SAFE_RECRUITMENT_PATH} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-navy px-5 text-sm font-semibold text-white hover:bg-navy-deep">
+          <Link href={SAFE_RECRUITMENT_PATH} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b]">
             How to stay safe
           </Link>
         </div>

@@ -2,7 +2,7 @@ import { Info } from "lucide-react";
 
 import type { PublicMetric } from "@/modules/content/types";
 
-import { Section, SectionHeading } from "../section";
+import { Section, SectionHeading, type SectionTone } from "../section";
 import { CountUp } from "./count-up";
 
 function formatAsOf(asOf: string): string {
@@ -15,23 +15,23 @@ function formatAsOf(asOf: string): string {
  * Credibility figures. Renders ONLY values returned by `getPublicMetrics()` (live counts above their threshold
  * or admin-approved figures), each with its definition and "as of" date. Nothing renders when the list is empty.
  */
-export function MetricsSection({ metrics, heading, intro }: { metrics: readonly PublicMetric[]; heading?: string | null; intro?: string | null }) {
+export function MetricsSection({ tone = "white", metrics, heading, intro }: { metrics: readonly PublicMetric[]; heading?: string | null; intro?: string | null } & { tone?: SectionTone }) {
   if (!metrics.length) return null;
   return (
-    <Section tone="white" labelledBy="home-metrics-title" data-testid="home-metrics" className="py-14 sm:py-16 lg:py-20">
+    <Section tone={tone} labelledBy="home-metrics-title" data-testid="home-metrics" className="py-14 sm:py-16 lg:py-20">
       <div data-reveal>
         <SectionHeading
           id="home-metrics-title"
           eyebrow="Venkat Sai in numbers"
-          title={<span className="uppercase">{heading || "Measured, not claimed"}</span>}
+          title={heading || "Measured, not claimed"}
           intro={intro || "Every figure below is counted from our platform records or approved against evidence, and shows the date it applies to."}
         />
       </div>
       <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m, i) => (
-          <div key={m.key} data-reveal={String(Math.min(i + 1, 4))} className="lift flex flex-col rounded-2xl border-2 border-navy/10 border-t-yellow bg-white p-6">
-            <dt className="order-2 mt-2 font-heading text-base font-bold text-navy">{m.label}</dt>
-            <dd className="order-1 font-display text-5xl text-royal sm:text-6xl">
+          <div key={m.key} data-reveal={String(Math.min(i + 1, 4))} className="card-surface flex flex-col rounded-2xl p-6 sm:p-7">
+            <dt className="order-2 mt-3 font-heading text-base font-bold text-foreground">{m.label}</dt>
+            <dd className="order-1 font-display text-5xl text-foreground tabular-nums sm:text-6xl">
               <CountUp value={m.value} />
             </dd>
             <dd className="order-3 mt-2 text-sm leading-relaxed text-muted-foreground">{m.definition}</dd>

@@ -1,9 +1,10 @@
-import { CalendarClock, CheckCircle2, FileUp, MapPin } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CmsImage } from "@/components/public/cms-media";
+import { Flag } from "@/components/public/flag";
 import { Breadcrumbs } from "@/components/public/page-hero";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { CallButton, CONTACT_BUTTON_STYLES, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
@@ -50,10 +51,10 @@ export default async function RequirementPage({ params, searchParams }: Props) {
   return (
     <>
       <PreviewRibbon show={poster.preview} />
-      <div className="container-page py-8 sm:py-12">
-        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Requirements", href: "/requirements" }, { label: card.title }]} className="mb-6" />
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface-subtle">
+      <div className="container-page pt-10 pb-16 sm:pt-12 sm:pb-24">
+        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Requirements", href: "/requirements" }, { label: card.title }]} className="mb-8" />
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
+          <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-surface-subtle p-3 shadow-card">
             {card.poster ? (
               <a href={card.poster.url} target="_blank" rel="noopener noreferrer" className="block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 <CmsImage asset={{ ...card.poster, alt: card.alt }} size="lg" priority className="h-auto object-contain" sizes="(min-width: 1024px) 55vw, 100vw" />
@@ -67,12 +68,12 @@ export default async function RequirementPage({ params, searchParams }: Props) {
           <div className="min-w-0 space-y-6">
             <div>
               {card.countryName ? (
-                <p className="inline-flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-teal-strong">
-                  <MapPin className="size-4" aria-hidden="true" />
+                <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Flag code={card.countryCode} />
                   {card.countryName}
                 </p>
               ) : null}
-              <h1 className="mt-2 text-balance font-heading text-3xl font-bold tracking-tight text-navy sm:text-4xl">{card.title}</h1>
+              <h1 className="mt-4 text-balance font-display text-[2.25rem] text-foreground sm:text-5xl">{card.title}</h1>
               {card.companyName ? <p className="mt-2 text-base text-foreground">Company: {card.companyName}</p> : null}
               <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <span>
@@ -88,20 +89,20 @@ export default async function RequirementPage({ params, searchParams }: Props) {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap" data-testid="requirement-actions">
+              <Link href={applyHref} className={cn(CONTACT_BUTTON_STYLES.call, "group/apply")} data-testid="apply-send-cv">
+                Apply: send your CV
+                <ArrowRight aria-hidden="true" className="size-4! transition-transform duration-150 group-hover/apply:translate-x-0.5 motion-reduce:transition-none" />
+              </Link>
               <WhatsAppButton message={whatsappMessage} />
               <CallButton className={CONTACT_BUTTON_STYLES.outline} />
-              <Link href={applyHref} className={cn(CONTACT_BUTTON_STYLES.call, "bg-yellow text-navy hover:bg-navy hover:text-white")} data-testid="apply-send-cv">
-                <FileUp aria-hidden="true" />
-                Apply: send your CV
-              </Link>
             </div>
 
             {card.trades.length ? (
               <section aria-labelledby="trades-heading">
-                <h2 id="trades-heading" className="font-heading text-lg font-semibold text-navy">
+                <h2 id="trades-heading" className="font-heading text-lg font-bold tracking-tight text-foreground">
                   Trades and salary
                 </h2>
-                <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-white">
+                <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-white">
                   {card.trades.map((t, i) => (
                     <li key={`${t.trade}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3">
                       <span className="font-medium text-foreground">{t.trade}</span>
@@ -114,7 +115,7 @@ export default async function RequirementPage({ params, searchParams }: Props) {
 
             {card.benefits.length ? (
               <section aria-labelledby="benefits-heading">
-                <h2 id="benefits-heading" className="font-heading text-lg font-semibold text-navy">
+                <h2 id="benefits-heading" className="font-heading text-lg font-bold tracking-tight text-foreground">
                   Benefits
                 </h2>
                 <ul className="mt-3 space-y-2">
@@ -130,14 +131,14 @@ export default async function RequirementPage({ params, searchParams }: Props) {
 
             {card.description ? (
               <section aria-labelledby="details-heading">
-                <h2 id="details-heading" className="font-heading text-lg font-semibold text-navy">
+                <h2 id="details-heading" className="font-heading text-lg font-bold tracking-tight text-foreground">
                   Details
                 </h2>
                 <p className="mt-2 whitespace-pre-line leading-relaxed text-foreground">{card.description}</p>
               </section>
             ) : null}
 
-            <p className="rounded-xl bg-surface-subtle p-4 text-sm leading-relaxed text-foreground">
+            <p className="rounded-2xl border border-border bg-surface-subtle p-4 text-sm leading-relaxed text-foreground">
               Venkat Sai never charges candidates to apply for a job, and no payment can guarantee a job or visa.{" "}
               <Link href="/safe-recruitment" className="font-medium text-teal-strong underline underline-offset-4">
                 How to stay safe

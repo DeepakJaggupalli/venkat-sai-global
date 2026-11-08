@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 
+import { LOCKUP_WIDTH, MARK_SIZE } from "@/components/brand/logo-geometry";
 import { getLogoDataUri } from "@/components/brand/logo-svg";
 import { BRAND } from "@/config/site";
 
-/** Default social image for every page without its own CMS image: the brand on navy with route arcs. */
-export const alt = `${BRAND.name} — ${BRAND.category}`;
+/** Default social image for every page without its own CMS image: white, the logo and one large black headline. */
+export const alt = `${BRAND.name}: overseas jobs, trade training and manpower supply`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,39 +17,27 @@ export default function OpengraphImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          position: "relative",
-          background: "linear-gradient(135deg, #091327 0%, #101C35 60%, #0d2a3a 100%)",
-          color: "#ffffff",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "72px 80px",
+          background: "#FFFFFF",
+          color: "#0A0A0B",
           fontFamily: "sans-serif",
         }}
       >
-        <svg width="1200" height="630" viewBox="0 0 1200 630" style={{ position: "absolute", top: 0, left: 0 }}>
-          <circle cx="930" cy="330" r="250" fill="none" stroke="#ffffff" strokeOpacity="0.12" />
-          <ellipse cx="930" cy="330" rx="120" ry="250" fill="none" stroke="#ffffff" strokeOpacity="0.1" />
-          <ellipse cx="930" cy="330" rx="250" ry="60" fill="none" stroke="#ffffff" strokeOpacity="0.1" />
-          <path d="M960 360 Q 860 180 760 250" fill="none" stroke="#4fd1cb" strokeWidth="3" />
-          <path d="M960 360 Q 1000 170 1080 210" fill="none" stroke="#d5a64a" strokeWidth="3" />
-          <path d="M960 360 Q 880 420 790 430" fill="none" stroke="#4fd1cb" strokeWidth="2" strokeDasharray="6 8" />
-          <circle cx="960" cy="360" r="9" fill="#d5a64a" />
-          <circle cx="760" cy="250" r="6" fill="#4fd1cb" />
-          <circle cx="1080" cy="210" r="6" fill="#4fd1cb" />
-          <circle cx="790" cy="430" r="6" fill="#4fd1cb" />
-        </svg>
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "72px 80px", width: "100%" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={getLogoDataUri({ variant: "onDark", layout: "mark", height: 88 })} width={88} height={88} alt="" />
-            <div style={{ display: "flex", fontSize: 44, fontWeight: 800 }}>
-              <span>Venkat Sai</span>
-              <span style={{ color: "#4fd1cb", marginLeft: 12, fontWeight: 600 }}>Global</span>
-            </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={getLogoDataUri({ layout: "full", height: 64 })} width={Math.round((LOCKUP_WIDTH * 64) / MARK_SIZE)} height={64} alt="" />
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 24, fontWeight: 600, letterSpacing: 3, textTransform: "uppercase", color: "#0369A1" }}>
+            <div style={{ width: 12, height: 12, borderRadius: 12, background: "#0EA5E9" }} />
+            Overseas jobs · Training · Manpower
           </div>
-          <div style={{ display: "flex", flexDirection: "column", maxWidth: 720 }}>
-            <div style={{ fontSize: 26, letterSpacing: 4, textTransform: "uppercase", color: "#e6c27a" }}>{BRAND.category}</div>
-            <div style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.1, marginTop: 18 }}>{BRAND.statement}</div>
-            <div style={{ fontSize: 28, color: "rgba(255,255,255,0.75)", marginTop: 22 }}>{BRAND.tagline}</div>
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 92, fontWeight: 800, lineHeight: 1.02, letterSpacing: -3, marginTop: 24 }}>
+            <span>Skilled trades.</span>
+            <span>Global careers.</span>
           </div>
         </div>
+        <div style={{ display: "flex", fontSize: 26, color: "#5B6170" }}>Visakhapatnam, India · Candidates never pay placement fees</div>
       </div>
     ),
     size,

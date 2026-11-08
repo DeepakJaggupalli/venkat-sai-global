@@ -90,6 +90,10 @@ export const FILE_PURPOSES = [
   "message_attachment",
   /** CV sent through the public "Send your CV" form (no account; staff-only, sensitive). */
   "cv_submission",
+  /** Extra documents for a CV submission (certificates, licences, passport pages, photo); staff-only, sensitive. */
+  "cv_submission_document",
+  /** "Prepare my resume" service: the candidate's photo and the generated DOCX/PDF; staff-only, sensitive. */
+  "resume_service",
   "invoice",
   "data_export",
   "other",

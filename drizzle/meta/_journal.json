@@ -22,6 +22,20 @@
       "when": 1794095856334,
       "tag": "0002_cv_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794098278120,
+      "tag": "0003_docs_and_resume_service",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794099746827,
+      "tag": "0004_resume_passport_encrypted",
+      "breakpoints": true
     }
   ]
 }

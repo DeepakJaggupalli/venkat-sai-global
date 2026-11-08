@@ -17,9 +17,9 @@ import { isExternalHref } from "./nav-utils";
 import { desktopNavBudgets, fitNavItems, isCurrentPage, isSectionActive } from "./public-nav";
 import type { PublicNavItem, PublicNavLink } from "./types";
 
-/** The header is always navy (transparent over the homepage hero, solid elsewhere): white items, yellow focus. */
+/** White header: plain grey text links that turn near-black on hover, focus and for the current section. */
 const TOP_LEVEL =
-  "group/top relative inline-flex h-10 items-center justify-center gap-1 rounded-lg bg-transparent px-3 text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-open:bg-white/10 data-open:text-white data-active:bg-transparent data-active:text-white focus-visible:outline-solid! focus-visible:outline-2! focus-visible:outline-yellow!";
+  "group/top relative inline-flex h-10 items-center justify-center gap-1 rounded-full bg-transparent px-3.5 text-[15px] font-medium text-muted-foreground transition-colors hover:bg-transparent hover:text-foreground focus:bg-transparent focus:text-foreground data-open:bg-surface-subtle data-open:text-foreground data-active:bg-transparent data-active:text-foreground focus-visible:outline-solid! focus-visible:outline-2! focus-visible:outline-ring!";
 
 /**
  * NavigationMenuContent strips outline/ring from links inside dropdowns, which would leave keyboard
@@ -28,13 +28,13 @@ const TOP_LEVEL =
 const CONTENT_LINK_FOCUS =
   "focus-visible:outline-solid! focus-visible:outline-2! focus-visible:outline-ring! focus-visible:-outline-offset-2!";
 
-/** Small yellow bar under the section that contains the current page. */
+/** Small accent dot under the section that contains the current page (the text also turns near-black). */
 function ActiveIndicator({ active }: { active: boolean }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-x-3 -bottom-1 h-[3px] rounded-full bg-yellow transition-opacity duration-200",
+        "pointer-events-none absolute -bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-teal transition-opacity duration-200",
         active ? "opacity-100" : "opacity-0",
       )}
     />
@@ -83,7 +83,7 @@ function DropdownLinks({ links, pathname, wide }: { links: readonly PublicNavLin
             link={link}
             pathname={pathname}
             className={cn(
-              "group/link flex items-start gap-2 rounded-md px-3 py-2.5 text-sm text-navy transition-colors hover:bg-surface-subtle focus:bg-surface-subtle data-active:bg-teal-soft",
+              "group/link flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-surface-subtle focus:bg-surface-subtle data-active:bg-teal-soft",
               CONTENT_LINK_FOCUS,
             )}
           >
@@ -166,7 +166,7 @@ function MoreItem({ items, pathname, className }: { items: readonly PublicNavIte
                 link={item}
                 pathname={pathname}
                 className={cn(
-                  "flex items-center rounded-md px-3 py-2.5 text-sm font-medium text-navy transition-colors hover:bg-surface-subtle focus:bg-surface-subtle data-active:bg-teal-soft",
+                  "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-subtle focus:bg-surface-subtle data-active:bg-teal-soft",
                   CONTENT_LINK_FOCUS,
                 )}
               >

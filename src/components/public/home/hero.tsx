@@ -1,27 +1,26 @@
-import { BadgeCheck, MapPin, Plane } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 
-import { whatsappHref } from "@/config/contact";
 import type { HomepageData } from "@/modules/content/collections";
 import type { PublicMediaAsset } from "@/modules/content/types";
 
 import { type CtaSpec } from "../blocks";
 import { CmsImage, CmsVideo } from "../cms-media";
-import { DEFAULT_WHATSAPP_MESSAGE, WhatsAppIcon } from "../contact-links";
 import { CtaLink } from "../cta-link";
-import { GLOBE_DESTINATIONS } from "./globe-data";
-import { HeroGlobe } from "./hero-globe";
+import type { PosterCard } from "../requirements/data";
+import { NowHiringCard, RouteCard } from "./hero-card";
 
 /**
- * Seeded headings (the original specification copy and the current seed). When the CMS still holds exactly
- * one of these, the designed three-line default headline shows; anything an editor has written is respected.
+ * Seeded headings (the original specification copy and earlier seeds). When the CMS still holds exactly one of
+ * these, the designed default headline shows; anything an editor has written is respected.
  */
 const LEGACY_HEADINGS = new Set(["Connecting Global Talent With Limitless Opportunities.", "Skilled hands from Vizag to the world"]);
 const LEGACY_CTA_LABELS = new Set(["explore opportunities", "hire through venkat sai", "become a partner"]);
 
-const DEFAULT_PRIMARY = { label: "Explore jobs", href: "/jobs" };
-const DEFAULT_SECONDARY = { label: "Send your CV", href: "/send-cv" };
+const DEFAULT_PRIMARY = { label: "Send your CV", href: "/send-cv" };
+const DEFAULT_SECONDARY = { label: "Explore jobs", href: "/jobs" };
 
-const HERO_CTA = "min-h-12 px-6 text-base sm:min-h-14 sm:px-7";
+const TRUST = ["No placement fees", "Visa, ticket and documents", "Trade-tested candidates"] as const;
 
 export function usableHeroCta(cta: CtaSpec | null | undefined, fallback: { label: string; href: string }): { label: string; href: string } {
   const label = cta?.label?.trim();
@@ -32,98 +31,106 @@ export function usableHeroCta(cta: CtaSpec | null | undefined, fallback: { label
 }
 
 /**
- * Homepage hero: dark navy band with a heavy display headline, the three main actions (Explore jobs, Send
- * your CV, WhatsApp) and the interactive globe showing routes from Visakhapatnam. It slides under the
- * transparent header. A CMS hero image becomes a dimmed backdrop; a CMS video replaces the globe.
+ * Homepage hero, white: accent label, a very large black headline, one grey line, the two pills (Send your CV,
+ * Explore jobs) and three trust checks. On the right one clean card: the latest requirement poster, else a route
+ * card. A CMS hero image or video (uploaded by the business) takes the card's place.
+ * The copy enters once on load (CSS, opacity/transform only; static for reduced motion).
  */
-export function HomeHero({ hero, media, whatsappE164 }: { hero: HomepageData["hero"] | null | undefined; media: PublicMediaAsset | null; whatsappE164?: string }) {
+export function HomeHero({
+  hero,
+  media,
+  poster,
+  openRequirements = 0,
+}: {
+  hero: HomepageData["hero"] | null | undefined;
+  media: PublicMediaAsset | null;
+  poster?: PosterCard | null;
+  /** Number of published requirement posters (live count, shown as "N more open requirements"). */
+  openRequirements?: number;
+  whatsappE164?: string;
+}) {
   const cmsHeading = hero?.heading?.trim();
   const heading = cmsHeading && !LEGACY_HEADINGS.has(cmsHeading) ? cmsHeading : null;
   const subheading =
     (heading ? hero?.subheading?.trim() : null) ||
-    "We train welders, fitters, electricians and riggers in Visakhapatnam and connect them with employers in the Gulf, Europe and Asia. Applying for a job is always free.";
+    "We train welders, fitters, electricians and riggers in Visakhapatnam and place them with employers in the Gulf, Europe and Asia. Applying is always free.";
+  // The main action is always "Send your CV" (CMS CTAs that still point elsewhere become the secondary pill).
   const primary = usableHeroCta(hero?.primaryCta, DEFAULT_PRIMARY);
   const secondary = usableHeroCta(hero?.secondaryCta, DEFAULT_SECONDARY);
+  const [first, second] = primary.href === DEFAULT_SECONDARY.href && secondary.href === DEFAULT_PRIMARY.href ? [secondary, primary] : [primary, secondary];
   const image = media?.kind === "image" ? media : null;
   const video = media && (media.kind === "video" || media.kind === "embed") ? media : null;
 
   return (
-    <section
-      aria-labelledby="home-hero-title"
-      className="band-dark relative isolate -mt-16 overflow-hidden bg-navy-deep pt-16 text-white xl:-mt-[4.5rem] xl:pt-[4.5rem]"
-      data-testid="home-hero"
-    >
-      {image ? (
-        <div aria-hidden="true" className="absolute inset-0 -z-20">
-          <CmsImage asset={image} priority className="opacity-30" sizes="100vw" />
-        </div>
-      ) : null}
-      <div aria-hidden="true" className="bg-grid-dark absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_70%_40%,#000_20%,transparent_70%)]" />
-      <div aria-hidden="true" className="absolute -top-40 -left-40 -z-10 size-[36rem] rounded-full bg-royal/40 blur-3xl" />
-      <div aria-hidden="true" className="absolute right-[-10rem] bottom-[-12rem] -z-10 size-[30rem] rounded-full bg-yellow/10 blur-3xl" />
-
-      <div className="container-page relative grid items-center gap-10 pt-10 pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-6 lg:pt-16 lg:pb-24">
+    <section aria-labelledby="home-hero-title" className="relative overflow-hidden bg-white" data-testid="home-hero">
+      <div className="container-page grid items-center gap-12 pt-12 pb-20 sm:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:pt-20 lg:pb-28">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 rounded-full border border-yellow/40 bg-yellow/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-yellow">
-            <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
-            Venkat Sai Welding Works · Visakhapatnam
-          </p>
-          <h1 id="home-hero-title" className="mt-6 text-balance font-display text-[2.9rem] uppercase sm:text-7xl lg:text-[5.4rem] xl:text-8xl">
+          <p className="label-dot motion-safe:animate-[vsg-enter_0.7s_cubic-bezier(0.22,1,0.36,1)_both]">Overseas jobs · Training · Manpower</p>
+          <h1
+            id="home-hero-title"
+            className="mt-6 text-balance font-display text-[2.875rem] leading-[1.02] text-foreground motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_60ms_both] sm:text-7xl lg:text-[5.25rem] xl:text-[5.75rem]"
+          >
             {heading ?? (
               <>
-                <span className="block">Skilled hands</span>
-                <span className="block">from Vizag</span>
-                <span className="block text-yellow">to the world</span>
+                Skilled trades.
+                <br />
+                <span className="bg-gradient-to-r from-[#0284c7] to-[#0891b2] bg-clip-text text-transparent">Global</span> careers.
               </>
             )}
           </h1>
-          <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-white/85 sm:text-xl">{subheading}</p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <CtaLink href={primary.href} cta="explore_jobs" location="hero" variant="accent" arrow className={HERO_CTA} data-testid="hero-explore-jobs">
-              {primary.label}
+          <p className="mt-7 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_120ms_both] sm:text-xl">
+            {subheading}
+          </p>
+          <div className="mt-10 flex flex-col gap-3 motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_180ms_both] min-[420px]:flex-row min-[420px]:flex-wrap">
+            <CtaLink href={first.href} cta="send_cv" location="hero" variant="primary" arrow className="min-h-12 px-6 text-[15px]" data-testid="hero-send-cv">
+              {first.label}
             </CtaLink>
-            <CtaLink href={secondary.href} cta="send_cv" location="hero" variant="onDark" className={HERO_CTA}>
-              {secondary.label}
-            </CtaLink>
-            <CtaLink
-              href={whatsappHref(DEFAULT_WHATSAPP_MESSAGE, whatsappE164)}
-              cta="whatsapp"
-              location="hero"
-              variant="onDark"
-              className={`${HERO_CTA} border-green-strong bg-green-strong hover:border-green hover:bg-[#0b6630]`}
-            >
-              <WhatsAppIcon className="size-5" />
-              WhatsApp
+            <CtaLink href={second.href} cta="explore_jobs" location="hero" variant="outline" className="min-h-12 px-6 text-[15px]" data-testid="hero-explore-jobs">
+              {second.label}
             </CtaLink>
           </div>
-          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-white/85">
-            <li className="flex items-center gap-2">
-              <BadgeCheck aria-hidden="true" className="size-4 text-yellow" />
-              Free for candidates to apply
-            </li>
-            <li className="flex items-center gap-2">
-              <BadgeCheck aria-hidden="true" className="size-4 text-yellow" />
-              Trade tests at our own workshop
-            </li>
-            <li className="flex items-center gap-2">
-              <Plane aria-hidden="true" className="size-4 text-yellow" />
-              Visa, ticket and documents handled
-            </li>
+          <ul className="mt-10 flex flex-col gap-3 text-sm font-medium text-foreground motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_240ms_both] sm:flex-row sm:flex-wrap sm:gap-x-6">
+            {TRUST.map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-teal-soft text-teal-strong">
+                  <Check className="size-3" strokeWidth={3} />
+                </span>
+                {item}
+              </li>
+            ))}
           </ul>
         </div>
 
-        <div className="relative min-w-0">
-          {video ? (
-            <CmsVideo asset={video} className="rounded-3xl border border-white/10 shadow-2xl shadow-black/40" />
-          ) : (
-            <>
-              <HeroGlobe className="mx-auto max-w-[36rem]" />
-              <p className="sr-only">Routes from Visakhapatnam to {GLOBE_DESTINATIONS.map((d) => d.label).join(", ")}.</p>
-            </>
-          )}
+        <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:pl-4">
+          <div aria-hidden="true" className="absolute -inset-x-6 -inset-y-8 -z-0 rounded-[2.5rem] bg-gradient-to-br from-[#f0f9ff] via-white to-[#ecfeff] lg:-inset-x-10" />
+          <div className="relative">
+            {video ? (
+              <CmsVideo asset={video} className="rounded-3xl border border-border shadow-card" />
+            ) : image ? (
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-border bg-surface-subtle shadow-card sm:aspect-[4/3] lg:aspect-[4/5]">
+                <CmsImage asset={image} priority className="absolute inset-0" sizes="(min-width: 1024px) 40vw, 100vw" />
+              </div>
+            ) : poster ? (
+              <>
+                <NowHiringCard poster={poster} />
+                {openRequirements > 1 ? (
+                  <Link
+                    href="/requirements"
+                    className="group/more mt-4 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-border bg-white/80 px-5 text-sm font-medium text-foreground backdrop-blur transition-colors hover:border-[#c9cdd5] focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    <span>
+                      {openRequirements - 1} more open {openRequirements - 1 === 1 ? "requirement" : "requirements"}
+                    </span>
+                    <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground transition-transform duration-150 group-hover/more:translate-x-0.5 motion-reduce:transition-none" />
+                  </Link>
+                ) : null}
+              </>
+            ) : (
+              <RouteCard />
+            )}
+          </div>
         </div>
       </div>
-      <div aria-hidden="true" className="stripe-hazard h-2 w-full" />
     </section>
   );
 }

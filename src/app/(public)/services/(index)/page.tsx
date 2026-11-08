@@ -8,8 +8,8 @@ import { PageHero } from "@/components/public/page-hero";
 import { Section, SectionHeading } from "@/components/public/section";
 import { buildPageMetadata, settle } from "@/components/public/server";
 import { FeaturedServiceCard, hasTag, SERVICE_TAGS } from "@/components/public/services/featured-service-card";
-import { ServiceIllustration } from "@/components/public/services/service-illustration";
 import { CourseFamilyGrid } from "@/components/public/training-catalog/course-family-grid";
+import { stockPhoto } from "@/content/stock-photos";
 import { getPublishedEntries } from "@/modules/content/queries";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -39,17 +39,14 @@ export default async function ServicesPage() {
         eyebrow="What we do"
         title="Overseas jobs, trade training and manpower supply"
         intro="From our centre in Autonagar, Gajuwaka, Visakhapatnam, we train and test tradespeople, send them to jobs abroad and supply skilled teams to companies."
-        visual={<ServiceIllustration iconName="flame" className="mx-auto aspect-[4/3] w-full max-w-md" />}
+        photo={stockPhoto("workshop")}
         actions={
           <>
-            <CtaLink href="/send-cv" cta="send_cv" location="services_hero" variant="accent" arrow>
-              Send your CV and trade
+            <CtaLink href="/send-cv" cta="send_cv" location="services_hero" variant="primary" arrow>
+              Send your CV
             </CtaLink>
-            <CtaLink href="/employers/request" cta="submit_workforce_requirement" location="services_hero" variant="onDark">
-              Request manpower
-            </CtaLink>
-            <CtaLink href="/jobs" cta="explore_jobs" location="services_hero" variant="onDark">
-              Explore jobs
+            <CtaLink href="/employers/request" cta="submit_workforce_requirement" location="services_hero" variant="outline">
+              Request workers
             </CtaLink>
           </>
         }
@@ -58,7 +55,7 @@ export default async function ServicesPage() {
       {featured.length ? (
         <Section labelledBy="services-main-title" data-testid="services-featured">
           <SectionHeading id="services-main-title" eyebrow="Main services" title="How we can help" />
-          <ul className="mt-10 grid gap-6 lg:grid-cols-3">
+          <ul className="mt-12 grid gap-6 lg:grid-cols-3">
             {featured.map((s) => (
               <li key={s.id}>
                 <FeaturedServiceCard entry={s} assets={page?.assets} />
@@ -76,7 +73,7 @@ export default async function ServicesPage() {
           intro={featured.length && others.length ? "Internships, trade testing, recruitment and the other services we offer." : undefined}
         />
         {others.length ? (
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="services-list">
+          <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="services-list">
             {others.map((s) => (
               <li key={s.id}>
                 <EntryCard href={s.path ?? `/services/${s.slug}`} title={s.title} summary={s.summary} iconName={s.data.iconName} image={pickAsset(page?.assets, s.heroAssetId)} headingLevel="h3" />
@@ -85,10 +82,10 @@ export default async function ServicesPage() {
           </ul>
         ) : null}
         {courses.length ? (
-          <div className="mt-14">
-            <h3 className="font-heading text-xl font-semibold text-navy">Training courses</h3>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Every course ends with a completion certificate and includes trade test preparation for overseas interviews.</p>
-            <CourseFamilyGrid families={courses} assets={page?.assets} compact className="mt-6" />
+          <div className="mt-20">
+            <h3 className="font-display text-2xl text-foreground sm:text-[2rem]">Training courses</h3>
+            <p className="mt-3 max-w-2xl text-base text-muted-foreground">Every course ends with a completion certificate and includes trade test preparation for overseas interviews.</p>
+            <CourseFamilyGrid families={courses} assets={page?.assets} compact className="mt-8" />
           </div>
         ) : null}
         {empty ? (

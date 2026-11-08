@@ -1,13 +1,21 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, FilePlus2, FileText } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
+import { Button } from "@/components/ui/button";
 import { CallButton, EmailButton, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import type { CvSubmissionResult } from "@/modules/operations/cv-submission-schemas";
 
 /** Shown after a CV was accepted: the team will call; WhatsApp (prefilled with name and trade), call, group. */
-export function CvConfirmation({ result, whatsappGroupUrl }: { result: Pick<CvSubmissionResult, "code" | "name" | "trade" | "requirementTitle">; whatsappGroupUrl: string | null }) {
+export function CvConfirmation({
+  result,
+  whatsappGroupUrl,
+}: {
+  result: Pick<CvSubmissionResult, "code" | "name" | "trade" | "requirementTitle"> & { uploadToken?: string | null };
+  whatsappGroupUrl: string | null;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.focus();
@@ -37,12 +45,34 @@ export function CvConfirmation({ result, whatsappGroupUrl }: { result: Pick<CvSu
           </>
         ) : null}
       </p>
+      {result.uploadToken ? (
+        <div className="mt-6 rounded-xl border border-border bg-white p-4 sm:p-5" data-testid="add-documents-offer">
+          <h3 className="font-heading text-lg font-semibold text-navy">Add your documents now (optional)</h3>
+          <p className="mt-1 text-sm text-foreground">Certificates, licences, passport pages and a photo on white background. One file at a time; we show you how each scan should look.</p>
+          <Button asChild className="mt-3 min-h-12 text-base">
+            <Link href={`/send-cv/documents?t=${encodeURIComponent(result.uploadToken)}`} prefetch={false}>
+              <FilePlus2 aria-hidden="true" />
+              Add your documents
+            </Link>
+          </Button>
+        </div>
+      ) : null}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <WhatsAppButton message={message} className="min-h-14 text-lg" />
         <CallButton label="Call us" className="min-h-14 text-lg" />
         <EmailButton subject={result.code ? `CV ${result.code}` : "My CV"} />
       </div>
       <FollowWhatsAppLink groupUrl={whatsappGroupUrl} className="mt-4 w-full sm:w-auto" />
+      <p className="mt-6 flex items-start gap-2 text-sm text-foreground">
+        <FileText className="mt-0.5 size-4 shrink-0 text-navy" aria-hidden="true" />
+        <span>
+          No proper CV yet?{" "}
+          <Link href="/resume-service" className="font-medium text-navy underline underline-offset-4">
+            We can prepare a professional resume for you
+          </Link>{" "}
+          (a paid service, separate from any job application).
+        </span>
+      </p>
       <p className="mt-6 text-sm text-muted-foreground">Venkat Sai never asks candidates for money to apply for a job, and no payment can guarantee a job or visa.</p>
     </div>
   );

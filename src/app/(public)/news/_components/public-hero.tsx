@@ -5,8 +5,8 @@ import { PageBreadcrumbs, type BreadcrumbEntry } from "@/components/shared/page-
 import { cn } from "@/lib/utils";
 
 /**
- * Title band for public content pages: breadcrumbs (Home first), eyebrow, h1, description, meta and actions.
- * Shared by the content, trust, support and legal pages so they read as one family.
+ * Title band for public content pages, white like every hero: breadcrumbs (Home first), an accent label, the h1 in
+ * the display face, a grey description, meta and actions. Shared by the content, trust, support and legal pages.
  */
 export function PublicHero({
   title,
@@ -32,16 +32,16 @@ export function PublicHero({
 }) {
   const crumbs: BreadcrumbEntry[] | null = breadcrumbs?.length ? [{ label: "Home", href: "/" }, ...breadcrumbs] : null;
   return (
-    <section lang={lang} className={cn("border-b border-border/70 bg-surface-subtle", className)}>
-      <div className="container-page py-10 sm:py-14">
-        {crumbs ? <PageBreadcrumbs items={crumbs} className="mb-6" /> : null}
-        {eyebrow ? <p className="text-sm font-semibold text-teal-strong">{eyebrow}</p> : null}
-        <h1 className="mt-2 max-w-4xl font-heading text-3xl font-bold tracking-tight text-balance text-navy sm:text-4xl lg:text-[2.6rem] lg:leading-[1.15]">
+    <section lang={lang} className={cn("border-b border-border bg-white", className)}>
+      <div className="container-page pt-10 pb-12 sm:pt-12 sm:pb-16 lg:pb-20">
+        {crumbs ? <PageBreadcrumbs items={crumbs} className="mb-8" /> : null}
+        {eyebrow ? <p className="label-dot">{eyebrow}</p> : null}
+        <h1 className="mt-4 max-w-4xl font-display text-[2.5rem] text-balance text-foreground sm:text-5xl lg:text-6xl">
           {title}
         </h1>
-        {description ? <div className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{description}</div> : null}
+        {description ? <div className="mt-5 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">{description}</div> : null}
         {meta ? <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">{meta}</div> : null}
-        {actions ? <div className="mt-7 flex flex-wrap gap-3">{actions}</div> : null}
+        {actions ? <div className="mt-8 flex flex-wrap gap-3">{actions}</div> : null}
         {children}
       </div>
     </section>
@@ -86,7 +86,7 @@ export function PublicSection({
       {title ? (
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div className="max-w-3xl">
-            <Heading id={headingId} className="font-heading text-2xl font-semibold tracking-tight text-navy sm:text-[1.7rem]">
+            <Heading id={headingId} className="font-display text-[1.75rem] text-foreground sm:text-[2.125rem]">
               {title}
             </Heading>
             {description ? <p className="mt-2 text-muted-foreground">{description}</p> : null}

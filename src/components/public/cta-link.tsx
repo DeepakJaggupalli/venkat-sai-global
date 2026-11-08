@@ -10,17 +10,25 @@ import { track } from "@/modules/analytics/client";
 export type CtaVariant = "primary" | "accent" | "outline" | "onDark" | "link" | "linkOnDark";
 
 const BASE =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 [&_svg]:size-4 [&_svg]:shrink-0";
+  "group/cta inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:active:scale-100 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg]:duration-150";
 
-/** Call-to-action styles for the marketing pages (sizes larger than portal buttons; AA contrast on each surface). */
+const PILL_DARK = `${BASE} bg-foreground text-white hover:bg-[#26262b] hover:[&_svg]:translate-x-0.5`;
+const PILL_LIGHT = `${BASE} border border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle`;
+const TEXT_LINK =
+  "group/cta inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-teal-strong underline-offset-4 hover:underline [&_svg]:size-4 [&_svg]:transition-transform [&_svg]:duration-150 hover:[&_svg]:translate-x-0.5";
+
+/**
+ * Call-to-action styles for the marketing pages: black rounded-full pills for the main action, white outline
+ * pills for the secondary one, accent text links. Legacy variant names are kept: `accent` and `primary` are the
+ * black pill, `onDark` the outline pill, `linkOnDark` the text link (the site has no dark bands any more).
+ */
 export const CTA_STYLES: Record<CtaVariant, string> = {
-  primary: `${BASE} bg-navy text-white hover:bg-navy-deep`,
-  // Navy text on gold: 7.7:1.
-  accent: `${BASE} bg-gold text-navy hover:bg-[color-mix(in_oklab,var(--brand-gold),white_18%)]`,
-  outline: `${BASE} border border-navy/20 bg-white text-navy hover:border-navy/40 hover:bg-surface-subtle`,
-  onDark: `${BASE} border border-white/30 bg-white/5 text-white hover:border-white/60 hover:bg-white/10`,
-  link: "inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-teal-strong underline-offset-4 hover:underline [&_svg]:size-4",
-  linkOnDark: "inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold text-white underline-offset-4 hover:underline [&_svg]:size-4",
+  primary: PILL_DARK,
+  accent: PILL_DARK,
+  outline: PILL_LIGHT,
+  onDark: PILL_LIGHT,
+  link: TEXT_LINK,
+  linkOnDark: TEXT_LINK,
 };
 
 export function isExternalLink(href: string): boolean {

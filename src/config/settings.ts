@@ -26,6 +26,9 @@ export type SellerDetailsSetting = {
   paymentInstructions?: string;
 };
 
+/** Price of the "Prepare my resume" service. amountMinor 0 = price on request (staff quote it on WhatsApp). */
+export type ResumeServicePriceSetting = { amountMinor: number; currency: string };
+
 export const SETTINGS = {
   // Security
   "security.require_staff_2fa": { default: isProd, label: "Require two-factor authentication for staff", group: "Security" },
@@ -85,6 +88,10 @@ export const SETTINGS = {
   // Notifications
   /** Business inbox that receives a copy of every new CV, contact enquiry and workforce requirement (blank = off). */
   "notifications.business_inbox_email": { default: "vsweld@gmail.com", label: "Business inbox for new CVs, enquiries and requirements (blank = none)", group: "Notifications" },
+
+  // Resume service ("Prepare my resume", edited on /admin/resume-requests)
+  /** Price of the paid resume-writing service: amount in minor units + ISO currency. 0 = "Price on request". */
+  "resume_service.price": { default: { amountMinor: 0, currency: "" } as ResumeServicePriceSetting, label: "Resume service price", group: "Resume service" },
 
   // Support
   "support.sla_hours_urgent": { default: 4, label: "Urgent ticket first-response SLA (hours)", group: "Support" },

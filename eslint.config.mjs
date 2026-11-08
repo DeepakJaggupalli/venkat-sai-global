@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     ".next-*/**",
+    // Hidden local tool folders (browser and design tooling), not part of the app.
+    ".*/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

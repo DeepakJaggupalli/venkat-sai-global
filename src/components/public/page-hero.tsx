@@ -2,35 +2,36 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import type { ImageCredit } from "@/content/image-credits";
 import { cn } from "@/lib/utils";
 import type { PublicMediaAsset } from "@/modules/content/types";
 
 import { CmsImage } from "./cms-media";
 import { Eyebrow } from "./section";
-import { BeadPattern, HorizonOrnament } from "./visuals";
+import { StockImage } from "./stock-image";
 
 export type Crumb = { label: string; href?: string };
 
 /** Visible breadcrumb trail (the last item is the current page). */
-export function Breadcrumbs({ items, onDark = false, className }: { items: readonly Crumb[]; onDark?: boolean; className?: string }) {
+export function Breadcrumbs({ items, className }: { items: readonly Crumb[]; /** @deprecated no dark bands any more */ onDark?: boolean; className?: string }) {
   if (!items.length) return null;
   return (
     <nav aria-label="Breadcrumb" className={className}>
-      <ol className={cn("flex flex-wrap items-center gap-1 text-sm", onDark ? "text-white/70" : "text-muted-foreground")}>
+      <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         {items.map((item, i) => {
           const last = i === items.length - 1;
           return (
-            <li key={`${item.label}-${i}`} className="flex items-center gap-1">
+            <li key={`${item.label}-${i}`} className="flex min-w-0 items-center gap-1">
               {item.href && !last ? (
-                <Link href={item.href} className={cn("rounded-sm underline-offset-4 hover:underline", onDark ? "hover:text-white" : "hover:text-navy")}>
+                <Link href={item.href} className="rounded-sm underline-offset-4 hover:text-foreground hover:underline">
                   {item.label}
                 </Link>
               ) : (
-                <span aria-current={last ? "page" : undefined} className={cn(last && (onDark ? "text-white" : "text-navy"))}>
+                <span aria-current={last ? "page" : undefined} className={cn("truncate", last && "text-foreground")}>
                   {item.label}
                 </span>
               )}
-              {!last ? <ChevronRight aria-hidden="true" className="size-3.5 opacity-60" /> : null}
+              {!last ? <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 opacity-60" /> : null}
             </li>
           );
         })}
@@ -40,8 +41,9 @@ export function Breadcrumbs({ items, onDark = false, className }: { items: reado
 }
 
 /**
- * Inner-page hero on deep navy: breadcrumbs, eyebrow, the page's only h1, intro, actions and an optional
- * visual. CMS hero images (public, consented) replace the designed ornament when supplied.
+ * Inner-page hero: white, breadcrumbs, an accent label, the page's only h1 in the big black display face, a grey
+ * intro and pill actions. On the right: the business's own CMS image when there is one, else a credited stock
+ * photograph (`photo`), else a custom `visual`; with none of them the hero is a single, centred-left column.
  */
 export function PageHero({
   title,
@@ -50,6 +52,7 @@ export function PageHero({
   breadcrumbs,
   actions,
   media,
+  photo,
   visual,
   meta,
   className,
@@ -60,33 +63,43 @@ export function PageHero({
   breadcrumbs?: readonly Crumb[];
   actions?: ReactNode;
   media?: PublicMediaAsset | null;
-  /** Custom decorative visual (shown when there is no CMS image). */
+  /** Stock photograph shown when the CMS has no image. */
+  photo?: ImageCredit | null;
+  /** Custom visual (shown when there is neither a CMS image nor a photo). */
   visual?: ReactNode;
   /** Small facts row under the intro (e.g. "Last reviewed"). */
   meta?: ReactNode;
   className?: string;
 }) {
   const image = media && media.kind === "image" ? media : null;
+  const side = image ? (
+    <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-border bg-surface-subtle shadow-card">
+      <CmsImage asset={image} priority className="absolute inset-0" sizes="(min-width: 1024px) 40vw, 100vw" />
+    </div>
+  ) : photo ? (
+    <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-border bg-surface-subtle shadow-card">
+      <StockImage photo={photo} priority sizes="(min-width: 1024px) 40vw, 100vw" />
+    </div>
+  ) : (
+    (visual ?? null)
+  );
   return (
-    <section className={cn("band-dark relative isolate overflow-hidden bg-navy-deep text-white", className)}>
-      <BeadPattern />
-      <div aria-hidden="true" className="absolute -top-40 right-[-10%] -z-10 size-[36rem] rounded-full bg-royal/40 blur-3xl" />
-      <div className="container-page relative grid gap-10 py-14 sm:py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-center lg:py-20">
-        <div className="min-w-0">
-          {breadcrumbs?.length ? <Breadcrumbs items={breadcrumbs} onDark className="mb-6" /> : null}
-          {eyebrow ? <Eyebrow onDark>{eyebrow}</Eyebrow> : null}
-          <h1 className="mt-3 text-balance font-display text-5xl sm:text-6xl">{title}</h1>
-          {intro ? <div className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-white/80">{intro}</div> : null}
-          {meta ? <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">{meta}</div> : null}
-          {actions ? <div className="mt-8 flex flex-wrap gap-3">{actions}</div> : null}
-        </div>
-        {image ? (
-          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/30">
-            <CmsImage asset={image} priority className="aspect-[16/9] lg:aspect-[4/3]" sizes="(min-width: 1024px) 40vw, 100vw" />
-          </div>
-        ) : (
-          <div className="relative hidden min-w-0 lg:block">{visual ?? <HorizonOrnament className="mx-auto w-full max-w-sm" />}</div>
+    <section className={cn("relative bg-white", className)}>
+      <div
+        className={cn(
+          "container-page grid gap-10 pt-10 pb-14 sm:pt-12 sm:pb-16 lg:items-center lg:pt-16 lg:pb-20",
+          side ? "lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16" : null,
         )}
+      >
+        <div className="min-w-0">
+          {breadcrumbs?.length ? <Breadcrumbs items={breadcrumbs} className="mb-8" /> : null}
+          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+          <h1 className={cn("mt-4 text-balance font-display text-[2.75rem] text-foreground sm:text-6xl", side ? "lg:text-[4rem]" : "max-w-4xl lg:text-[4.5rem]")}>{title}</h1>
+          {intro ? <div className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">{intro}</div> : null}
+          {meta ? <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">{meta}</div> : null}
+          {actions ? <div className="mt-9 flex flex-wrap gap-3">{actions}</div> : null}
+        </div>
+        {side ? <div className="relative min-w-0">{side}</div> : null}
       </div>
     </section>
   );

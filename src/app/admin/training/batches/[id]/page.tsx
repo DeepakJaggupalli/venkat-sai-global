@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionButton } from "@/components/admin/action-button";
+import { DownloadExcelButton } from "@/components/admin/download-excel-button";
 import { listStaffOptions } from "@/components/admin/queries";
 import { DataTable } from "@/components/shared/data-table";
 import { DateText } from "@/components/shared/date-text";
@@ -129,7 +130,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <SectionCard title="Learners" description="Contact details stay on the candidate profile, where reveals are recorded." flush>
+          <SectionCard title="Learners" description="Contact details stay on the candidate profile, where reveals are recorded." flush action={<DownloadExcelButton href={`/admin/training/batches/${batch.id}/export`} />}>
             <DataTable
               caption="Enrolments in this batch"
               rows={enrolments}

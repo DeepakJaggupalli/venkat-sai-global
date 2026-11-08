@@ -1,4 +1,4 @@
-import { Download, Eye, MessageCircle, Phone } from "lucide-react";
+import { Download, Eye, FileStack, MessageCircle, Phone, Stamp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -14,9 +14,11 @@ import { whatsappHref } from "@/config/contact";
 import { sp as pick, type SearchParams } from "@/lib/http";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
 import { CV_SUBMISSION_STATUS_LABELS, CV_SUBMISSION_STATUS_TONE, CV_SUBMISSION_STATUS_VALUES } from "@/modules/operations/cv-submission-schemas";
+import { listCvSubmissionDocuments } from "@/modules/operations/cv-submission-documents";
 import { getCvSubmission } from "@/modules/operations/cv-submissions";
 
 import { setCvSubmissionRemarksAction, setCvSubmissionStatusAction } from "../actions";
+import { DocumentsCard } from "./_components/documents-card";
 
 export const metadata: Metadata = { title: "CV submission" };
 
@@ -28,6 +30,9 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
   const s = await getCvSubmission(ctx, id, { revealPassport: pick(sp, "reveal") === "passport" });
   if (!s) notFound();
   const canManage = staffCan(ctx, "candidates.manage");
+  const canOpenDocuments = staffCan(ctx, ["candidates.view_documents", "recruitment.manage"], "any");
+  const documents = await listCvSubmissionDocuments(ctx, s.id);
+  const wordCv = s.cvMimeType === "application/msword" || s.cvMimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
   const passport = s.passportNumber ? (
     <span className="font-mono font-semibold" data-testid="passport-full">
@@ -61,24 +66,47 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
         backLink={{ href: "/admin/cv-submissions", label: "CV submissions" }}
         status={<StatusBadge tone={CV_SUBMISSION_STATUS_TONE[s.status]}>{CV_SUBMISSION_STATUS_LABELS[s.status]}</StatusBadge>}
         actions={
-          s.phone ? (
-            <div className="flex flex-wrap gap-2">
-              <Button asChild>
-                <a href={whatsappHref(`Hello ${s.name}, this is Venkat Sai Global about the CV you sent for ${s.tradeLabel}.`, s.phone)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle aria-hidden="true" />
-                  WhatsApp
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href={`tel:${s.phone}`}>
-                  <Phone aria-hidden="true" />
-                  Call
-                </a>
-              </Button>
-            </div>
-          ) : null
+          <div className="flex flex-wrap gap-2">
+            {canOpenDocuments ? (
+              <>
+                <Button asChild variant="outline">
+                  <a href={`/admin/cv-submissions/${s.id}/pack?type=cv`} data-testid="cv-pack-download">
+                    <FileStack aria-hidden="true" />
+                    Download CV pack
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a href={`/admin/cv-submissions/${s.id}/pack?type=visa`} data-testid="visa-pack-download">
+                    <Stamp aria-hidden="true" />
+                    Download visa pack
+                  </a>
+                </Button>
+              </>
+            ) : null}
+            {s.phone ? (
+              <>
+                <Button asChild>
+                  <a href={whatsappHref(`Hello ${s.name}, this is Venkat Sai Global about the CV you sent for ${s.tradeLabel}.`, s.phone)} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle aria-hidden="true" />
+                    WhatsApp
+                  </a>
+                </Button>
+                <Button asChild variant="outline">
+                  <a href={`tel:${s.phone}`}>
+                    <Phone aria-hidden="true" />
+                    Call
+                  </a>
+                </Button>
+              </>
+            ) : null}
+          </div>
         }
       />
+      {canOpenDocuments && wordCv ? (
+        <p className="rounded-lg border border-border bg-surface-subtle p-3 text-sm text-foreground">
+          The CV is a Word file, which cannot be merged into the PDF packs (they include a note page instead). Download the Word CV separately and attach it next to the pack.
+        </p>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
         <SectionCard title="Details">
           <KeyValueList
@@ -149,6 +177,7 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
           </SectionCard>
         </div>
       </div>
+      <DocumentsCard submissionId={s.id} code={s.code} name={s.name} phone={s.phone} documents={documents} canManage={canManage} />
     </div>
   );
 }

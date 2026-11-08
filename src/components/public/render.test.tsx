@@ -5,23 +5,42 @@ import { CheckList, FaqList, FeatureGrid, StepList } from "./blocks";
 import { MetricsSection } from "./home/metrics";
 import { serializeJsonLd } from "./json-ld";
 import { htmlToText } from "./text";
-import { AudienceGlyph, BeadPattern, HeroGlobe, HorizonOrnament, ReachMap } from "./visuals";
+import { Flag, flagSrc } from "./flag";
+import { StockImage } from "./stock-image";
+import { IMAGE_CREDITS } from "@/content/image-credits";
+import { stockPhoto, stockPhotoFor } from "@/content/stock-photos";
 
-describe("public visuals", () => {
-  it("render decorative SVG without inline styles", () => {
+describe("flags and stock photos", () => {
+  it("renders real SVG flags (never emoji) and falls back to an icon for unknown codes", () => {
+    expect(flagSrc("ae")).toBe("/flags/ae.svg");
+    expect(flagSrc("ZZ")).toBeNull();
+    expect(flagSrc("12")).toBeNull();
     const html = renderToStaticMarkup(
       <>
-        <HeroGlobe />
-        <ReachMap points={[{ code: "QA", label: "Qatar", region: "gcc" }, { code: "ZZ", label: "Nowhere" }]} />
-        <BeadPattern />
-        <HorizonOrnament />
-        <AudienceGlyph variant="partners" />
+        <Flag code="IN" />
+        <Flag code="ZZ" />
       </>,
     );
-    expect(html).toContain('aria-hidden="true"');
-    expect(html).not.toContain("style=");
-    expect(html).toContain("Qatar");
-    expect(html).not.toContain("Nowhere");
+    expect(html).toContain('src="/flags/in.svg"');
+    expect(html).toContain('alt=""');
+    expect(html).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);
+  });
+
+  it("credits every stock photo and picks one for any service", () => {
+    for (const c of IMAGE_CREDITS) {
+      expect(c.src).toMatch(/^\/images\/stock\/[a-z]+-\d+\.webp$/);
+      expect(c.license).toBeTruthy();
+      expect(c.licenseUrl).toMatch(/^https:\/\//);
+      expect(c.sourceUrl).toMatch(/^https:\/\//);
+      expect(c.alt.length).toBeGreaterThan(10);
+    }
+    expect(new Set(IMAGE_CREDITS.map((c) => c.src)).size).toBe(IMAGE_CREDITS.length);
+    expect(stockPhotoFor({ slug: "overseas-employment" }).src).toBe("/images/stock/gulf-1.webp");
+    expect(stockPhotoFor({ slug: "unknown-service", iconName: "zap" }).topic).toBe("electrical");
+    expect(stockPhotoFor({ slug: "x", iconName: "nope" })).toBeDefined();
+    expect(stockPhoto("training").src).toMatch(/\.webp$/);
+    const html = renderToStaticMarkup(<StockImage photo={stockPhoto("overseas")} decorative />);
+    expect(html).toContain('alt=""');
   });
 });
 

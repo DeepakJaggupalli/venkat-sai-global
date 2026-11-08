@@ -2,7 +2,7 @@
  * Venkat Sai Global logo geometry and palette (client-safe, framework-free).
  *
  * The mark: a path that dips and rises (Discover → Learn → Qualify → Work → Grow) past a horizon
- * arc (global reach), ending in a gold spark — a nod to the welding heritage of Venkat Sai Welding
+ * arc (global reach), ending in an aqua spark — a nod to the welding heritage of Venkat Sai Welding
  * Works and Testing Center. The V of the path doubles as a single-V weld joint and the "V" of Venkat.
  * The arc is drawn in segments that stop short of the path, so it reads as passing *behind* the V
  * on any background without knockout strokes or SVG masks (no ids needed).
@@ -14,15 +14,17 @@
 export type LogoVariant = "onLight" | "onDark";
 
 export const BRAND_COLORS = {
-  // 2026-11 rebrand: poster palette (navy, royal blue, golden yellow). Key names kept for compatibility.
-  navy: "#0B1F5C",
-  navyDeep: "#06123A",
-  teal: "#1D3FA8",
-  /** AA-compliant accent for text on white (royal blue). */
-  tealStrong: "#1D3FA8",
-  /** Accent for text/strokes on navy backgrounds. */
-  tealLight: "#8FA9FF",
-  gold: "#FFD000",
+  // 2026-11 redesign: near-black + one blue-aqua accent (see DESIGN.md). Key names kept for compatibility.
+  navy: "#0A0A0B",
+  navyDeep: "#000000",
+  /** Accent fill (horizon arc). */
+  teal: "#0EA5E9",
+  /** AA-compliant accent for text on white (5.9:1). */
+  tealStrong: "#0369A1",
+  /** Accent for text/strokes on dark backgrounds. */
+  tealLight: "#7DD3FC",
+  /** The spark: the accent's aqua partner. */
+  gold: "#06B6D4",
   white: "#FFFFFF",
 } as const;
 
@@ -39,7 +41,7 @@ export const MARK = {
   spark: { cx: 36.58, cy: 11.24, r: 3.2 },
 } as const;
 
-/** Tile behind the glyph: solid navy on light backgrounds, a quiet glass tile on dark ones. */
+/** Tile behind the glyph: solid near-black on light backgrounds, a quiet glass tile on dark ones. */
 export const TILE = {
   onLight: { x: 0, y: 0, size: 48, rx: 12, fill: BRAND_COLORS.navy, fillOpacity: 1, stroke: null, strokeOpacity: 0 },
   onDark: {
@@ -55,7 +57,7 @@ export const TILE = {
 } as const;
 
 /**
- * Wordmark metrics, tuned to Manrope (the heading font loaded in the root layout).
+ * Wordmark metrics, originally tuned to Manrope; the heading font is now Figtree (root layout).
  * `textLength` pins each word's width so the lockup never clips or collides, even if the
  * brand font has not loaded yet (letter spacing absorbs the difference). Lengths were calibrated
  * from measured Segoe UI ink widths scaled by the Manrope/Segoe average-width ratio (capsize metrics).
