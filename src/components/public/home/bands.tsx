@@ -5,8 +5,10 @@ import { CtaLink } from "../cta-link";
 import { Section, SectionHeading } from "../section";
 
 /** "Join our WhatsApp group" band — only when the CMS site settings hold a group link. */
-export function WhatsAppGroupBand({ url, heading, intro }: { url: string | null; heading?: string | null; intro?: string | null }) {
+/** WhatsApp group band; falls back to the official WhatsApp channel when no group link is configured. */
+export function WhatsAppGroupBand({ url, kind = "group", heading, intro }: { url: string | null; kind?: "group" | "channel"; heading?: string | null; intro?: string | null }) {
   if (!url) return null;
+  const isChannel = kind === "channel";
   return (
     <section aria-labelledby="home-wa-group-title" className="band-dark relative isolate overflow-hidden bg-green-strong py-12 text-white sm:py-14" data-testid="home-whatsapp-group">
       <div aria-hidden="true" className="absolute -top-20 -right-16 -z-10 size-72 rounded-full bg-white/10" />
@@ -17,14 +19,14 @@ export function WhatsAppGroupBand({ url, heading, intro }: { url: string | null;
           </span>
           <div>
             <h2 id="home-wa-group-title" className="font-display text-3xl uppercase sm:text-4xl">
-              {heading || "Join our WhatsApp group"}
+              {heading || (isChannel ? "Follow our WhatsApp channel" : "Join our WhatsApp group")}
             </h2>
             <p className="mt-2 max-w-xl text-white/90">{intro || "Get the latest job requirements on your phone as soon as we post them."}</p>
           </div>
         </div>
-        <CtaLink href={url} cta="whatsapp_group" location="home_whatsapp_group" variant="onDark" className="min-h-14 shrink-0 border-white bg-white px-7 text-base text-green-strong hover:bg-white/90">
+        <CtaLink href={url} cta={isChannel ? "whatsapp_channel" : "whatsapp_group"} location="home_whatsapp_group" variant="onDark" className="min-h-14 shrink-0 border-white bg-white px-7 text-base text-green-strong hover:bg-white/90">
           <WhatsAppIcon className="size-5" />
-          Join the group
+          {isChannel ? "Follow the channel" : "Join the group"}
         </CtaLink>
       </div>
     </section>

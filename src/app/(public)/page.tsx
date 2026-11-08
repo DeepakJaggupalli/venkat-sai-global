@@ -26,6 +26,7 @@ import { BRAND, DEFAULT_SEO } from "@/config/site";
 import { absoluteUrl } from "@/lib/env";
 import type { SearchParams } from "@/lib/http";
 import type { CmsCollection } from "@/db/schema";
+import { CONTACT } from "@/config/contact";
 import { getPublicMetrics, getPublishedEntries, getSingleton, getSingletonData } from "@/modules/content/queries";
 import type { AssetMap, PublishedEntry, ReferenceMap } from "@/modules/content/types";
 import { listFeaturedJobs, searchJobs } from "@/modules/jobs/queries";
@@ -201,7 +202,7 @@ export default async function HomePage({ searchParams }: Props) {
         ) : null}
         {employersSection ? <EmployerBand heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} /> : null}
         {tail.map(renderTail)}
-        <WhatsAppGroupBand url={contactDetails.whatsappGroupUrl} />
+        <WhatsAppGroupBand url={contactDetails.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl} kind={contactDetails.whatsappGroupUrl ? "group" : "channel"} />
         {ctaSection ? (
           <CtaBand
             location="home_cta_band"

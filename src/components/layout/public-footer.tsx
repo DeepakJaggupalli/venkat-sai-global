@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { Logo } from "@/components/brand/logo";
 import { ContactIcons, ContactList, DEFAULT_WHATSAPP_MESSAGE, MapEmbed, resolveContact, WhatsAppIcon, type ResolvedContact } from "@/components/public/contact-links";
-import { whatsappHref } from "@/config/contact";
+import { CONTACT, whatsappHref } from "@/config/contact";
 import { BRAND } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -125,16 +125,16 @@ export function PublicFooter({
             {contact.businessName}, Autonagar, Visakhapatnam. Training, trade testing and overseas placement for skilled tradespeople.
           </p>
           <ContactIcons contact={contact} variant="dark" className="mt-6" />
-          {contact.whatsappGroupUrl ? (
+          {contact.whatsappGroupUrl || CONTACT.whatsappChannelUrl ? (
             <a
-              href={contact.whatsappGroupUrl}
+              href={contact.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-green-strong px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-strong/90"
               data-testid="footer-whatsapp-group"
             >
               <BellRing aria-hidden="true" className="size-4 shrink-0" />
-              Join our WhatsApp group for the latest requirements
+              {contact.whatsappGroupUrl ? "Join our WhatsApp group for the latest requirements" : "Follow our WhatsApp channel for the latest requirements"}
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
