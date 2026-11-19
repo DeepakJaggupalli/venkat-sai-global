@@ -21,6 +21,7 @@ import { JsonLd } from "@/components/public/json-ld";
 import { LanguageSwitch } from "@/components/public/language-switch";
 import { getMarketingT } from "@/components/public/marketing-locale";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
+import { publicLocaleProps } from "@/components/public/public-locale";
 import { loadPosterPage } from "@/components/public/requirements/data";
 import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
 import { RevealScope } from "@/components/public/reveal";
@@ -203,7 +204,7 @@ export default async function HomePage({ searchParams }: Props) {
   };
 
   return (
-    <div lang={t.locale}>
+    <div {...publicLocaleProps(t.locale)}>
       {detail?.preview ? null : <JsonLd data={organization} />}
       <PreviewRibbon show={Boolean(detail?.preview)} />
       <RevealScope>

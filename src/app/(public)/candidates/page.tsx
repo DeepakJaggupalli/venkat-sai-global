@@ -6,6 +6,7 @@ import { LandingPage, type LandingCopy } from "@/components/public/landing";
 import { LanguageSwitch } from "@/components/public/language-switch";
 import type { MarketingT } from "@/components/public/marketing-i18n";
 import { getMarketingT } from "@/components/public/marketing-locale";
+import { publicLocaleProps } from "@/components/public/public-locale";
 import { SAFE_RECRUITMENT_PATH } from "@/components/public/links";
 import { Section } from "@/components/public/section";
 import { buildPageMetadata } from "@/components/public/server";
@@ -64,7 +65,7 @@ export default async function CandidatesPage({ searchParams }: Props) {
   // ?lang= → the visitor's saved language → English; FAQs stay as published in the CMS.
   const t = await getMarketingT((await searchParams).lang);
   return (
-    <div lang={t.locale}>
+    <div {...publicLocaleProps(t.locale)}>
       <LandingPage
         copy={candidatesCopy(t)}
         heroAfter={<LanguageSwitch path="/candidates" locale={t.locale} label={t("language.label")} />}

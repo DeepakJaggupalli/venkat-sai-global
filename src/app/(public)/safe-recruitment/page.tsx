@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { publicLocaleProps } from "@/components/public/public-locale";
 import { Button } from "@/components/ui/button";
-import { LOCALE_LABELS } from "@/i18n/config";
+import { PUBLIC_LOCALE_LABELS } from "@/i18n/config";
 import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +28,7 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
     description: t("meta.description"),
     alternates: {
       canonical: locale === "en" ? "/safe-recruitment" : `/safe-recruitment?lang=${locale}`,
-      languages: { en: "/safe-recruitment", hi: "/safe-recruitment?lang=hi", te: "/safe-recruitment?lang=te" },
+      languages: Object.fromEntries(SAFETY_LOCALES.map((code) => [code, code === "en" ? "/safe-recruitment" : `/safe-recruitment?lang=${code}`])),
     },
     openGraph: { type: "article", title: t("meta.title"), description: t("meta.description"), url: "/safe-recruitment" },
   };
@@ -73,7 +74,7 @@ export default async function SafeRecruitmentPage({ searchParams }: { searchPara
   const signs = ["fee", "email", "pressure", "noInterview", "passport", "visitVisa", "noContract", "unregistered"] as const;
 
   return (
-    <div lang={locale}>
+    <div {...publicLocaleProps(locale)}>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", url: abs("/") }, { name: t("breadcrumb"), url: abs("/safe-recruitment") }])} />
       <PublicHero
         eyebrow={t("hero.eyebrow")}
@@ -108,7 +109,7 @@ export default async function SafeRecruitmentPage({ searchParams }: { searchPara
                 code === locale ? "border-navy bg-navy text-white" : "border-border bg-white text-foreground hover:border-navy/40",
               )}
             >
-              {LOCALE_LABELS[code].label}
+              {PUBLIC_LOCALE_LABELS[code].label}
             </Link>
           ))}
         </nav>
@@ -159,7 +160,7 @@ export default async function SafeRecruitmentPage({ searchParams }: { searchPara
 
         <Section id="verify-agent" icon={<ListChecks />} title={t("verify.title")}>
           <p>{t("verify.intro")}</p>
-          <ol className="list-decimal space-y-2 pl-6">
+          <ol className="list-decimal space-y-2 ps-6">
             {(["step1", "step2", "step3", "step4"] as const).map((key) => (
               <li key={key}>{t(`verify.${key}`)}</li>
             ))}

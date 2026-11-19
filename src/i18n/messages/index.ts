@@ -1,5 +1,5 @@
 /* Static registry of message catalogues (generated layout; keep in sync with NAMESPACES/LOCALES). */
-import type { Locale, Messages, Namespace } from "../config";
+import { isLocale, type Locale, type Messages, type Namespace, type PublicLocale, type PublicNamespace, type PublicOnlyLocale } from "../config";
 
 import en_common from "./en/common.json";
 import en_auth from "./en/auth.json";
@@ -31,6 +31,10 @@ import te_talent_account from "./te/talent-account.json";
 import te_talent_messages from "./te/talent-messages.json";
 import te_public_safety from "./te/public-safety.json";
 import te_public_marketing from "./te/public-marketing.json";
+import or_public_safety from "./or/public-safety.json";
+import or_public_marketing from "./or/public-marketing.json";
+import ar_public_safety from "./ar/public-safety.json";
+import ar_public_marketing from "./ar/public-marketing.json";
 
 export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
   en: {
@@ -70,3 +74,20 @@ export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
     "public-marketing": te_public_marketing as Messages,
   },
 };
+
+/** Public-only languages carry the public namespaces only (no empty portal catalogues); see PUBLIC_ONLY_LOCALES. */
+export const PUBLIC_ONLY_MESSAGES: Record<PublicOnlyLocale, Record<PublicNamespace, Messages>> = {
+  or: {
+    "public-safety": or_public_safety as Messages,
+    "public-marketing": or_public_marketing as Messages,
+  },
+  ar: {
+    "public-safety": ar_public_safety as Messages,
+    "public-marketing": ar_public_marketing as Messages,
+  },
+};
+
+/** A public namespace in any public page language (missing keys fall back to English in `translate`). */
+export function publicMessages(locale: PublicLocale, namespace: PublicNamespace): Messages {
+  return isLocale(locale) ? MESSAGES[locale][namespace] : PUBLIC_ONLY_MESSAGES[locale][namespace];
+}

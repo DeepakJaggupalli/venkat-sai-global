@@ -417,3 +417,28 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Public pages in Odia / Arabic (src/components/public/public-locale.ts). Inter and Figtree have no glyphs for these
+ * scripts, so the on-demand script font (--font-script) fills in after them; Latin text keeps the house fonts.
+ */
+.locale-script,
+.locale-script .font-sans {
+  font-family: var(--font-inter), var(--font-script), ui-sans-serif, system-ui, sans-serif;
+}
+.locale-script :is(h1, h2, h3, h4, .font-heading, .font-display) {
+  font-family: var(--font-figtree), var(--font-script), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+/* Vowel signs above and below the line need more room than the tight Latin display leading. */
+.locale-script .font-display {
+  line-height: 1.25;
+}
+/* Arabic letters join, so no tracking. */
+.locale-script:lang(ar) :is(h1, h2, h3, h4, .font-heading, .font-display, [class*="tracking-"]) {
+  letter-spacing: normal;
+}
+/* Right-to-left pages: directional icons point, and nudge on hover, the other way. */
+[dir="rtl"] :is(.lucide-arrow-right, .lucide-arrow-up-right, .lucide-chevron-right, .lucide-plane) {
+  scale: -1 1;
+  translate: calc(var(--tw-translate-x, 0px) * -1) var(--tw-translate-y, 0px);
+}

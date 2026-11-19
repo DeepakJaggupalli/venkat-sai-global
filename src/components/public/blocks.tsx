@@ -55,8 +55,8 @@ export function StepList({
   return (
     <ol className={cn("relative grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-4", className)}>
       {list.map((step, i) => (
-        <li key={`${step.title}-${i}`} className="relative border-l border-border pl-6 md:border-t md:border-l-0 md:pt-6 md:pl-0">
-          <span aria-hidden="true" className="absolute top-0 -left-[5px] size-2.5 rounded-full bg-teal md:-top-[5px] md:left-0" />
+        <li key={`${step.title}-${i}`} className="relative border-s border-border ps-6 md:border-t md:border-s-0 md:pt-6 md:ps-0">
+          <span aria-hidden="true" className="absolute top-0 -start-[5px] size-2.5 rounded-full bg-teal md:-top-[5px] md:start-0" />
           <p aria-hidden="true" className="font-display text-sm text-teal-strong tabular-nums">
             {String(i + 1).padStart(2, "0")}
           </p>

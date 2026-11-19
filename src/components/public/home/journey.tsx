@@ -38,7 +38,7 @@ export function HowItWorksSection({ tone = "white", heading, intro, t = EN_MARKE
         <ol className="relative">
           {STEPS.map((step, i) => (
             <li key={step} className="relative grid grid-cols-[3rem_minmax(0,1fr)] gap-x-5 pb-10 last:pb-0" data-reveal={String(Math.min(i + 1, 4))}>
-              {i < STEPS.length - 1 ? <span aria-hidden="true" className="absolute top-12 bottom-0 left-6 w-px bg-border" /> : null}
+              {i < STEPS.length - 1 ? <span aria-hidden="true" className="absolute top-12 bottom-0 start-6 w-px bg-border" /> : null}
               <span aria-hidden="true" className="relative flex size-12 items-center justify-center rounded-full border border-border bg-white font-display text-base text-foreground tabular-nums">
                 {String(i + 1).padStart(2, "0")}
               </span>

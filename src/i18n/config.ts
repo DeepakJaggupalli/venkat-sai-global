@@ -16,6 +16,33 @@ export const LOCALE_LABELS: Record<Locale, { label: string; english: string }> =
   te: { label: "తెలుగు", english: "Telugu" },
 };
 
+/**
+ * Public-only languages: the translated public pages (homepage, /candidates, /safe-recruitment) also offer Odia and
+ * Arabic. Only the PUBLIC_NAMESPACES catalogues exist for them (src/i18n/messages/<locale>/public-*.json); the People
+ * Portal, auth, emails and the saved preference stay on LOCALES. Odia and Arabic copy: native-speaker review pending.
+ */
+export const PUBLIC_ONLY_LOCALES = ["or", "ar"] as const;
+export type PublicOnlyLocale = (typeof PUBLIC_ONLY_LOCALES)[number];
+export const PUBLIC_LOCALES = [...LOCALES, ...PUBLIC_ONLY_LOCALES] as const;
+export type PublicLocale = (typeof PUBLIC_LOCALES)[number];
+export const PUBLIC_NAMESPACES = ["public-marketing", "public-safety"] as const;
+export type PublicNamespace = (typeof PUBLIC_NAMESPACES)[number];
+
+export const PUBLIC_LOCALE_LABELS: Record<PublicLocale, { label: string; english: string }> = {
+  ...LOCALE_LABELS,
+  or: { label: "ଓଡ଼ିଆ", english: "Odia" },
+  ar: { label: "العربية", english: "Arabic" },
+};
+
+export function isPublicLocale(value: string | null | undefined): value is PublicLocale {
+  return !!value && (PUBLIC_LOCALES as readonly string[]).includes(value);
+}
+
+/** Writing direction of a page language (Arabic is right-to-left). */
+export function localeDir(locale: PublicLocale): "ltr" | "rtl" {
+  return locale === "ar" ? "rtl" : "ltr";
+}
+
 /** One namespace per area so different owners never edit the same file. */
 export const NAMESPACES = ["common", "auth", "talent-dashboard", "talent-profile", "talent-jobs", "talent-training", "talent-account", "talent-messages", "public-safety", "public-marketing"] as const;
 export type Namespace = (typeof NAMESPACES)[number];

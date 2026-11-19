@@ -1,12 +1,12 @@
 import { ArrowRight, Check, Plane } from "lucide-react";
 import Link from "next/link";
 
-import type { Locale } from "@/i18n/config";
+import type { PublicLocale } from "@/i18n/config";
 import { formatRelative } from "@/lib/format";
 
 import { CmsImage } from "../cms-media";
 import { Flag } from "../flag";
-import { EN_MARKETING, splitAround, type MarketingT } from "../marketing-i18n";
+import { EN_MARKETING, intlLocale, splitAround, type MarketingT } from "../marketing-i18n";
 import type { PosterCard } from "../requirements/data";
 
 /**
@@ -19,7 +19,7 @@ import type { PosterCard } from "../requirements/data";
 const CARD = "relative w-full rounded-3xl border border-border bg-white p-6 shadow-[0_1px_2px_rgb(10_10_11/0.04),0_24px_60px_-12px_rgb(10_10_11/0.12)] sm:p-7";
 
 /** "3 days ago" in the page language (English keeps the existing wording). */
-function relativeTime(date: Date, locale: Locale): string {
+function relativeTime(date: Date, locale: PublicLocale): string {
   if (locale === "en") return formatRelative(date);
   const seconds = Math.round((date.getTime() - Date.now()) / 1000);
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -29,7 +29,7 @@ function relativeTime(date: Date, locale: Locale): string {
     ["hour", 3_600],
     ["minute", 60],
   ];
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: "auto" });
   for (const [unit, size] of units) {
     if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
   }
@@ -115,7 +115,7 @@ export function NowHiringCard({ poster, t = EN_MARKETING }: { poster: PosterCard
         <Link href={poster.href} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
           {t("card.details")}
         </Link>
-        <span className="ml-auto text-xs text-muted-foreground">{t("card.free")}</span>
+        <span className="ms-auto text-xs text-muted-foreground">{t("card.free")}</span>
       </div>
     </article>
   );
@@ -145,7 +145,7 @@ export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
             <Plane className="size-4" />
           </span>
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p className="flex items-center justify-end gap-2 font-display text-xl text-foreground">
             {t("route.to")}
             <Flag code="AE" />

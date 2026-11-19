@@ -75,7 +75,7 @@ export function IndustriesSection({ tone = "white", industries, heading, intro, 
           <li key={i.id}>
             <Link
               href={i.path ?? `/industries/${i.slug}`}
-              className="group inline-flex min-h-12 items-center gap-2.5 rounded-full border border-border bg-white py-2 pr-5 pl-3 text-[15px] font-medium text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="group inline-flex min-h-12 items-center gap-2.5 rounded-full border border-border bg-white py-2 pe-5 ps-3 text-[15px] font-medium text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-teal-soft text-teal-strong">
                 <CmsIcon name={i.data.iconName} className="size-3.5" />

@@ -122,7 +122,7 @@ export function HomeHero({
           {languageSwitch ? <div className="mt-6">{languageSwitch}</div> : null}
         </div>
 
-        <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:pl-4">
+        <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:ps-4">
           <div aria-hidden="true" className="absolute -inset-x-6 -inset-y-8 -z-0 rounded-[2.5rem] bg-gradient-to-br from-[#f0f9ff] via-white to-[#ecfeff] lg:-inset-x-10" />
           <div className="relative">
             {video ? (

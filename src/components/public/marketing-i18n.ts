@@ -1,16 +1,17 @@
-import { DEFAULT_LOCALE, translate, type Locale } from "@/i18n/config";
-import { MESSAGES } from "@/i18n/messages";
+import { DEFAULT_LOCALE, translate, type PublicLocale } from "@/i18n/config";
+import { MESSAGES, publicMessages } from "@/i18n/messages";
 
 /**
  * Translator for the "public-marketing" namespace (homepage and /candidates).
- * Hindi and Telugu copy: native-speaker review pending.
+ * Hindi, Telugu, Odia and Arabic copy: native-speaker review pending. Odia and Arabic are public-only languages
+ * (PUBLIC_ONLY_LOCALES): the People Portal stays English / Hindi / Telugu.
  * Missing keys fall back to English. Components default to English, so they render unchanged in tests and on
  * pages that do not pick a language; the page resolves the visitor's language (see marketing-locale.ts).
  */
-export type MarketingT = ((key: string, vars?: Record<string, string | number>) => string) & { locale: Locale };
+export type MarketingT = ((key: string, vars?: Record<string, string | number>) => string) & { locale: PublicLocale };
 
-export function marketingT(locale: Locale = DEFAULT_LOCALE): MarketingT {
-  const messages = MESSAGES[locale]["public-marketing"];
+export function marketingT(locale: PublicLocale = DEFAULT_LOCALE): MarketingT {
+  const messages = publicMessages(locale, "public-marketing");
   const fallback = MESSAGES[DEFAULT_LOCALE]["public-marketing"];
   return Object.assign((key: string, vars?: Record<string, string | number>) => translate(messages, fallback, key, vars, locale), { locale });
 }
@@ -23,7 +24,7 @@ export function splitAround(template: string, name: string): [string, string] {
   return [before, after];
 }
 
-/** Region-formatted dates in the page language ("en-IN", "hi-IN", "te-IN"). */
-export function intlLocale(locale: Locale): string {
-  return `${locale}-IN`;
+/** Region-formatted dates in the page language ("en-IN", "hi-IN", "te-IN", "or-IN"; Arabic for the Gulf with Latin digits). */
+export function intlLocale(locale: PublicLocale): string {
+  return locale === "ar" ? "ar-AE-u-nu-latn" : `${locale}-IN`;
 }

@@ -1,18 +1,18 @@
 import { Languages } from "lucide-react";
 import Link from "next/link";
 
-import { LOCALE_LABELS, LOCALES, type Locale } from "@/i18n/config";
+import { PUBLIC_LOCALE_LABELS, PUBLIC_LOCALES, type PublicLocale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 /**
- * Small "English / हिन्दी / తెలుగు" switch for a candidate-facing page. Links use `?lang=` (as on
+ * Small "English / हिन्दी / తెలుగు / ଓଡ଼ିଆ / العربية" switch for a translated public page. Links use `?lang=` (as on
  * /safe-recruitment), so the choice can be shared and the visitor's saved preference is not changed.
  */
-export function LanguageSwitch({ path, locale, label, className }: { path: string; locale: Locale; label: string; className?: string }) {
+export function LanguageSwitch({ path, locale, label, className }: { path: string; locale: PublicLocale; label: string; className?: string }) {
   return (
     <nav aria-label={label} className={cn("flex flex-wrap items-center gap-2 text-sm", className)} data-testid="language-switch">
       <Languages aria-hidden="true" className="size-4 text-muted-foreground" />
-      {LOCALES.map((code) => (
+      {PUBLIC_LOCALES.map((code) => (
         <Link
           key={code}
           href={`${path}?lang=${code}`}
@@ -24,7 +24,7 @@ export function LanguageSwitch({ path, locale, label, className }: { path: strin
             code === locale ? "border-foreground bg-foreground text-white" : "border-border bg-white text-foreground hover:border-[#c9cdd5]",
           )}
         >
-          {LOCALE_LABELS[code].label}
+          {PUBLIC_LOCALE_LABELS[code].label}
         </Link>
       ))}
     </nav>

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
  * `PausableRails` adds a pause button (WCAG 2.2.2). Edges fade out (mask).
  *
  * `speed` maps to a few fixed durations so no inline style is needed.
+ * The rail always runs left-to-right (`dir="ltr"`), also on the Arabic page.
  */
 const SPEED = {
   slow: "[--marquee-duration:90s]",
@@ -38,7 +39,7 @@ export function Marquee<T>({
 }) {
   if (!items.length) return null;
   return (
-    <div className={cn("marquee-mask overflow-hidden", SPEED[speed], className)}>
+    <div dir="ltr" className={cn("marquee-mask overflow-hidden", SPEED[speed], className)}>
       <div className="marquee-track" data-reverse={reverse ? "true" : undefined}>
         <ul aria-label={label} className="flex shrink-0 items-center motion-reduce:shrink motion-reduce:flex-wrap motion-reduce:justify-center">
           {items.map((item) => (
