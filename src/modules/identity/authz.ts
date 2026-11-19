@@ -6,7 +6,7 @@ import { cache } from "react";
 
 import { db } from "@/db";
 import { organizationMembers, organizations, roles, userRoles } from "@/db/schema";
-import type { OrgType } from "@/db/schema/_constants";
+import type { EmployerKind, OrgType } from "@/db/schema/_constants";
 import {
   PLATFORM_PERMISSIONS,
   SUPER_ADMIN_ROLE_KEY,
@@ -21,6 +21,7 @@ import { currentPathForReturn, getCurrentSession, requireUser, type SessionUser 
 // Portals
 // ---------------------------------------------------------------------------
 
+/** Portal per organisation type. Employer organisations of kind travel_agency use /agency instead (see employerPortalHome). */
 export const PORTAL_BASE_PATH: Record<OrgType, string> = {
   employer: "/employer",
   recruitment_partner: "/recruiter",
@@ -179,6 +180,8 @@ export type UserMembership = {
   organizationId: string;
   organizationName: string;
   organizationType: OrgType;
+  /** Employer organisations only (null for other types): direct_company or travel_agency. */
+  employerKind: EmployerKind | null;
   organizationStatus: OrganizationRow["status"];
   logoFileId: string | null;
   roleKey: string;
@@ -188,11 +191,12 @@ export type UserMembership = {
 
 /** All active memberships of a user (portal switcher, account page). */
 export async function listUserMemberships(userId: string): Promise<UserMembership[]> {
-  return db
+  const rows = await db
     .select({
       organizationId: organizations.id,
       organizationName: organizations.name,
       organizationType: organizations.type,
+      employerKind: organizations.employerKind,
       organizationStatus: organizations.status,
       logoFileId: organizations.logoFileId,
       roleKey: roles.key,
@@ -204,11 +208,15 @@ export async function listUserMemberships(userId: string): Promise<UserMembershi
     .innerJoin(roles, eq(roles.id, organizationMembers.roleId))
     .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.status, "active"), isNull(organizations.deletedAt)))
     .orderBy(organizations.name);
+  return rows.map((row) => ({ ...row, employerKind: row.organizationType === "employer" ? (row.employerKind ?? "direct_company") : null }));
 }
 
 export type PortalAccess = {
   talent: true;
+  /** Member of a direct company / HR employer organisation (Company Portal, /employer). */
   employer: boolean;
+  /** Member of a travel agency employer organisation (Travel Agency Portal, /agency). */
+  agency: boolean;
   recruiter: boolean;
   institution: boolean;
   admin: boolean;
@@ -217,9 +225,11 @@ export type PortalAccess = {
 export const getPortalAccess = cache(async (user: SessionUser): Promise<PortalAccess> => {
   const memberships = await listUserMemberships(user.id);
   const types = new Set(memberships.map((m) => m.organizationType));
+  const employerKinds = new Set(memberships.map((m) => m.employerKind));
   return {
     talent: true,
-    employer: types.has("employer"),
+    employer: employerKinds.has("direct_company"),
+    agency: employerKinds.has("travel_agency"),
     recruiter: types.has("recruitment_partner"),
     institution: types.has("institution"),
     admin: user.isStaff,
@@ -230,6 +240,7 @@ export const getPortalAccess = cache(async (user: SessionUser): Promise<PortalAc
 export function portalHomePath(access: PortalAccess): string {
   if (access.admin) return "/admin";
   if (access.employer) return "/employer";
+  if (access.agency) return "/agency";
   if (access.recruiter) return "/recruiter";
   if (access.institution) return "/institution";
   return "/talent";

@@ -1,12 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { EMPLOYER_KINDS } from "@/db/schema/_constants";
 import { createAction, createFormAction, ok } from "@/lib/actions";
 import { f } from "@/lib/validation";
 import { requireOrgMember } from "@/modules/identity/authz";
-import { createBranch, setBranchActive, updateBranch, updateCompanyProfile } from "@/modules/organizations/employer";
+import { createBranch, setBranchActive, setEmployerKind, updateBranch, updateCompanyProfile } from "@/modules/organizations/employer";
+import { employerPortalHome } from "@/modules/organizations/employer-kind";
 import { companyBranchSchema, companyProfileSchema, organizationDetailsSchema, organizationDocumentSchema, socialLinksSchema } from "@/modules/organizations/schemas";
 import {
   addOrganizationDocument,
@@ -34,6 +37,17 @@ export const updateCompanyDetailsAction = createFormAction(organizationDetailsSc
   await updateOrganization(ctx, ctx.organization.id, input);
   refreshCompany();
   return ok(undefined, "Company details saved.");
+});
+
+/**
+ * Owner only (re-checked by the service): switch between direct company and travel agency. The workspace moves to
+ * the matching portal (/employer or /agency), so the member is sent to the profile page there.
+ */
+export const setEmployerKindAction = createFormAction(z.object({ employerKind: z.enum(EMPLOYER_KINDS) }), async ({ employerKind }) => {
+  const ctx = await guard();
+  await setEmployerKind(ctx, ctx.organization.id, employerKind);
+  revalidatePath("/employer", "layout");
+  redirect(`${employerPortalHome(employerKind)}/company`);
 });
 
 const profileFormSchema = companyProfileSchema.omit({ socialLinks: true }).extend(socialLinksSchema.shape);

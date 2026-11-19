@@ -28,13 +28,16 @@ export function sanitizeReturnTo(value: string | null | undefined): string | nul
 
 export const INTENT_ONBOARDING_PATH: Record<SignupIntent, string> = {
   candidate: "/talent/onboarding",
+  travel_agency: "/agency/onboarding",
   employer: "/employer/onboarding",
   partner: "/recruiter/onboarding",
   institution: "/institution/onboarding",
 };
 
-const INTENT_PORTAL_PATH: Record<SignupIntent, string> = {
+/** Portal home for each account type (sign-in account-type choice sets returnTo to it). */
+export const INTENT_PORTAL_PATH: Record<SignupIntent, string> = {
   candidate: "/talent",
+  travel_agency: "/agency",
   employer: "/employer",
   partner: "/recruiter",
   institution: "/institution",
@@ -44,6 +47,8 @@ function hasPortalFor(intent: SignupIntent, access: PortalAccess): boolean {
   switch (intent) {
     case "candidate":
       return access.talent;
+    case "travel_agency":
+      return access.agency;
     case "employer":
       return access.employer;
     case "partner":
@@ -51,6 +56,16 @@ function hasPortalFor(intent: SignupIntent, access: PortalAccess): boolean {
     case "institution":
       return access.institution;
   }
+}
+
+/** The account type whose portal contains `path` (e.g. "/agency/jobs" → travel_agency), or null. */
+export function intentForPath(path: string | null | undefined): SignupIntent | null {
+  if (!path) return null;
+  const pathname = path.split(/[?#]/)[0] ?? path;
+  for (const [intent, base] of Object.entries(INTENT_PORTAL_PATH) as [SignupIntent, string][]) {
+    if (pathname === base || pathname.startsWith(`${base}/`)) return intent;
+  }
+  return null;
 }
 
 export type PostAuthRedirectInput = {

@@ -95,9 +95,12 @@ describe.skipIf(!isTestDatabase)("shell-data (database)", () => {
     await expect(findActiveMembership(ids.member, "employer", ids.employerA)).resolves.toEqual({
       organizationId: ids.employerA,
       organizationName: `Alpha Fabrication ${suffix}`,
+      // Employers without a stored kind are direct companies (Company Portal).
+      employerKind: "direct_company",
     });
     await expect(findActiveMembership(ids.member, "recruitment_partner", ids.partner)).resolves.toMatchObject({
       organizationId: ids.partner,
+      employerKind: null,
     });
   });
 

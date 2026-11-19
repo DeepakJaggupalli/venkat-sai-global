@@ -13,7 +13,8 @@ import { fileUrl, requireUploadedFile, setFileVisibility, thumbnailUrl } from "@
 import type { StaffContext } from "@/modules/identity/authz";
 
 import { assertStaff, authorizeOrg, ORG_PERMISSION, type OrgActor } from "./access";
-import { invalidStateError, notFoundError, validationError, withConstraintMessages } from "./errors";
+import { employerKindOf, type EmployerKind } from "./employer-kind";
+import { forbiddenError, invalidStateError, notFoundError, validationError, withConstraintMessages } from "./errors";
 import type { CompanyProfileRow } from "./readiness";
 import type { CompanyBranchInput, CompanyProfileInput, EmployerContractInput } from "./schemas";
 import { assertCountryExists } from "./service";
@@ -77,6 +78,35 @@ async function requirePublicOrgImage(tx: DbOrTx, fileId: string, organizationId:
   const file = await requireUploadedFile(fileId, { purposes: ["org_logo"], organizationId, ownerUserId: actorUserId }, tx);
   if (file.visibility !== "public") await setFileVisibility(file.id, "public", { actorUserId, tx });
   return file.id;
+}
+
+// ---------------------------------------------------------------------------
+// Employer kind (Company Portal vs Travel Agency Portal)
+// ---------------------------------------------------------------------------
+
+/**
+ * Change whether an employer organisation is a direct company / HR team or a travel agency, which moves it between
+ * the Company Portal (/employer) and the Travel Agency Portal (/agency). Owners only (or staff with orgs.manage);
+ * audited. Returns the updated row (unchanged when the kind is the same).
+ */
+export async function setEmployerKind(actor: OrgActor, organizationId: string, kind: EmployerKind): Promise<typeof organizations.$inferSelect> {
+  return db.transaction(async (tx) => {
+    const access = await authorizeOrg(actor, organizationId, PROFILE_RULE, { tx, lock: true });
+    if (access.via === "member" && !access.isOwner) throw forbiddenError("Only the owner can change whether this is a company or a travel agency.");
+    const previous = employerKindOf(access.organization);
+    if (previous === kind) return access.organization;
+    const [row] = await tx.update(organizations).set({ employerKind: kind, updatedAt: new Date() }).where(eq(organizations.id, organizationId)).returning();
+    await audit({
+      action: "employer.kind_changed",
+      entityType: "organization",
+      entityId: organizationId,
+      organizationId,
+      actorUserId: access.actorUserId,
+      metadata: { from: previous, to: kind },
+      tx,
+    });
+    return row!;
+  });
 }
 
 // ---------------------------------------------------------------------------

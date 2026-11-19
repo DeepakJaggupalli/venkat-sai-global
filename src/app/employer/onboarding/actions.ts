@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { EMPLOYER_KINDS } from "@/db/schema/_constants";
 import { ActionError, createFormAction } from "@/lib/actions";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
@@ -11,29 +12,32 @@ import { f } from "@/lib/validation";
 import { assertPortalEnabled } from "@/components/layout/shell-data";
 import { getOrgContext } from "@/modules/identity/authz";
 import { getCurrentSession, requireUser, setActiveOrganization } from "@/modules/identity/session";
+import { employerOnboardingPath, employerPortalHome } from "@/modules/organizations/employer-kind";
 import { updateMemberDetails } from "@/modules/organizations/members";
 import { organizationDetailsSchema } from "@/modules/organizations/schemas";
 import { createOrganization } from "@/modules/organizations/service";
 
 const onboardingSchema = organizationDetailsSchema.extend({
+  /** Direct company / HR (Company Portal) or travel agency (Travel Agency Portal); set by the onboarding page. */
+  employerKind: z.enum(EMPLOYER_KINDS).catch("direct_company"),
   /** The signed-in person's designation; saved on their membership as the authorised representative. */
   representativeTitle: f.text({ max: 120, label: "Your designation" }),
   confirmAuthorised: z.preprocess((v) => v === "true" || v === "on" || v === true, z.literal(true, { error: "Confirm that you are authorised to register this company" })),
 });
 
 /**
- * Create the employer organisation owned by the signed-in user (status draft), make it the active
- * employer workspace and open the dashboard, where the setup checklist continues.
+ * Create the employer organisation owned by the signed-in user (status draft) as a direct company or a travel
+ * agency, make it the active employer workspace and open its portal dashboard, where the setup checklist continues.
  */
 export const createEmployerOrganizationAction = createFormAction(onboardingSchema, async (input) => {
-  const user = await requireUser({ returnTo: "/employer/onboarding" });
+  const user = await requireUser({ returnTo: employerOnboardingPath(input.employerKind) });
   await assertPortalEnabled("employer");
   const limited = await rateLimit(`org-create:${user.id}`, 5, 24 * 60 * 60);
   if (!limited.allowed) throw new ActionError("You have created several organisations today. Contact Venkat Sai support if you need more.");
 
-  const { representativeTitle, confirmAuthorised: _confirmed, ...details } = input;
+  const { representativeTitle, employerKind, confirmAuthorised: _confirmed, ...details } = input;
   void _confirmed;
-  const org = await createOrganization("employer", details, user);
+  const org = await createOrganization("employer", details, user, { employerKind });
   const current = await getCurrentSession();
   if (current) await setActiveOrganization(current.session.id, "employer", org.id);
 
@@ -48,5 +52,5 @@ export const createEmployerOrganizationAction = createFormAction(onboardingSchem
   }
 
   revalidatePath("/employer", "layout");
-  redirect("/employer?welcome=1");
+  redirect(`${employerPortalHome(employerKind)}?welcome=1`);
 });

@@ -7,21 +7,26 @@ import { useEmployerForm } from "@/components/employer/use-form-action";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
 import type { SelectOption } from "@/components/shared/types";
 import { Input } from "@/components/ui/input";
+import type { EmployerKind } from "@/db/schema/_constants";
 import { track } from "@/modules/analytics/client";
 
 import { createEmployerOrganizationAction } from "./actions";
 
 export function EmployerOnboardingForm({
+  employerKind,
   countries,
   industries,
   representativeName,
   defaultEmail,
 }: {
+  /** Fixed by the portal the member signed up for: travel_agency (/agency/onboarding) or direct_company. */
+  employerKind: EmployerKind;
   countries: SelectOption[];
   industries: SelectOption[];
   representativeName: string;
   defaultEmail?: string;
 }) {
+  const noun = employerKind === "travel_agency" ? "agency" : "company";
   const { state, pending, onSubmit } = useEmployerForm(createEmployerOrganizationAction);
   useActionToast(state);
   const started = useRef(false);
@@ -49,6 +54,7 @@ export function EmployerOnboardingForm({
         state={state}
         fieldLabels={{ ...ORGANIZATION_FIELD_LABELS, representativeTitle: "Your designation", confirmAuthorised: "Authorisation confirmation" }}
       />
+      <input type="hidden" name="employerKind" value={employerKind} />
       <OrganizationDetailsFields state={state} countries={countries} industries={industries} defaults={{ email: defaultEmail }} />
 
       <fieldset className="space-y-4">
@@ -62,7 +68,7 @@ export function EmployerOnboardingForm({
             <Input autoComplete="organization-title" maxLength={120} />
           </FormField>
         </div>
-        <FormField label="I confirm I am authorised to register this company on Venkat Sai Global" name="confirmAuthorised" required state={state} hideLabel>
+        <FormField label={`I confirm I am authorised to register this ${noun} on Venkat Sai Global`} name="confirmAuthorised" required state={state} hideLabel>
           {(field) => (
             <div className="flex items-start gap-3">
               <input
@@ -72,8 +78,8 @@ export function EmployerOnboardingForm({
                 className="mt-1 size-4 shrink-0 rounded border-input accent-[var(--color-navy)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               />
               <label htmlFor={field.id} className="text-sm leading-6 text-foreground">
-                I confirm I am authorised to register this company on Venkat Sai Global, and that the details above are accurate. Venkat Sai checks them before
-                the company is verified.
+                I confirm I am authorised to register this {noun} on Venkat Sai Global, and that the details above are accurate. Venkat Sai checks them
+                before the {noun} is verified.
               </label>
             </div>
           )}
@@ -81,9 +87,9 @@ export function EmployerOnboardingForm({
       </fieldset>
 
       <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">You can review and change these details later from your company profile.</p>
+        <p className="text-sm text-muted-foreground">You can review and change these details later from your {noun} profile.</p>
         <SubmitButton pending={pending} pendingLabel="Creating workspace…" size="lg">
-          Create employer workspace
+          {employerKind === "travel_agency" ? "Create agency workspace" : "Create employer workspace"}
         </SubmitButton>
       </div>
     </form>

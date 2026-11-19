@@ -16,7 +16,7 @@ export default async function NotificationsEntryPage({ searchParams }: { searchP
   const user = await requireUser({ returnTo: "/notifications" });
   const params = await searchParams;
   const access = await getPortalAccess(user);
-  const businessUser = access.admin || access.employer || access.recruiter || access.institution;
+  const businessUser = access.admin || access.employer || access.agency || access.recruiter || access.institution;
   const target = businessUser ? "/account/notifications" : "/talent/notifications";
   redirect(withParams(target, {}, { filter: sp(params, "filter") === "unread" ? "unread" : null }));
 }

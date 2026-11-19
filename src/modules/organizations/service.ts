@@ -17,7 +17,7 @@ import {
   partnerProfiles,
   roles,
 } from "@/db/schema";
-import type { OrgType } from "@/db/schema/_constants";
+import type { EmployerKind, OrgType } from "@/db/schema/_constants";
 import { uniqueSlug } from "@/lib/http";
 import { trackServer } from "@/modules/analytics/server";
 import { cancelApprovalsForEntity, submitForApproval } from "@/modules/approvals/service";
@@ -91,8 +91,10 @@ export async function createOrganization(
   type: OrgType,
   input: OrganizationDetailsInput,
   owner: OrganizationOwner,
-  opts: { createdByUserId?: string | null } = {},
+  /** employerKind: employer organisations only (default direct_company); ignored for other types. */
+  opts: { createdByUserId?: string | null; employerKind?: EmployerKind } = {},
 ): Promise<OrganizationRow> {
+  const employerKind = type === "employer" ? (opts.employerKind ?? "direct_company") : null;
   if (owner.status !== "active") throw forbiddenError("Your account must be active to create an organisation.");
   return withConstraintMessages(
     () =>
@@ -113,7 +115,7 @@ export async function createOrganization(
         const now = new Date();
         const [org] = await tx
           .insert(organizations)
-          .values({ type, slug, status: "draft", createdByUserId: opts.createdByUserId ?? owner.id, ...detailsToColumns(input) })
+          .values({ type, employerKind, slug, status: "draft", createdByUserId: opts.createdByUserId ?? owner.id, ...detailsToColumns(input) })
           .returning();
         await tx.insert(organizationMembers).values({ organizationId: org!.id, userId: owner.id, roleId: ownerRole.id, status: "active", joinedAt: now, lastActiveAt: now });
         if (type === "employer") await tx.insert(companyProfiles).values({ organizationId: org!.id });
@@ -126,7 +128,7 @@ export async function createOrganization(
           entityId: org!.id,
           organizationId: org!.id,
           actorUserId: opts.createdByUserId ?? owner.id,
-          metadata: { type, name: org!.name, slug, ownerUserId: owner.id },
+          metadata: { type, ...(employerKind ? { employerKind } : {}), name: org!.name, slug, ownerUserId: owner.id },
           tx,
         });
         return org!;

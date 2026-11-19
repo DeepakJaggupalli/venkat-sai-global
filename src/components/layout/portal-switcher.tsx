@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Check, Globe, GraduationCap, Handshake, LayoutGrid, ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
+import { Building2, Check, Globe, GraduationCap, Handshake, LayoutGrid, Plane, ShieldCheck, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import type { PortalLink } from "./types";
 export const PORTAL_ICONS: Record<PortalKey, LucideIcon> = {
   talent: UserRound,
   employer: Building2,
+  agency: Plane,
   recruiter: Handshake,
   institution: GraduationCap,
   admin: ShieldCheck,

@@ -36,6 +36,13 @@
       "when": 1794099746827,
       "tag": "0004_resume_passport_encrypted",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795073363963,
+      "tag": "0005_employer_kind",
+      "breakpoints": true
     }
   ]
 }

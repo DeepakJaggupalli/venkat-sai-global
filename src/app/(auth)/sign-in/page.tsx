@@ -8,11 +8,12 @@ import { getT } from "@/i18n/server";
 import { sp, type SearchParams } from "@/lib/http";
 import { getPortalAccess, portalHomePath } from "@/modules/identity/authz";
 import { isGoogleSignInEnabled } from "@/modules/identity/google";
-import { sanitizeReturnTo } from "@/modules/identity/redirects";
+import { INTENT_PORTAL_PATH, intentForPath, resolvePostAuthRedirect, sanitizeReturnTo } from "@/modules/identity/redirects";
 import { getCurrentSession } from "@/modules/identity/session";
-import { isSignupIntent } from "@/modules/identity/types";
+import { isSignupIntent, type SignupIntent } from "@/modules/identity/types";
 import { isFeatureEnabled } from "@/modules/settings";
 
+import { AccountTypeChoice, accountTypeItems } from "../_components/account-type-cards";
 import { AuthHeading, AuthLinks } from "../_components/auth-heading";
 import { GoogleButton, OrSeparator } from "../_components/google-button";
 import { SignInForms } from "../_components/sign-in-forms";
@@ -39,10 +40,15 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const returnTo = sanitizeReturnTo(sp(params, "returnTo"));
   const intentParam = sp(params, "intent");
   const intent = isSignupIntent(intentParam) ? intentParam : null;
+  // The account type shown as chosen: the ?intent= deep link, else the portal the returnTo belongs to.
+  const selectedType = intent ?? intentForPath(returnTo);
 
   const current = await getCurrentSession();
   if (current?.needsTwoFactor) redirect(`/sign-in/two-factor${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);
-  if (current) redirect(returnTo ?? portalHomePath(await getPortalAccess(current.user)));
+  if (current) {
+    const access = await getPortalAccess(current.user);
+    redirect(resolvePostAuthRedirect({ returnTo, intent, access, homePath: portalHomePath(access) }));
+  }
 
   const [t, googleEnabled, emailOtp, phoneOtp] = await Promise.all([
     getT("auth"),
@@ -64,9 +70,20 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   googleParams.set("consent", "notice");
   const googleHref = `/auth/google?${googleParams.toString()}`;
 
+  /**
+   * One sign-in form for every account type; choosing a type only sets where to go afterwards: that portal's home
+   * (or the current returnTo when it is already inside that portal). The portal then applies its own access rules
+   * (onboarding when the account has no organisation there; travel agency ↔ company redirect).
+   */
+  const hrefFor = (type: SignupIntent) => {
+    const next = new URLSearchParams({ intent: type, returnTo: returnTo && intentForPath(returnTo) === type ? returnTo : INTENT_PORTAL_PATH[type] });
+    return `/sign-in?${next.toString()}`;
+  };
+
   return (
     <div className="space-y-6">
       <AuthHeading title={t("signIn.title")} description={t("signIn.description")} />
+      <AccountTypeChoice label={t("accountType.label")} hint={t("accountType.signInHint")} items={accountTypeItems(t, hrefFor)} selected={selectedType} variant="tabs" />
 
       {notice ? (
         <Alert role="status" className="border-success/30 bg-success-soft">

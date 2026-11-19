@@ -5,12 +5,13 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import { files, organizationDocuments, organizationInvitations, organizationMembers, organizations, organizationVerifications, users } from "@/db/schema";
-import type { OrgStatus, OrgType } from "@/db/schema/_constants";
+import type { EmployerKind, OrgStatus, OrgType } from "@/db/schema/_constants";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { fileUrl, thumbnailUrl } from "@/modules/files";
 import type { StaffContext } from "@/modules/identity/authz";
 
 import { assertStaff, authorizeOrg, type OrganizationRow, type OrgActor } from "./access";
+import { employerKindOf } from "./employer-kind";
 import { loadVerificationContext, type CompanyProfileRow, type InstitutionProfileRow, type OrganizationDocumentRow, type PartnerProfileRow } from "./readiness";
 import { daysUntil, RECOMMENDED_DOCUMENTS, type VerificationReadiness } from "./rules";
 
@@ -49,6 +50,8 @@ export type OrganizationOverview = {
 export type OrganizationListItem = {
   id: string;
   type: OrgType;
+  /** Employer organisations only: direct_company or travel_agency (null for other types). */
+  employerKind: EmployerKind | null;
   name: string;
   slug: string;
   status: OrgStatus;
@@ -165,13 +168,22 @@ export async function listVerificationHistory(actor: OrgActor, organizationId: s
 /** Command Centre list of organisations (orgs.view). */
 export async function listOrganizations(
   staff: StaffContext,
-  filters: { type?: OrgType; status?: OrgStatus; q?: string; countryCode?: string; expiringWithinDays?: number },
+  filters: { type?: OrgType; employerKind?: EmployerKind; status?: OrgStatus; q?: string; countryCode?: string; expiringWithinDays?: number },
   page: PageQuery,
   now: Date = new Date(),
 ): Promise<Paginated<OrganizationListItem>> {
   assertStaff(staff, "orgs.view");
   const where: SQL[] = [isNull(organizations.deletedAt)];
   if (filters.type) where.push(eq(organizations.type, filters.type));
+  if (filters.employerKind) {
+    // Employers without a stored kind are direct companies.
+    where.push(eq(organizations.type, "employer"));
+    where.push(
+      filters.employerKind === "direct_company"
+        ? or(isNull(organizations.employerKind), eq(organizations.employerKind, "direct_company"))!
+        : eq(organizations.employerKind, filters.employerKind),
+    );
+  }
   if (filters.status) where.push(eq(organizations.status, filters.status));
   if (filters.countryCode) where.push(eq(organizations.countryCode, filters.countryCode.toUpperCase()));
   if (filters.q?.trim()) {
@@ -205,6 +217,7 @@ export async function listOrganizations(
     rows.map((r) => ({
       id: r.org.id,
       type: r.org.type,
+      employerKind: employerKindOf(r.org),
       name: r.org.name,
       slug: r.org.slug,
       status: r.org.status,

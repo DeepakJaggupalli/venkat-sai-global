@@ -8,6 +8,7 @@ import { NAVIGATION, PORTAL_HOME, PORTAL_LABEL, type NavItem, type NavSection, t
 import { BRAND } from "@/config/site";
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
+import { inEmployerPortal } from "@/modules/organizations/employer-kind";
 
 import { buildAutoTrail, filterNavSections, findActiveNavItem, isNavItemExact, navSectionI18nKey } from "./nav-utils";
 import { OrgSwitcher } from "./org-switcher";
@@ -76,7 +77,8 @@ export function PortalShell({
   children,
 }: PortalShellProps) {
   const t = useShellT();
-  const pathname = usePathname();
+  // /agency is served by the /employer routes: read either form as this portal's path.
+  const pathname = inEmployerPortal(usePathname(), portal);
   const searchParams = useSearchParams();
   const translate = portal === "talent";
 

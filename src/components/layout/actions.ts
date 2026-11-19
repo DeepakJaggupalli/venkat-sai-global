@@ -7,6 +7,7 @@ import { ORG_TYPES } from "@/db/schema/_constants";
 import { ActionError, createAction, ok } from "@/lib/actions";
 import { audit } from "@/modules/audit";
 import { PORTAL_BASE_PATH } from "@/modules/identity/authz";
+import { employerPortalHome } from "@/modules/organizations/employer-kind";
 import { getCurrentSession, requireUser, setActiveOrganization } from "@/modules/identity/session";
 
 import { findActiveMembership } from "./shell-data";
@@ -42,7 +43,8 @@ export const switchOrganization = createAction(switchOrganizationSchema, async (
     metadata: { orgType },
   });
 
-  const href = PORTAL_BASE_PATH[orgType];
-  revalidatePath(href, "layout");
+  // A travel agency opens in the Travel Agency Portal (/agency, served by the /employer routes).
+  const href = membership.employerKind ? employerPortalHome(membership.employerKind) : PORTAL_BASE_PATH[orgType];
+  revalidatePath(PORTAL_BASE_PATH[orgType], "layout");
   return ok({ href }, `Switched to ${membership.organizationName}`);
 });

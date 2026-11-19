@@ -16,9 +16,18 @@ const CARDS = [
 ] as const;
 
 /**
+ * Each card's portal: sign-up with the account type preselected. Signed-in visitors are sent on by /sign-up to their
+ * portal (/agency or /employer) or to that portal's onboarding when they do not have it yet.
+ */
+export const MANPOWER_PORTAL_HREF: Record<(typeof CARDS)[number]["key"], string> = {
+  agency: "/sign-up?intent=travel_agency",
+  company: "/sign-up?intent=employer",
+};
+
+/**
  * "Need manpower?" (anchor #manpower, linked from the hero): one card for travel agencies with a requirement from
- * abroad and one for HR teams and direct companies. Both reach the business contact (CONTACT.business) on WhatsApp,
- * with a card-specific message, or by phone. The business number is used here only; candidates are pointed to the
+ * abroad and one for HR teams and direct companies. Each opens its own portal (Travel Agency Portal / Company Portal)
+ * and reaches the business contact (CONTACT.business) on WhatsApp, with a card-specific message, or by phone. The business number is used here only; candidates are pointed to the
  * office number.
  */
 export function ManpowerSection({ tone = "white", t = EN_MARKETING }: { tone?: SectionTone; t?: MarketingT }) {
@@ -36,6 +45,14 @@ export function ManpowerSection({ tone = "white", t = EN_MARKETING }: { tone?: S
               <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t(`manpower.${card.key}.body`)}</p>
               <p className="mt-6 text-sm font-medium text-foreground">{t("manpower.contact", { name: contact.name })}</p>
               <div className="mt-auto flex flex-wrap gap-3 pt-4">
+                <Link
+                  href={MANPOWER_PORTAL_HREF[card.key]}
+                  data-testid={`${card.testId}-portal`}
+                  className={`${PILL} bg-foreground text-white hover:bg-[#26262b]`}
+                >
+                  {t(`manpower.${card.key}.portal`)}
+                  <ArrowRight aria-hidden="true" className="size-4 rtl:rotate-180" />
+                </Link>
                 <a
                   href={whatsappHref(t(`manpower.${card.key}.message`, { name: contact.name }), contact.e164)}
                   target="_blank"
@@ -46,7 +63,10 @@ export function ManpowerSection({ tone = "white", t = EN_MARKETING }: { tone?: S
                   {t("manpower.whatsapp")}
                   <span className="sr-only">{t("common.newTab")}</span>
                 </a>
-                <a href={telHref(contact.e164)} className={`${PILL} bg-foreground text-white hover:bg-[#26262b]`}>
+                <a
+                  href={telHref(contact.e164)}
+                  className={`${PILL} border border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle`}
+                >
                   <Phone aria-hidden="true" className="size-4" />
                   {t("manpower.call", { phone: contact.display })}
                 </a>

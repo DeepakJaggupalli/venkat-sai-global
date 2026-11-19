@@ -2,7 +2,7 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
-import { buildContentSecurityPolicy, config, isProtectedPath, pathForReturn, proxy, resolveRequestId } from "./proxy";
+import { agencyRewritePath, buildContentSecurityPolicy, config, isProtectedPath, pathForReturn, proxy, resolveRequestId } from "./proxy";
 
 const directives = (csp: string) => Object.fromEntries(csp.split("; ").map((d) => [d.split(" ")[0], d.split(" ").slice(1)]));
 
@@ -44,10 +44,10 @@ describe("buildContentSecurityPolicy", () => {
 
 describe("helpers", () => {
   it("matches portal prefixes on segment boundaries only", () => {
-    for (const p of ["/talent", "/talent/jobs", "/employer", "/employer/jobs/1", "/recruiter", "/institution/courses", "/admin", "/admin/settings", "/account/security"]) {
+    for (const p of ["/talent", "/talent/jobs", "/employer", "/employer/jobs/1", "/agency", "/agency/requirements", "/recruiter", "/institution/courses", "/admin", "/admin/settings", "/account/security"]) {
       expect(isProtectedPath(p)).toBe(true);
     }
-    for (const p of ["/", "/employers", "/administration", "/talented", "/jobs", "/sign-in", "/accounting"]) {
+    for (const p of ["/", "/employers", "/administration", "/talented", "/jobs", "/sign-in", "/accounting", "/agency-news"]) {
       expect(isProtectedPath(p)).toBe(false);
     }
   });
@@ -91,6 +91,33 @@ describe("proxy", () => {
   it("does not redirect public pages or non-GET requests", () => {
     expect(proxy(new NextRequest("http://localhost:3000/jobs")).status).toBe(200);
     expect(proxy(new NextRequest("http://localhost:3000/admin", { method: "POST" })).status).toBe(200);
+  });
+
+  it("serves /agency from the employer workspace with the portal header", () => {
+    expect(agencyRewritePath("/agency")).toBe("/employer");
+    expect(agencyRewritePath("/agency/requirements/1")).toBe("/employer/requirements/1");
+    expect(agencyRewritePath("/agencyx")).toBeNull();
+    expect(agencyRewritePath("/employer")).toBeNull();
+
+    const res = proxy(new NextRequest("http://localhost:3000/agency/pipeline?job=2", { headers: { cookie: "vsg_session=token" } }));
+    const rewrite = new URL(res.headers.get("x-middleware-rewrite")!);
+    expect(rewrite.pathname).toBe("/employer/pipeline");
+    expect(rewrite.searchParams.get("job")).toBe("2");
+    expect(res.headers.get("x-middleware-request-x-vsg-portal")).toBe("agency");
+    // returnTo / redirects keep the address the member actually opened.
+    expect(res.headers.get("x-middleware-request-x-vsg-pathname")).toBe("/agency/pipeline?job=2");
+  });
+
+  it("never trusts a portal header sent by the client", () => {
+    const res = proxy(new NextRequest("http://localhost:3000/employer", { headers: { cookie: "vsg_session=token", "x-vsg-portal": "agency" } }));
+    expect(res.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(res.headers.get("x-middleware-request-x-vsg-portal")).toBeNull();
+  });
+
+  it("sends signed-out visitors of /agency to sign-in", () => {
+    const res = proxy(new NextRequest("http://localhost:3000/agency"));
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get("location")!).searchParams.get("returnTo")).toBe("/agency");
   });
 
   it("issues a fresh nonce per request", () => {

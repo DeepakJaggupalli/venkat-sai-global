@@ -8,10 +8,11 @@ import type { FeatureKey } from "@/config/features";
 import { PORTAL_HOME, PORTAL_LABEL, type PortalKey } from "@/config/navigation";
 import { db } from "@/db";
 import { organizationMembers, organizations } from "@/db/schema";
-import type { OrgType } from "@/db/schema/_constants";
+import type { EmployerKind, OrgType } from "@/db/schema/_constants";
 import { logger } from "@/lib/logger";
 import { getPortalAccess, listUserMemberships, portalHomePath, type OrgContext } from "@/modules/identity/authz";
 import { getCurrentUser, type SessionUser } from "@/modules/identity/session";
+import { employerKindOf } from "@/modules/organizations/employer-kind";
 import { isFeatureEnabled } from "@/modules/settings";
 
 import { LAST_PORTAL_COOKIE, SIDEBAR_COOKIE } from "./portal-config";
@@ -26,11 +27,18 @@ import type { HeaderAccount, PortalLink, ShellMembership, ShellOrganization, She
 const PORTAL_FLAG: Record<Exclude<PortalKey, "admin">, FeatureKey> = {
   talent: "portal.talent",
   employer: "portal.employer",
+  // The Travel Agency Portal is the employer workspace: same switch.
+  agency: "portal.employer",
   recruiter: "portal.recruiter",
   institution: "portal.institution",
 };
 
-const PORTAL_ORDER: readonly PortalKey[] = ["talent", "employer", "recruiter", "institution", "admin"];
+const PORTAL_ORDER: readonly PortalKey[] = ["talent", "employer", "agency", "recruiter", "institution", "admin"];
+
+/** Feature-flag rollout rules know the employer workspace as "employer" (it also serves /agency). */
+function flagPortal(portal: Exclude<PortalKey, "admin">): Exclude<PortalKey, "admin" | "agency"> {
+  return portal === "agency" ? "employer" : portal;
+}
 
 /**
  * Avatar URL for a user: the files module serves it at /api/v1/files/[id] after its access check
@@ -52,7 +60,7 @@ export function toShellUser(user: SessionUser): ShellUser {
 export async function assertPortalEnabled(portal: Exclude<PortalKey, "admin">, opts: { organizationId?: string } = {}): Promise<void> {
   const user = await getCurrentUser();
   const enabled = await isFeatureEnabled(PORTAL_FLAG[portal], {
-    portal,
+    portal: flagPortal(portal),
     isStaff: user?.isStaff ?? false,
     organizationId: opts.organizationId,
   });
@@ -65,7 +73,7 @@ export async function getPortalLinks(user: SessionUser): Promise<PortalLink[]> {
   const links: PortalLink[] = [];
   for (const portal of PORTAL_ORDER) {
     if (!access[portal]) continue;
-    if (portal !== "admin" && !(await isFeatureEnabled(PORTAL_FLAG[portal], { portal, isStaff: user.isStaff }))) continue;
+    if (portal !== "admin" && !(await isFeatureEnabled(PORTAL_FLAG[portal], { portal: flagPortal(portal), isStaff: user.isStaff }))) continue;
     links.push({ portal, label: PORTAL_LABEL[portal], href: PORTAL_HOME[portal] });
   }
   return links;
@@ -102,9 +110,9 @@ export async function findActiveMembership(
   userId: string,
   orgType: OrgType,
   organizationId: string,
-): Promise<{ organizationId: string; organizationName: string } | null> {
+): Promise<{ organizationId: string; organizationName: string; employerKind: EmployerKind | null } | null> {
   const rows = await db
-    .select({ organizationId: organizations.id, organizationName: organizations.name })
+    .select({ organizationId: organizations.id, organizationName: organizations.name, type: organizations.type, employerKind: organizations.employerKind })
     .from(organizationMembers)
     .innerJoin(organizations, eq(organizations.id, organizationMembers.organizationId))
     .where(
@@ -117,7 +125,8 @@ export async function findActiveMembership(
       ),
     )
     .limit(1);
-  return rows[0] ?? null;
+  const row = rows[0];
+  return row ? { organizationId: row.organizationId, organizationName: row.organizationName, employerKind: employerKindOf(row) } : null;
 }
 
 /** Desktop sidebar preference (cookie written by the shell). */

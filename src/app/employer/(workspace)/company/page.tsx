@@ -10,6 +10,7 @@ import { toFileSummary } from "@/modules/files/present";
 import { requireOrgMember } from "@/modules/identity/authz";
 import { COMPANY_SIZE_BANDS, COMPANY_SIZE_LABELS } from "@/modules/organizations/constants";
 import { getCompanyProfile, listBranches } from "@/modules/organizations/employer";
+import { employerKindOf } from "@/modules/organizations/employer-kind";
 import { publicEmployerPath } from "@/modules/organizations/paths";
 import { getOrganizationOverview } from "@/modules/organizations/queries";
 import { countryOptions, currencyOptions, industryOptions, jobCategoryOptions } from "@/modules/taxonomy/queries";
@@ -18,6 +19,7 @@ import { BranchesManager } from "./_components/branches-manager";
 import { BrandingControls } from "./_components/branding-controls";
 import { CompanyDetailsForm } from "./_components/company-details-form";
 import { CompanyProfileForm } from "./_components/company-profile-form";
+import { EmployerKindForm } from "./_components/employer-kind-form";
 
 export const metadata: Metadata = { title: "Company profile" };
 
@@ -82,6 +84,16 @@ export default async function EmployerCompanyPage() {
           }}
         />
       </SectionCard>
+
+      {ctx.isOwner ? (
+        <SectionCard
+          title="Business type"
+          description="Travel agencies use the Travel Agency Portal; companies and HR teams use the Company Portal. Only the owner can change this."
+          id="business-type"
+        >
+          <EmployerKindForm current={employerKindOf(org) ?? "direct_company"} />
+        </SectionCard>
+      ) : null}
 
       <SectionCard title="Logo and public page" id="branding">
         <BrandingControls

@@ -66,11 +66,16 @@ export type NavItem = {
 
 export type NavSection = { title?: string; items: NavItem[] };
 
-export type PortalKey = "talent" | "employer" | "recruiter" | "institution" | "admin";
+/**
+ * "employer" is the Company Portal (direct companies / HR); "agency" is the Travel Agency Portal. Both are the
+ * employer workspace (same services and employer.* permissions); /agency is served by the /employer routes.
+ */
+export type PortalKey = "talent" | "employer" | "agency" | "recruiter" | "institution" | "admin";
 
 export const PORTAL_LABEL: Record<PortalKey, string> = {
   talent: "People Portal",
-  employer: "Employer Portal",
+  employer: "Company Portal",
+  agency: "Travel Agency Portal",
   recruiter: "Partner Portal",
   institution: "Institution Portal",
   admin: "Command Centre",
@@ -79,6 +84,7 @@ export const PORTAL_LABEL: Record<PortalKey, string> = {
 export const PORTAL_HOME: Record<PortalKey, string> = {
   talent: "/talent",
   employer: "/employer",
+  agency: "/agency",
   recruiter: "/recruiter",
   institution: "/institution",
   admin: "/admin",
@@ -150,6 +156,34 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Billing", href: "/employer/billing", icon: CreditCard, permission: "employer.billing.view" },
         { title: "Messages", href: "/employer/messages", icon: MessageSquare },
         { title: "Support", href: "/employer/support", icon: LifeBuoy },
+      ],
+    },
+  ],
+
+  // Travel Agency Portal: the employer workspace pages under /agency, focused on requirements from abroad.
+  agency: [
+    {
+      items: [
+        { title: "Dashboard", href: "/agency", icon: LayoutDashboard, permission: "employer.dashboard", matchNested: false },
+        { title: "Manpower requirements", href: "/agency/requirements", icon: HardHat, permission: "employer.requirements.manage" },
+      ],
+    },
+    {
+      title: "Candidates",
+      items: [
+        { title: "Candidates & pipeline", href: "/agency/pipeline", icon: KanbanSquare, permission: "employer.pipeline.view" },
+        { title: "Interviews", href: "/agency/interviews", icon: CalendarClock, permission: "employer.interviews.manage" },
+        { title: "Deployment & mobilisation", href: "/agency/offers", icon: Plane, permission: "employer.offers.manage" },
+      ],
+    },
+    {
+      title: "Agency",
+      items: [
+        { title: "Messages", href: "/agency/messages", icon: MessageSquare },
+        { title: "Billing", href: "/agency/billing", icon: CreditCard, permission: "employer.billing.view" },
+        { title: "Team", href: "/agency/team", icon: Users, permission: "employer.team.manage" },
+        { title: "Agency profile & verification", href: "/agency/company", icon: Building2, permission: "employer.company.manage" },
+        { title: "Support", href: "/agency/support", icon: LifeBuoy },
       ],
     },
   ],

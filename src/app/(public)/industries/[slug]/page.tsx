@@ -150,7 +150,7 @@ export default async function IndustryPage({ params, searchParams }: Props) {
           <div className="mt-8 rounded-xl border border-dashed border-border bg-white p-6 text-sm text-muted-foreground">
             <p>There are no open jobs in this industry right now. Create your profile and you will be ready to apply when new roles are published.</p>
             <div className="mt-4 flex flex-wrap gap-4">
-              <CtaLink href="/sign-up" cta="industry_signup" location="industry_jobs" variant="link">
+              <CtaLink href="/sign-up?intent=candidate" cta="industry_signup" location="industry_jobs" variant="link">
                 Create your profile
               </CtaLink>
               <CtaLink href="/jobs" cta="browse_all_jobs" location="industry_jobs" variant="link">

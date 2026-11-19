@@ -13,12 +13,24 @@ import { NextResponse, type NextRequest } from "next/server";
  *  3. Coarse auth redirect: portal and account pages without a session cookie go straight to
  *     /sign-in?returnTo=… . This is only a UX shortcut — every page, action and route handler still
  *     authorises the request itself.
+ *  4. Travel Agency Portal: /agency/… is served by the employer workspace (/employer/…) through a rewrite,
+ *     with `x-vsg-portal: agency` so the employer layout brands it and applies the /agency vs /employer rule.
+ *     The header is always stripped from incoming requests (clients cannot set it).
  */
 
 /** Must match SESSION_COOKIE in src/modules/identity/session.ts (duplicated: proxy cannot import server modules). */
 const SESSION_COOKIE = process.env.NODE_ENV === "production" ? "__Host-vsg_session" : "vsg_session";
 
-export const PROTECTED_PREFIXES = ["/talent", "/employer", "/recruiter", "/institution", "/admin", "/account"] as const;
+export const PROTECTED_PREFIXES = ["/talent", "/employer", "/agency", "/recruiter", "/institution", "/admin", "/account"] as const;
+
+/** Request header telling the employer workspace it is being served as the Travel Agency Portal. */
+export const PORTAL_HEADER = "x-vsg-portal";
+
+/** /agency → /employer, /agency/jobs → /employer/jobs; null for any other path (incl. "/agency-x"). */
+export function agencyRewritePath(pathname: string): string | null {
+  if (pathname !== "/agency" && !pathname.startsWith("/agency/")) return null;
+  return `/employer${pathname.slice("/agency".length)}`;
+}
 
 /** True for a protected portal path ("/admin", "/admin/…"), false for look-alikes ("/administration"). */
 export function isProtectedPath(pathname: string): boolean {
@@ -137,8 +149,18 @@ export function proxy(request: NextRequest): NextResponse {
   requestHeaders.set("content-security-policy", csp);
   requestHeaders.set("x-vsg-pathname", returnPath);
   requestHeaders.set("x-request-id", requestId);
+  requestHeaders.delete(PORTAL_HEADER);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const agencyTarget = agencyRewritePath(pathname);
+  let response: NextResponse;
+  if (agencyTarget) {
+    requestHeaders.set(PORTAL_HEADER, "agency");
+    const target = request.nextUrl.clone();
+    target.pathname = agencyTarget;
+    response = NextResponse.rewrite(target, { request: { headers: requestHeaders } });
+  } else {
+    response = NextResponse.next({ request: { headers: requestHeaders } });
+  }
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("X-Request-Id", requestId);
   refreshSessionCookie(request, response);

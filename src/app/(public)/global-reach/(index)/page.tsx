@@ -120,7 +120,7 @@ export default async function GlobalReachPage() {
         location="global_reach_cta_band"
         heading="Thinking about working abroad?"
         body="Build your profile, apply for verified overseas roles and never pay anyone for a job. Venkat Sai never charges candidates."
-        primary={{ label: "Build your career profile", href: "/sign-up", id: "build_career_profile" }}
+        primary={{ label: "Build your career profile", href: "/sign-up?intent=candidate", id: "build_career_profile" }}
         secondary={{ label: "How to recruit safely", href: SAFE_RECRUITMENT_PATH, id: "safe_recruitment" }}
       />
     </>

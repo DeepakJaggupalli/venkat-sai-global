@@ -3,6 +3,7 @@
  */
 export type { OrgAccess, OrgActor, OrganizationRow } from "./access";
 export type { CompanyBranchRow, EmployerContractRow, PublicCompany, PublicCompanyListItem, PublicImage } from "./employer";
+export type { EmployerKind, EmployerPortal } from "./employer-kind";
 export type { PublicInstitution } from "./institution";
 export type { AcceptInvitationResult, InvitationListItem, InvitationPreview, MemberListItem, OrgRoleItem } from "./members";
 export type { LicenceReviewItem, PartnerAgreementRow, PartnerLicenceView, PartnerProfileView, PartnerTerritoryView } from "./partner";

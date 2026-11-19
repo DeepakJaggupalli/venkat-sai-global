@@ -2,13 +2,24 @@
  * Identity constants and types shared by server code, forms and client components.
  * Client-safe: this file must never import server-only code.
  */
+import type { EmployerKind } from "@/db/schema/_constants";
 
-/** Why someone is creating an account; drives the post-sign-up destination. */
-export const SIGNUP_INTENTS = ["candidate", "employer", "partner", "institution"] as const;
+/**
+ * Why someone is creating an account (the "I am a…" account types, in display order); drives the post-sign-up
+ * destination. travel_agency and employer both create an employer organisation (kind travel_agency / direct_company).
+ */
+export const SIGNUP_INTENTS = ["candidate", "travel_agency", "employer", "partner", "institution"] as const;
 export type SignupIntent = (typeof SIGNUP_INTENTS)[number];
 
 export function isSignupIntent(value: unknown): value is SignupIntent {
   return typeof value === "string" && (SIGNUP_INTENTS as readonly string[]).includes(value);
+}
+
+/** Employer organisation kind created for a sign-up intent (null for non-employer intents). */
+export function employerKindForIntent(intent: SignupIntent | null | undefined): EmployerKind | null {
+  if (intent === "travel_agency") return "travel_agency";
+  if (intent === "employer") return "direct_company";
+  return null;
 }
 
 /** Mirrors VERIFICATION_PURPOSES in src/db/schema/identity.ts (checked at compile time in otp.ts). */

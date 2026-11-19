@@ -5,12 +5,14 @@
 import type { PortalKey } from "@/config/navigation";
 import type { OrgType } from "@/db/schema/_constants";
 
-export type OrgPortalKey = "employer" | "recruiter" | "institution";
+/** "agency" (Travel Agency Portal) is the employer workspace for travel agency organisations. */
+export type OrgPortalKey = "employer" | "agency" | "recruiter" | "institution";
 
-export const ORG_PORTALS: readonly OrgPortalKey[] = ["employer", "recruiter", "institution"];
+export const ORG_PORTALS: readonly OrgPortalKey[] = ["employer", "agency", "recruiter", "institution"];
 
 export const ORG_TYPE_BY_PORTAL: Record<OrgPortalKey, OrgType> = {
   employer: "employer",
+  agency: "employer",
   recruiter: "recruitment_partner",
   institution: "institution",
 };
@@ -25,6 +27,7 @@ export const PORTAL_BY_ORG_TYPE: Record<OrgType, OrgPortalKey> = {
 export const PORTAL_SUPPORT_HREF: Record<PortalKey, string> = {
   talent: "/talent/support",
   employer: "/employer/support",
+  agency: "/agency/support",
   recruiter: "/recruiter/support",
   institution: "/institution/support",
   admin: "/admin/support",
@@ -34,6 +37,7 @@ export const PORTAL_SUPPORT_HREF: Record<PortalKey, string> = {
 export const PORTAL_NOTIFICATIONS_HREF: Record<PortalKey, string> = {
   talent: "/talent/notifications",
   employer: "/account/notifications",
+  agency: "/account/notifications",
   recruiter: "/account/notifications",
   institution: "/account/notifications",
   admin: "/account/notifications",
@@ -42,6 +46,7 @@ export const PORTAL_NOTIFICATIONS_HREF: Record<PortalKey, string> = {
 /** Organisation verification page per org portal (status banner links here). */
 export const VERIFICATION_HREF: Record<OrgPortalKey, string> = {
   employer: "/employer/company/verification",
+  agency: "/agency/company/verification",
   recruiter: "/recruiter/profile/verification",
   institution: "/institution/profile#verification",
 };
@@ -49,6 +54,7 @@ export const VERIFICATION_HREF: Record<OrgPortalKey, string> = {
 /** What members call their organisation in each portal (used in copy). */
 export const ORG_NOUN: Record<OrgPortalKey, string> = {
   employer: "company",
+  agency: "agency",
   recruiter: "agency",
   institution: "institution",
 };

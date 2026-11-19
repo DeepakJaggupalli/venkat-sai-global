@@ -131,7 +131,7 @@ export default async function DestinationPage({ params, searchParams }: Props) {
             <CtaLink href={jobsHref} cta="destination_jobs" location="destination_hero" variant="accent" arrow>
               Jobs in {countryName}
             </CtaLink>
-            <CtaLink href="/sign-up" cta="build_career_profile" location="destination_hero" variant="onDark">
+            <CtaLink href="/sign-up?intent=candidate" cta="build_career_profile" location="destination_hero" variant="onDark">
               Build your profile
             </CtaLink>
           </>
@@ -272,7 +272,7 @@ export default async function DestinationPage({ params, searchParams }: Props) {
           <div className="mt-8 rounded-xl border border-dashed border-border bg-white p-6 text-sm text-muted-foreground">
             <p>There are no open jobs in {countryName} right now. Build your profile so you are ready to apply when roles are published.</p>
             <div className="mt-4 flex flex-wrap gap-4">
-              <CtaLink href="/sign-up" cta="destination_signup" location="destination_jobs" variant="link">
+              <CtaLink href="/sign-up?intent=candidate" cta="destination_signup" location="destination_jobs" variant="link">
                 Build your profile
               </CtaLink>
               <CtaLink href="/jobs?overseas=1" cta="browse_overseas_jobs" location="destination_jobs" variant="link">

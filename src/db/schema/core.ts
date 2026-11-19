@@ -7,7 +7,7 @@
  */
 import { bigint, boolean, char, index, integer, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { FILE_PURPOSES, FILE_SCAN_STATUSES, FILE_VISIBILITIES, ORG_STATUSES, ORG_TYPES, USER_STATUSES } from "./_constants";
+import { EMPLOYER_KINDS, FILE_PURPOSES, FILE_SCAN_STATUSES, FILE_VISIBILITIES, ORG_STATUSES, ORG_TYPES, USER_STATUSES } from "./_constants";
 import { countryCode, emptyJsonObject, pk, timestamps, tstz } from "./_shared";
 import { countries, industries } from "./taxonomy";
 
@@ -66,6 +66,8 @@ export const organizations = pgTable(
   {
     id: pk(),
     type: text({ enum: ORG_TYPES }).notNull(),
+    /** Employer organisations only: direct_company (Company Portal) or travel_agency (Travel Agency Portal). Null for other types. */
+    employerKind: text({ enum: EMPLOYER_KINDS }),
     name: text().notNull(),
     legalName: text(),
     slug: text().notNull(),

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { PortalAccess } from "./authz";
-import { INTENT_ONBOARDING_PATH, isAuthPath, resolvePostAuthRedirect, sanitizeReturnTo } from "./redirects";
+import { INTENT_ONBOARDING_PATH, INTENT_PORTAL_PATH, intentForPath, isAuthPath, resolvePostAuthRedirect, sanitizeReturnTo } from "./redirects";
 
-const candidateOnly: PortalAccess = { talent: true, employer: false, recruiter: false, institution: false, admin: false };
+const candidateOnly: PortalAccess = { talent: true, employer: false, agency: false, recruiter: false, institution: false, admin: false };
 const employer: PortalAccess = { ...candidateOnly, employer: true };
+const agency: PortalAccess = { ...candidateOnly, agency: true };
 const staff: PortalAccess = { ...candidateOnly, admin: true };
 
 describe("sanitizeReturnTo", () => {
@@ -30,6 +31,33 @@ describe("sanitizeReturnTo", () => {
     }
     expect(isAuthPath("/sign-in-help")).toBe(false);
     expect(isAuthPath("/authority")).toBe(false);
+  });
+});
+
+describe("travel agency accounts", () => {
+  it("sends a new travel agency to the agency onboarding, an existing one to /agency", () => {
+    expect(INTENT_ONBOARDING_PATH.travel_agency).toBe("/agency/onboarding");
+    expect(resolvePostAuthRedirect({ intent: "travel_agency", access: candidateOnly, homePath: "/talent" })).toBe("/agency/onboarding");
+    expect(resolvePostAuthRedirect({ intent: "travel_agency", access: agency, homePath: "/agency" })).toBe("/agency");
+  });
+
+  it("keeps the two employer kinds apart", () => {
+    // A company member choosing "Travel agency" sets one up; a travel agency choosing "Company / HR" does too.
+    expect(resolvePostAuthRedirect({ intent: "travel_agency", access: employer, homePath: "/employer" })).toBe("/agency/onboarding");
+    expect(resolvePostAuthRedirect({ intent: "employer", access: agency, homePath: "/agency" })).toBe("/employer/onboarding");
+  });
+
+  it("maps portal paths back to their account type", () => {
+    expect(intentForPath("/agency")).toBe("travel_agency");
+    expect(intentForPath("/agency/requirements?x=1")).toBe("travel_agency");
+    expect(intentForPath("/employer/jobs")).toBe("employer");
+    expect(intentForPath("/talent")).toBe("candidate");
+    expect(intentForPath("/recruiter")).toBe("partner");
+    expect(intentForPath("/institution/courses")).toBe("institution");
+    expect(intentForPath("/employers/request")).toBeNull();
+    expect(intentForPath("/jobs/abc")).toBeNull();
+    expect(intentForPath(null)).toBeNull();
+    expect(Object.values(INTENT_PORTAL_PATH)).toEqual(["/talent", "/agency", "/employer", "/recruiter", "/institution"]);
   });
 });
 

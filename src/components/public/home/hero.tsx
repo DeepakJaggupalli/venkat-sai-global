@@ -9,6 +9,7 @@ import { type CtaSpec } from "../blocks";
 import { CmsImage, CmsVideo } from "../cms-media";
 import { CtaLink } from "../cta-link";
 import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
+import { MANPOWER_PORTAL_HREF } from "./manpower";
 import type { PosterCard } from "../requirements/data";
 import { NowHiringCard, RouteCard } from "./hero-card";
 
@@ -112,12 +113,13 @@ export function HomeHero({
             ))}
           </ul>
           <div className="mt-8 flex flex-wrap gap-2 motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_280ms_both]" data-testid="hero-audience-links">
-            <a href="#manpower" className={AUDIENCE_PILL}>
+            {/* Straight to each business portal's sign-up (signed-in members are sent on to their portal). */}
+            <Link href={MANPOWER_PORTAL_HREF.agency} className={AUDIENCE_PILL}>
               {t("hero.forAgency")}
-            </a>
-            <a href="#manpower" className={AUDIENCE_PILL}>
+            </Link>
+            <Link href={MANPOWER_PORTAL_HREF.company} className={AUDIENCE_PILL}>
               {t("hero.forCompany")}
-            </a>
+            </Link>
           </div>
           {languageSwitch ? <div className="mt-6">{languageSwitch}</div> : null}
         </div>

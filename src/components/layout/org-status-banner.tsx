@@ -8,6 +8,7 @@ import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import type { OrgStatus } from "@/db/schema/_constants";
 import { cn } from "@/lib/utils";
+import { inEmployerPortal } from "@/modules/organizations/employer-kind";
 
 import { getOrgStatusNotice, type OrgStatusNotice, type OrgStatusTone } from "./org-status";
 import type { OrgPortalKey } from "./portal-config";
@@ -38,7 +39,7 @@ function samePath(a: string, b: string): boolean {
  * Renders nothing for verified organisations. Rendered by the (workspace) layouts below the top bar.
  */
 export function OrgStatusBanner({ portal, status }: { portal: OrgPortalKey; status: OrgStatus }) {
-  const pathname = usePathname();
+  const pathname = inEmployerPortal(usePathname(), portal);
   const titleId = useId();
   const notice = getOrgStatusNotice(status, portal);
   if (!notice) return null;

@@ -8,6 +8,14 @@
 export const ORG_TYPES = ["employer", "recruitment_partner", "institution"] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 
+/**
+ * What kind of business an employer organisation is (organizations.employer_kind; null for other types).
+ * Direct companies / HR teams use the Company Portal (/employer); travel agencies that bring manpower
+ * requirements from abroad use the Travel Agency Portal (/agency). Same employer services and permissions.
+ */
+export const EMPLOYER_KINDS = ["direct_company", "travel_agency"] as const;
+export type EmployerKind = (typeof EMPLOYER_KINDS)[number];
+
 /** Verification lifecycle shared by organisations (spec 9.1). `draft` = onboarding not submitted yet. */
 export const ORG_STATUSES = ["draft", "pending", "under_review", "verified", "rejected", "suspended", "expired"] as const;
 export type OrgStatus = (typeof ORG_STATUSES)[number];

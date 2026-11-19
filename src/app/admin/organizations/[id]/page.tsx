@@ -32,6 +32,7 @@ import {
   PARTNER_LICENCE_VERIFICATION_METHOD_LABELS,
   PARTNER_LICENCE_VERIFICATION_METHODS,
 } from "@/modules/organizations/constants";
+import { EMPLOYER_KIND_LABELS, employerKindOf } from "@/modules/organizations/employer-kind";
 import { staffSetMemberStatusAction } from "@/modules/organizations/member-actions";
 import { listMembers } from "@/modules/organizations/members";
 import { expirePartnerLicenceAction, rejectPartnerLicenceAction } from "@/modules/organizations/partner-actions";
@@ -73,6 +74,7 @@ export default async function OrganizationDetailPage({ params }: { params: Param
     getOpenApprovalForEntity(VERIFICATION_APPROVAL_TYPE[org.type], org.id),
     listStaffOptions({ permission: "orgs.view" }),
   ]);
+  const employerKind = employerKindOf(org);
   const typeParam = `?type=${org.type}`;
   const listLabel = org.type === "employer" ? "Employers" : isPartner ? "Recruitment partners" : "Institutions";
 
@@ -80,7 +82,7 @@ export default async function OrganizationDetailPage({ params }: { params: Param
     <div className="space-y-6">
       <PortalBreadcrumb items={[{ label: listLabel, href: `/admin/organizations${typeParam}` }, { label: org.name }]} />
       <PageHeader
-        eyebrow={ORG_TYPE_LABELS[org.type]}
+        eyebrow={employerKind ? `${ORG_TYPE_LABELS[org.type]} · ${EMPLOYER_KIND_LABELS[employerKind]}` : ORG_TYPE_LABELS[org.type]}
         title={
           <span className="flex items-center gap-3">
             <OrgAvatar name={org.name} src={overview.logo?.thumbnailUrl ?? overview.logo?.url ?? undefined} size="md" verified={org.status === "verified"} />

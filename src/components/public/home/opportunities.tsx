@@ -59,7 +59,7 @@ export function OpportunitiesSection({
         eyebrow={t("opportunities.eyebrow")}
         title={heading || t("opportunities.title")}
         action={
-          <CtaLink href="/sign-up" cta="build_career_profile" location="home_opportunities" variant="outline" arrow>
+          <CtaLink href="/sign-up?intent=candidate" cta="build_career_profile" location="home_opportunities" variant="outline" arrow>
             {t("common.buildProfile")}
           </CtaLink>
         }

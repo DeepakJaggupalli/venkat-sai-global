@@ -11,11 +11,12 @@ import { LinkTabs } from "@/components/shared/link-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { ORG_STATUSES, ORG_TYPES, type OrgType } from "@/db/schema/_constants";
+import { EMPLOYER_KINDS, ORG_STATUSES, ORG_TYPES, type OrgType } from "@/db/schema/_constants";
 import { humanize } from "@/lib/format";
 import { parsePage } from "@/lib/http";
 import { requireStaff } from "@/modules/identity/authz";
 import { ORG_TYPE_LABELS } from "@/modules/organizations/constants";
+import { EMPLOYER_KIND_LABELS } from "@/modules/organizations/employer-kind";
 import { countOrganizationsByStatus, listOrganizations } from "@/modules/organizations/queries";
 import { countryOptions } from "@/modules/taxonomy/queries";
 
@@ -25,6 +26,7 @@ const PLURAL: Record<OrgType, string> = { employer: "Employers", recruitment_par
 
 const filtersSchema = z.object({
   type: z.enum(ORG_TYPES).optional().catch(undefined),
+  kind: z.enum(EMPLOYER_KINDS).optional().catch(undefined),
   status: z.enum(ORG_STATUSES).optional().catch(undefined),
   country: z.string().regex(/^[A-Z]{2}$/).optional().catch(undefined),
   expiring: z.enum(["30", "60", "90"]).optional().catch(undefined),
@@ -40,10 +42,16 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export default async function OrganizationsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const staff = await requireStaff("orgs.view");
   const sp = await searchParams;
-  const f = filtersSchema.parse({ type: sp.type, status: sp.status, country: sp.country, expiring: sp.expiring, q: sp.q });
+  const f = filtersSchema.parse({ type: sp.type, kind: sp.kind, status: sp.status, country: sp.country, expiring: sp.expiring, q: sp.q });
+  // Travel agency / Company applies to employers only.
+  const kind = !f.type || f.type === "employer" ? f.kind : undefined;
+  const kindOptions = [
+    { value: "travel_agency", label: "Travel agency" },
+    { value: "direct_company", label: "Company" },
+  ];
   const page = parsePage(sp, { defaultSize: 25 });
   const [result, counts, countries] = await Promise.all([
-    listOrganizations(staff, { type: f.type, status: f.status, q: f.q, countryCode: f.country, expiringWithinDays: f.expiring ? Number(f.expiring) : undefined }, page),
+    listOrganizations(staff, { type: f.type, employerKind: kind, status: f.status, q: f.q, countryCode: f.country, expiringWithinDays: f.expiring ? Number(f.expiring) : undefined }, page),
     countOrganizationsByStatus(staff),
     countryOptions(),
   ]);
@@ -72,7 +80,8 @@ export default async function OrganizationsPage({ searchParams }: { searchParams
         ]}
       />
       <FilterScope>
-        <FilterBar paramKeys={["q", "status", "country", "expiring"]} search={<SearchInput label="Search by name, registration or tax number" />}>
+        <FilterBar paramKeys={["q", "kind", "status", "country", "expiring"]} search={<SearchInput label="Search by name, registration or tax number" />}>
+          {!f.type || f.type === "employer" ? <FilterSelect param="kind" label="Employer type" allLabel="Any employer type" options={kindOptions} /> : null}
           <FilterSelect param="status" label="Status" allLabel="Any status" options={statusOptions} />
           <FilterSelect param="country" label="Country" allLabel="All countries" options={countries} />
           <FilterSelect
@@ -88,6 +97,7 @@ export default async function OrganizationsPage({ searchParams }: { searchParams
         </FilterBar>
         <FilterChips
           filters={[
+            { param: "kind", label: "Employer type", options: kindOptions },
             { param: "status", label: "Status", options: statusOptions },
             { param: "country", label: "Country", options: countries },
             { param: "expiring", label: "Expiring", options: [{ value: "30", label: "30 days" }, { value: "60", label: "60 days" }, { value: "90", label: "90 days" }] },
@@ -110,7 +120,7 @@ export default async function OrganizationsPage({ searchParams }: { searchParams
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">{o.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {ORG_TYPE_LABELS[o.type]}
+                        {o.employerKind ? `${ORG_TYPE_LABELS[o.type]} · ${EMPLOYER_KIND_LABELS[o.employerKind]}` : ORG_TYPE_LABELS[o.type]}
                         {o.city || o.countryCode ? ` · ${[o.city, o.countryCode].filter(Boolean).join(", ")}` : ""}
                       </p>
                     </div>

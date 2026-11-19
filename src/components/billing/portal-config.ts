@@ -12,7 +12,7 @@ export const BILLING_PORTALS: Record<BillingPortal, { orgType: OrgType; base: st
     orgType: "employer",
     base: PORTAL_BILLING_PATH.employer,
     home: "/employer",
-    homeLabel: "Employer Portal",
+    homeLabel: "Company Portal",
     viewPermission: BILLING_VIEW_PERMISSION.employer,
     managePermission: BILLING_MANAGE_PERMISSION.employer,
   },
