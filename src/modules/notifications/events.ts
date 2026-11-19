@@ -51,6 +51,10 @@ export const NOTIFICATION_EVENTS = {
   "org.verification_expiring": e("Verification or licence expiring", "organization", ["in_app", "email"], true),
   "org.member_added": e("New team member", "organization", ["in_app"]),
   "org.status_changed": e("Organisation suspended or reactivated", "organization", ["in_app", "email"], true),
+  // To the member who becomes owner when the previous sole owner's account is erased.
+  "org.ownership_transferred": e("You are now the owner of an organisation", "organization", ["in_app", "email"], true),
+  // To staff (orgs.manage): the only owner erased their account and nobody else could take over.
+  "org.orphaned": e("Organisation left without an owner", "organization", ["in_app", "email"], true),
   "partner.licence_reviewed": e("Licence verification decision", "organization", ["in_app", "email"], true),
   "partner.agreement_issued": e("Partner agreement ready to review and accept", "organization", ["in_app", "email"], true),
 

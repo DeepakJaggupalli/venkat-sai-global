@@ -26,7 +26,7 @@ import {
   updatePartnerTerritory,
   verifyPartnerLicence,
 } from "./partner";
-import { adminOrganizationPath, ADMIN_ORGANIZATIONS_PATH, ORG_PROFILE_PATH } from "./paths";
+import { adminOrganizationPath, ADMIN_ORGANIZATIONS_PATH, ADMIN_PARTNER_AGREEMENTS_PATH, ORG_PROFILE_PATH } from "./paths";
 import {
   acceptPartnerAgreementSchema,
   expireLicenceSchema,
@@ -46,31 +46,39 @@ import {
 
 const PROFILE_PATH = ORG_PROFILE_PATH.recruitment_partner;
 
+/** Agreements are shown on the partner profile, the organisation page and the staff agreements list. */
+function revalidateAgreements(organizationId?: string): void {
+  revalidatePath(PROFILE_PATH, "layout");
+  revalidatePath(ADMIN_PARTNER_AGREEMENTS_PATH, "layout");
+  if (organizationId) revalidatePath(adminOrganizationPath(organizationId));
+  else revalidatePath(ADMIN_ORGANIZATIONS_PATH, "layout");
+}
+
 export const updatePartnerProfileAction = createFormAction(partnerProfileSchema, async (input) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await updatePartnerProfile(ctx, ctx.organization.id, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Agency profile saved.");
 });
 
 export const addPartnerLicenceAction = createFormAction(partnerLicenceSchema, async (input) => {
   const ctx = await requireOrgMember("recruitment_partner");
   const row = await addPartnerLicence(ctx, ctx.organization.id, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok({ id: row.id }, "Licence added. Venkat Sai will verify it.");
 });
 
 export const updatePartnerLicenceAction = createFormAction(partnerLicenceSchema.and(z.object({ licenceId: f.uuid() })), async ({ licenceId, ...input }) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await updatePartnerLicence(ctx, licenceId, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Licence updated and sent for review.");
 });
 
 export const deletePartnerLicenceAction = createAction(z.object({ licenceId: f.uuid() }), async ({ licenceId }) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await deletePartnerLicence(ctx, licenceId);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Licence removed.");
 });
 
@@ -78,28 +86,28 @@ export const acceptPartnerAgreementAction = createFormAction(acceptPartnerAgreem
   const ctx = await requireOrgMember("recruitment_partner");
   const meta = await getRequestMeta();
   await acceptPartnerAgreement(ctx, { agreementId, acceptedByName }, { ipHash: meta.ipHash, userAgent: meta.userAgent });
-  revalidatePath(PROFILE_PATH);
+  revalidateAgreements(ctx.organization.id);
   return ok(undefined, "Agreement accepted.");
 });
 
 export const addPartnerTerritoryAction = createFormAction(partnerTerritorySchema, async (input) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await addPartnerTerritory(ctx, ctx.organization.id, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Territory added.");
 });
 
 export const updatePartnerTerritoryAction = createFormAction(partnerTerritorySchema.extend({ territoryId: f.uuid() }), async ({ territoryId, ...input }) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await updatePartnerTerritory(ctx, territoryId, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Territory updated.");
 });
 
 export const removePartnerTerritoryAction = createAction(z.object({ territoryId: f.uuid() }), async ({ territoryId }) => {
   const ctx = await requireOrgMember("recruitment_partner");
   await removePartnerTerritory(ctx, territoryId);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Territory removed.");
 });
 
@@ -131,7 +139,7 @@ export const expirePartnerLicenceAction = createAction(expireLicenceSchema, asyn
 export const issuePartnerAgreementAction = createFormAction(partnerAgreementSchema.and(z.object({ organizationId: f.uuid() })), async ({ organizationId, ...input }) => {
   const staff = await requireStaff("partners.manage");
   const row = await issuePartnerAgreement(staff, organizationId, input);
-  revalidatePath(adminOrganizationPath(organizationId));
+  revalidateAgreements(organizationId);
   return ok({ id: row.id }, "Agreement issued. The partner has been asked to accept it.");
 });
 
@@ -140,7 +148,7 @@ export const issuePartnerAgreementToPartnersAction = createFormAction(
   async ({ organizationIds, ...input }) => {
     const staff = await requireStaff("partners.manage");
     const result = await issuePartnerAgreementToPartners(staff, input, { organizationIds: organizationIds.length ? organizationIds : undefined });
-    revalidatePath(ADMIN_ORGANIZATIONS_PATH, "layout");
+    revalidateAgreements();
     return ok(result, `Issued to ${result.issued} partner(s)${result.skipped ? `; ${result.skipped} already had this version` : ""}.`);
   },
 );
@@ -148,7 +156,7 @@ export const issuePartnerAgreementToPartnersAction = createFormAction(
 export const terminatePartnerAgreementAction = createFormAction(terminatePartnerAgreementSchema, async (input) => {
   const staff = await requireStaff("partners.manage");
   await terminatePartnerAgreement(staff, input);
-  revalidatePath(ADMIN_ORGANIZATIONS_PATH, "layout");
+  revalidateAgreements();
   return ok(undefined, "Agreement terminated.");
 });
 

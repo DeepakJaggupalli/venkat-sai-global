@@ -27,28 +27,28 @@ const PROFILE_PATH = ORG_PROFILE_PATH.employer;
 export const updateCompanyProfileAction = createFormAction(companyProfileSchema, async (input) => {
   const ctx = await requireOrgMember("employer");
   await updateCompanyProfile(ctx, ctx.organization.id, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Company profile saved.");
 });
 
 export const createBranchAction = createFormAction(companyBranchSchema, async (input) => {
   const ctx = await requireOrgMember("employer");
   const row = await createBranch(ctx, ctx.organization.id, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok({ id: row.id }, "Branch added.");
 });
 
 export const updateBranchAction = createFormAction(companyBranchSchema.extend({ branchId: f.uuid() }), async ({ branchId, ...input }) => {
   const ctx = await requireOrgMember("employer");
   await updateBranch(ctx, branchId, input);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, "Branch saved.");
 });
 
 export const setBranchActiveAction = createAction(z.object({ branchId: f.uuid(), isActive: z.boolean() }), async ({ branchId, isActive }) => {
   const ctx = await requireOrgMember("employer");
   await setBranchActive(ctx, branchId, isActive);
-  revalidatePath(PROFILE_PATH);
+  revalidatePath(PROFILE_PATH, "layout");
   return ok(undefined, isActive ? "Branch reactivated." : "Branch deactivated.");
 });
 

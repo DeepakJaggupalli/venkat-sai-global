@@ -9,6 +9,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { f } from "@/lib/validation";
 import { requireOrgMember, requireStaff } from "@/modules/identity/authz";
 import { getCurrentSession, requireUser, setActiveOrganization } from "@/modules/identity/session";
+import type { OrgType } from "@/db/schema/_constants";
 
 import { adminOrganizationPath, ADMIN_ORGANIZATIONS_PATH, ORG_PORTAL_PATH, ORG_PROFILE_PATH } from "./paths";
 import {
@@ -46,6 +47,12 @@ import {
  * `organizationId` and require the staff permission.
  */
 
+/** The portal profile section (profile + verification sub-pages) and the Command Centre organisation page. */
+function revalidateOrganizationProfile(orgType: OrgType, organizationId: string): void {
+  revalidatePath(ORG_PROFILE_PATH[orgType], "layout");
+  revalidatePath(adminOrganizationPath(organizationId));
+}
+
 /** Onboarding: create an organisation owned by the signed-in user, make it active and open its portal. */
 export const createOrganizationAction = createFormAction(createOrganizationSchema, async (input) => {
   const user = await requireUser();
@@ -63,7 +70,7 @@ export const updateOrganizationAction = createFormAction(updateOrganizationSchem
   const { orgType, ...details } = input;
   const ctx = await requireOrgMember(orgType);
   await updateOrganization(ctx, ctx.organization.id, details);
-  revalidatePath(ORG_PROFILE_PATH[orgType]);
+  revalidateOrganizationProfile(orgType, ctx.organization.id);
   return ok(undefined, "Organisation details saved.");
 });
 
@@ -71,7 +78,7 @@ export const staffUpdateOrganizationAction = createFormAction(staffUpdateOrganiz
   const staff = await requireStaff("orgs.manage");
   const { organizationId, ...details } = input;
   await updateOrganization(staff, organizationId, details);
-  revalidatePath(adminOrganizationPath(organizationId));
+  revalidatePath(ADMIN_ORGANIZATIONS_PATH, "layout");
   return ok(undefined, "Organisation details saved.");
 });
 
@@ -85,7 +92,7 @@ export const setOrganizationLogoAction = createAction(setOrganizationLogoSchema,
 export const setOrganizationPublicAction = createAction(setOrganizationPublicSchema, async ({ orgType, isPublic }) => {
   const ctx = await requireOrgMember(orgType);
   await setOrganizationPublic(ctx, ctx.organization.id, isPublic);
-  revalidatePath(ORG_PROFILE_PATH[orgType]);
+  revalidateOrganizationProfile(orgType, ctx.organization.id);
   return ok(undefined, isPublic ? "Your public page is switched on. It is shown while your organisation is verified." : "Your public page is switched off.");
 });
 
@@ -93,14 +100,14 @@ export const addOrganizationDocumentAction = createFormAction(addOrganizationDoc
   const { orgType, ...doc } = input;
   const ctx = await requireOrgMember(orgType);
   const row = await addOrganizationDocument(ctx, ctx.organization.id, doc);
-  revalidatePath(ORG_PROFILE_PATH[orgType]);
+  revalidateOrganizationProfile(orgType, ctx.organization.id);
   return ok({ id: row.id }, "Document added.");
 });
 
 export const removeOrganizationDocumentAction = createAction(z.object({ orgType: orgTypeField, documentId: f.uuid() }), async ({ orgType, documentId }) => {
   const ctx = await requireOrgMember(orgType);
   await removeOrganizationDocument(ctx, documentId);
-  revalidatePath(ORG_PROFILE_PATH[orgType]);
+  revalidateOrganizationProfile(orgType, ctx.organization.id);
   return ok(undefined, "Document removed.");
 });
 

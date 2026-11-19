@@ -21,6 +21,7 @@ export const CANDIDATE_FILTER_KEYS = [
   "skillIds",
   "skillMatch",
   "verifiedSkillsOnly",
+  "industryIds",
   "experienceMinYears",
   "experienceMaxYears",
   "countryCode",

@@ -424,25 +424,31 @@ export const refreshLiveMetricsAction = createAction(z.object({}), async () => {
 // Logo permissions
 // ---------------------------------------------------------------------------
 
+function revalidateLogoPermission(id: string): void {
+  revalidatePath(CONTENT_ADMIN_PATHS.logoPermissions);
+  revalidatePath(CONTENT_ADMIN_PATHS.logoPermission(id));
+  revalidatePath(CONTENT_ADMIN_PATHS.media, "layout"); // logo pickers on media assets
+}
+
 /** Create (no id) or update. Evidence file: upload with purpose cms_media (stored private). */
 export const saveLogoPermissionAction = createFormAction(logoPermissionSchema, async (input) => {
   const ctx = await requireStaff("content.edit");
   const result = await service.saveLogoPermission(ctx, input);
-  revalidatePath(CONTENT_ADMIN_PATHS.logoPermissions);
+  revalidateLogoPermission(result.id);
   return ok(result, result.created ? "Logo permission recorded (pending review)." : "Logo permission saved.");
 });
 
 export const approveLogoPermissionAction = createAction(idOnly, async (input) => {
   const ctx = await requireStaff("content.publish");
   await service.approveLogoPermission(ctx, input.id);
-  revalidatePath(CONTENT_ADMIN_PATHS.logoPermissions);
+  revalidateLogoPermission(input.id);
   return ok(undefined, "Logo permission approved.");
 });
 
 export const revokeLogoPermissionAction = createFormAction(revokeLogoPermissionSchema, async (input) => {
   const ctx = await requireStaff("content.publish");
   const result = await service.revokeLogoPermission(ctx, input);
-  revalidatePath(CONTENT_ADMIN_PATHS.logoPermissions);
+  revalidateLogoPermission(input.id);
   if (result.logosTakenOffline) revalidatePath("/", "layout");
   return ok(result, result.logosTakenOffline ? `Revoked. ${result.logosTakenOffline} logo(s) taken offline.` : "Revoked.");
 });

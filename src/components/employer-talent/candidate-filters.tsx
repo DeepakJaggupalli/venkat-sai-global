@@ -19,6 +19,7 @@ import { buildCandidateSearchQuery } from "./search-query";
 export type CandidateFilterOptions = {
   countries: SelectOption[];
   currencies: SelectOption[];
+  industries: SelectOption[];
   languages: SelectOption[];
   educationLevels: SelectOption[];
   availability: SelectOption[];
@@ -34,6 +35,7 @@ export type CandidateFilterValues = {
   skills: SelectOption[];
   skillMatch: "all" | "any";
   verifiedSkillsOnly: boolean;
+  industryIds: string[];
   experienceMinYears?: number;
   experienceMaxYears?: number;
   countryCode?: string;
@@ -154,6 +156,20 @@ export function CandidateFilters({ options, values, activeCount }: { options: Ca
               <Input id={ids.max} name="experienceMaxYears" type="number" inputMode="numeric" min={0} max={60} defaultValue={values.experienceMaxYears} />
             </Field>
           </div>
+        </Group>
+
+        <Group title="Industry">
+          <MultiCombobox
+            name="industryIds"
+            options={options.industries}
+            defaultValue={options.industries.filter((o) => values.industryIds.includes(o.value))}
+            placeholder="Any industry"
+            searchPlaceholder="Search industries"
+            emptyText="No industry found."
+            aria-label="Industries (profile or work experience)"
+            maxSelected={20}
+          />
+          <p className="text-xs text-muted-foreground">Matches the candidate&apos;s industry or the industry of any job in their work experience.</p>
         </Group>
 
         <Group title="Qualifications and credentials">

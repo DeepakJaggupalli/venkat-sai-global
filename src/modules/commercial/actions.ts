@@ -65,6 +65,12 @@ async function memberContext(portal: keyof typeof PORTALS, level: "view" | "mana
   return requireOrgMember(orgType, permission);
 }
 
+/** Settlement list + detail pages for staff and the partner portal. */
+function revalidateSettlements(): void {
+  revalidatePath(`${ADMIN}/settlements`, "layout");
+  revalidatePath(PARTNER_SETTLEMENTS_PATH, "layout");
+}
+
 function revalidateBilling(orgType: OrgType | null, invoiceId?: string | null): void {
   if (orgType) revalidatePath(PORTAL_BILLING_PATH[orgType]);
   revalidatePath(ADMIN, "layout");
@@ -398,49 +404,49 @@ export const adjustCreditsAction = createFormAction(creditAdjustmentSchema, asyn
 export const computeSettlementAction = createFormAction(settlementComputeSchema, async (input) => {
   const ctx = await requireStaff("partners.settlements");
   const result = await service.computeSettlementDrafts(ctx, input);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(result, result.settlements.length ? "Settlement drafts updated" : "No placement fees are payable for this period");
 });
 
 export const addSettlementLineAction = createFormAction(settlementLineSchema, async (input) => {
   const ctx = await requireStaff("partners.settlements");
   await service.addSettlementLine(ctx, input);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Line added");
 });
 
 export const removeSettlementLineAction = createAction(z.object({ lineId: f.uuid() }), async ({ lineId }) => {
   const ctx = await requireStaff("partners.settlements");
   await service.removeSettlementLine(ctx, lineId);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Line removed");
 });
 
 export const updateSettlementDraftAction = createFormAction(settlementUpdateSchema, async (input) => {
   const ctx = await requireStaff("partners.settlements");
   await service.updateSettlementDraft(ctx, input);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Settlement saved");
 });
 
 export const submitSettlementAction = createAction(z.object({ settlementId: f.uuid() }), async ({ settlementId }) => {
   const ctx = await requireStaff("partners.settlements");
   await service.submitSettlement(ctx, settlementId);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Settlement sent for approval");
 });
 
 export const markSettlementPaidAction = createFormAction(settlementPaidSchema, async (input) => {
   const ctx = await requireStaff("partners.settlements");
   await service.markSettlementPaid(ctx, input);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Settlement marked as paid");
 });
 
 export const cancelSettlementAction = createFormAction(z.object({ settlementId: f.uuid(), reason: f.text({ label: "Reason", min: 5, max: 500 }) }), async ({ settlementId, reason }) => {
   const ctx = await requireStaff("partners.settlements");
   await service.cancelSettlement(ctx, settlementId, reason);
-  revalidatePath(`${ADMIN}/settlements`);
+  revalidateSettlements();
   return ok(undefined, "Settlement cancelled");
 });
 
@@ -449,7 +455,7 @@ export const resolveSettlementDisputeAction = createFormAction(
   async (input) => {
     const ctx = await requireStaff("partners.settlements");
     await service.resolveSettlementDispute(ctx, input);
-    revalidatePath(`${ADMIN}/settlements`);
+    revalidateSettlements();
     return ok(undefined, "Dispute resolved");
   },
 );
@@ -457,13 +463,13 @@ export const resolveSettlementDisputeAction = createFormAction(
 export const disputeSettlementAction = createFormAction(settlementDisputeSchema, async (input) => {
   const ctx = await requireOrgMember("recruitment_partner", "partner.settlements.view");
   await service.disputeSettlement(ctx, input);
-  revalidatePath(PARTNER_SETTLEMENTS_PATH);
+  revalidateSettlements();
   return ok(undefined, "Your query has been sent to the Venkat Sai finance team");
 });
 
 export const submitPartnerInvoiceAction = createFormAction(partnerInvoiceSchema, async (input) => {
   const ctx = await requireOrgMember("recruitment_partner", "partner.settlements.view");
   await service.submitPartnerInvoice(ctx, input);
-  revalidatePath(PARTNER_SETTLEMENTS_PATH);
+  revalidateSettlements();
   return ok(undefined, "Invoice details saved");
 });

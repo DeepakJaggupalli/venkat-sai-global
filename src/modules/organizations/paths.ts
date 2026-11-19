@@ -24,6 +24,10 @@ export const ORG_TEAM_PATH: Record<OrgType, string> = {
 };
 
 export const ADMIN_ORGANIZATIONS_PATH = "/admin/organizations";
+/** Command Centre list of partner agreements (owned by the partners area). */
+export const ADMIN_PARTNER_AGREEMENTS_PATH = "/admin/partners/agreements";
+/** Command Centre list of training institutions (owned by the training area). */
+export const ADMIN_TRAINING_INSTITUTIONS_PATH = "/admin/training/institutions";
 
 export function adminOrganizationPath(organizationId: string): string {
   return `${ADMIN_ORGANIZATIONS_PATH}/${organizationId}`;

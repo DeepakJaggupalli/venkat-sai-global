@@ -6,14 +6,15 @@ import { EMPLOYMENT_TYPE_LABELS, SALARY_PERIOD_LABELS, WORK_MODE_LABELS } from "
 import { EMPLOYMENT_TYPES, SALARY_PERIODS, WORK_MODES } from "@/db/schema/_constants";
 import { CANDIDATE_AVAILABILITY_OPTIONS, CANDIDATE_VERIFICATION_LEVEL_OPTIONS, LANGUAGE_PROFICIENCY_OPTIONS } from "@/modules/candidates/constants";
 import type { CandidateSearchFilters } from "@/modules/candidates/schemas";
-import { countryOptions, currencyOptions, getSkillsByIds, listEducationLevels, listLanguages } from "@/modules/taxonomy/queries";
+import { countryOptions, currencyOptions, getSkillsByIds, industryOptions, listEducationLevels, listLanguages } from "@/modules/taxonomy/queries";
 
 /** Options for the advanced search form; every list comes from reference data or schema enums. */
 export async function loadCandidateFilterOptions(): Promise<CandidateFilterOptions> {
-  const [countries, currencies, languages, educationLevels] = await Promise.all([countryOptions(), currencyOptions(), listLanguages(), listEducationLevels()]);
+  const [countries, currencies, languages, educationLevels, industries] = await Promise.all([countryOptions(), currencyOptions(), listLanguages(), listEducationLevels(), industryOptions()]);
   return {
     countries,
     currencies,
+    industries,
     languages: languages.map((l) => ({ value: l.code, label: l.name })),
     educationLevels: educationLevels.map((e) => ({ value: e.id, label: e.name })),
     availability: CANDIDATE_AVAILABILITY_OPTIONS.filter((a) => a !== "not_looking").map((a) => ({ value: a, label: AVAILABILITY_LABELS[a] ?? a })),
@@ -33,6 +34,7 @@ export async function filterValuesFrom(filters: CandidateSearchFilters): Promise
     skills: skills.map((s) => ({ value: s.id, label: s.name })),
     skillMatch: filters.skillMatch,
     verifiedSkillsOnly: Boolean(filters.verifiedSkillsOnly),
+    industryIds: [...filters.industryIds],
     experienceMinYears: filters.experienceMinYears,
     experienceMaxYears: filters.experienceMaxYears,
     countryCode: filters.countryCode,

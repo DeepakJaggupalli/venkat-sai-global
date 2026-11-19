@@ -90,9 +90,29 @@ async function hiringActor(portal: z.infer<typeof hiringPortal>): Promise<Hiring
   return portal === "admin" ? asStaff(await requireStaff()) : asEmployer(await requireOrgMember("employer"));
 }
 
+/** Pipeline views across every portal that shows an application's stage, interviews, offers or checklist. */
 function revalidatePipelines(): void {
   revalidatePath("/employer/pipeline", "layout");
+  revalidatePath("/employer/jobs", "layout"); // /employer/jobs/[id]/pipeline
   revalidatePath("/admin/pipeline", "layout");
+  revalidatePath("/recruiter/submissions", "layout");
+  revalidatePath("/recruiter/candidates", "layout");
+  revalidatePath("/talent/applications", "layout");
+}
+
+/** Interview lists and detail pages in every portal (plus the pipelines they are embedded in). */
+function revalidateInterviews(): void {
+  revalidatePath("/employer/interviews", "layout");
+  revalidatePath("/admin/interviews", "layout");
+  revalidatePath("/recruiter/interviews", "layout");
+  revalidatePath("/talent/interviews", "layout");
+  revalidatePipelines();
+}
+
+/** Mobilisation checklists: staff queue, partner document centre and the candidate's applications. */
+function revalidateMobilisation(): void {
+  revalidatePath("/admin/mobilisation", "layout");
+  revalidatePath("/recruiter/documents", "layout");
   revalidatePath("/talent/applications", "layout");
 }
 
@@ -131,8 +151,7 @@ export const withdrawApplicationAction = createAction(withdrawApplicationSchema,
 export const respondToInterviewAction = createAction(interviewResponseSchema, async (input) => {
   const actor = await requireCandidateActor();
   await respondToInterview(actor, input);
-  revalidatePath("/talent/interviews");
-  revalidatePath("/talent/applications", "layout");
+  revalidateInterviews();
   return ok(undefined, "Your response has been sent.");
 });
 
@@ -195,41 +214,37 @@ export const deleteApplicationNoteAction = createAction(z.object({ noteId: uuid,
 
 export const scheduleInterviewAction = createAction(scheduleInterviewSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   const created = await scheduleInterview(await hiringActor(portal), input);
-  revalidatePath("/employer/interviews");
-  revalidatePath("/admin/interviews");
-  revalidatePipelines();
+  revalidateInterviews();
   return ok(created, "Interview scheduled.");
 });
 
 export const rescheduleInterviewAction = createAction(rescheduleInterviewSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   await rescheduleInterview(await hiringActor(portal), input);
-  revalidatePath("/employer/interviews");
-  revalidatePath("/admin/interviews");
+  revalidateInterviews();
   return ok(undefined, "Interview rescheduled.");
 });
 
 export const cancelInterviewAction = createAction(cancelInterviewSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   await cancelInterview(await hiringActor(portal), input);
-  revalidatePath("/employer/interviews");
-  revalidatePath("/admin/interviews");
+  revalidateInterviews();
   return ok(undefined, "Interview cancelled.");
 });
 
 export const completeInterviewAction = createAction(completeInterviewSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   await completeInterview(await hiringActor(portal), input);
-  revalidatePath("/employer/interviews");
-  revalidatePath("/admin/interviews");
-  revalidatePipelines();
+  revalidateInterviews();
   return ok(undefined, "Interview updated.");
 });
 
 export const submitInterviewFeedbackAction = createAction(interviewFeedbackSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   await submitInterviewFeedback(await hiringActor(portal), input);
+  revalidateInterviews();
   return ok(undefined, "Feedback saved.");
 });
 
 export const updateInterviewParticipantsAction = createAction(interviewParticipantsSchema.extend({ portal: hiringPortal }), async ({ portal, ...input }) => {
   await updateInterviewParticipants(await hiringActor(portal), input);
+  revalidateInterviews();
   return ok(undefined, "Interview panel updated.");
 });
 
@@ -423,33 +438,31 @@ export const updateAttributionAction = createAction(updateAttributionSchema, asy
 
 export const startMobilisationAction = createAction(startMobilisationSchema, async (input) => {
   const result = await startMobilisation(await requireStaff("recruitment.mobilisation"), input);
-  revalidatePath("/admin/mobilisation", "layout");
+  revalidateMobilisation();
   return ok(result, "Mobilisation started.");
 });
 
 export const updateMobilisationAction = createAction(updateMobilisationSchema, async (input) => {
   await updateMobilisation(await requireStaff("recruitment.mobilisation"), input);
-  revalidatePath("/admin/mobilisation", "layout");
-  revalidatePath("/talent/applications", "layout");
+  revalidateMobilisation();
   return ok(undefined, "Mobilisation updated.");
 });
 
 export const addChecklistItemAction = createAction(addChecklistItemSchema, async (input) => {
   const created = await addChecklistItem(await requireStaff("recruitment.mobilisation"), input);
-  revalidatePath("/admin/mobilisation", "layout");
+  revalidateMobilisation();
   return ok(created, "Checklist item added.");
 });
 
 export const reviewChecklistItemAction = createAction(reviewChecklistItemSchema, async (input) => {
   await reviewChecklistItem(await requireStaff("recruitment.mobilisation"), input);
-  revalidatePath("/admin/mobilisation", "layout");
-  revalidatePath("/talent/applications", "layout");
+  revalidateMobilisation();
   return ok(undefined, "Checklist item updated.");
 });
 
 export const linkReplacementPlacementAction = createAction(linkReplacementSchema, async (input) => {
   await linkReplacementPlacement(await requireStaff("recruitment.mobilisation"), input);
-  revalidatePath("/admin/mobilisation", "layout");
+  revalidateMobilisation();
   return ok(undefined, "Replacement recorded.");
 });
 
@@ -458,8 +471,7 @@ export const submitChecklistItemAction = createAction(submitChecklistItemSchema.
   const actor =
     portal === "talent" ? await requireCandidateActor() : portal === "recruiter" ? asPartner(await requireOrgMember("recruitment_partner", "partner.documents.manage")) : asStaff(await requireStaff("recruitment.mobilisation"));
   await submitChecklistItem(actor, input);
-  revalidatePath("/talent/applications", "layout");
-  revalidatePath("/admin/mobilisation", "layout");
+  revalidateMobilisation();
   return ok(undefined, "Submitted for checking.");
 });
 

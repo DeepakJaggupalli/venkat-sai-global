@@ -10,6 +10,7 @@ import { getOrgContext, requireOrgMember } from "@/modules/identity/authz";
 import { getCurrentUser, requireUser } from "@/modules/identity/session";
 
 import { PORTAL_PREFIX, resolveNoteActor, resolveThreadActor } from "./actor";
+import type { NoteEntityType } from "./constants";
 import { submitPublicEnquiry } from "./enquiries";
 import {
   cancelEmployerRequirement,
@@ -197,20 +198,45 @@ export const setThreadStatusAction = createAction(threadStatusSchema, async ({ p
 
 const notePortalSchema = actorPortalSchema.exclude(["talent"]);
 
+/** Pages that render an entity's internal notes (Command Centre detail pages; requirements also in the employer portal). */
+const NOTE_ENTITY_PATHS: Record<NoteEntityType, (entityId: string) => [path: string, type?: "layout"][]> = {
+  lead: (id) => [[`/admin/leads/${id}`]],
+  enquiry: (id) => [[`/admin/leads/enquiries/${id}`]],
+  requirement: (id) => [[`/admin/requirements/${id}`], [`/employer/requirements/${id}`]],
+  ticket: (id) => [[`/admin/support/${id}`]],
+  task: () => [["/admin/tasks"]],
+  organization: (id) => [[`/admin/organizations/${id}`]],
+  candidate: (id) => [[`/admin/candidates/${id}`]],
+  application: (id) => [[`/admin/pipeline/${id}`]],
+  job: (id) => [[`/admin/jobs/${id}`]],
+  placement: () => [["/admin/mobilisation", "layout"]],
+  partner_assignment: (id) => [[`/admin/partners/${id}`]],
+  partner_submission: (id) => [[`/admin/partners/submissions/${id}`]],
+  interview: (id) => [[`/admin/interviews/${id}`]],
+  offer: () => [["/admin/pipeline", "layout"]],
+};
+
+function revalidateNotePages(entityType: NoteEntityType, entityId: string): void {
+  for (const [path, type] of NOTE_ENTITY_PATHS[entityType](entityId)) revalidatePath(path, type);
+}
+
 export const addInternalNoteAction = createFormAction(internalNoteSchema.extend({ portal: notePortalSchema }), async ({ portal, ...input }) => {
   const actor = await resolveNoteActor(portal);
   const result = await addInternalNote(actor, input);
+  revalidateNotePages(input.entityType, input.entityId);
   return ok(result, "Note added");
 });
 
 export const updateInternalNoteAction = createFormAction(internalNoteUpdateSchema.extend({ portal: notePortalSchema }), async ({ portal, id, body, pinned }) => {
   const actor = await resolveNoteActor(portal);
-  await updateInternalNote(actor, id, { body, pinned });
+  const ref = await updateInternalNote(actor, id, { body, pinned });
+  revalidateNotePages(ref.entityType, ref.entityId);
   return ok(undefined, "Note updated");
 });
 
 export const deleteInternalNoteAction = createAction(z.object({ portal: notePortalSchema, id: z.uuid() }), async ({ portal, id }) => {
   const actor = await resolveNoteActor(portal);
-  await deleteInternalNote(actor, id);
+  const ref = await deleteInternalNote(actor, id);
+  revalidateNotePages(ref.entityType, ref.entityId);
   return ok(undefined, "Note deleted");
 });

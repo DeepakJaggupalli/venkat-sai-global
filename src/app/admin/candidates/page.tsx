@@ -13,7 +13,7 @@ import { CANDIDATE_AVAILABILITY_OPTIONS, CANDIDATE_VERIFICATION_LEVEL_OPTIONS } 
 import { parseCandidateSearchParams } from "@/modules/candidates/schemas";
 import { searchCandidates } from "@/modules/candidates/search";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
-import { countryOptions, getSkillsByIds, listLanguages } from "@/modules/taxonomy/queries";
+import { countryOptions, getSkillsByIds, industryOptions, listLanguages } from "@/modules/taxonomy/queries";
 
 import { optionsFrom } from "../pipeline/_shared/server";
 import { humanize } from "../pipeline/_shared/status";
@@ -42,11 +42,12 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const filters = parseCandidateSearchParams(params);
   if (!staffCan(staff, "candidates.manage")) filters.includeHidden = false;
-  const [result, countries, languages, selectedSkills] = await Promise.all([
+  const [result, countries, languages, selectedSkills, industries] = await Promise.all([
     searchCandidates(filters, { kind: "staff", ctx: staff }),
     countryOptions(),
     listLanguages(),
     getSkillsByIds(filters.skillIds),
+    industryOptions(),
   ]);
   const languageOptions = languages.map((l) => ({ value: l.code, label: l.name }));
   const availabilityOptions = optionsFrom(CANDIDATE_AVAILABILITY_OPTIONS);
@@ -61,6 +62,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   const paramKeys = [
     "q",
     "skillIds",
+    "industryIds",
     "countryCode",
     "preferredCountryCode",
     "availability",
@@ -88,6 +90,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
       <FilterScope>
         <FilterBar paramKeys={paramKeys} search={<SearchInput label="Search by role, skill, headline or city" />}>
           <SkillFilter selected={selectedSkills.map((s) => ({ value: s.id, label: s.name }))} />
+          <FilterSelect param="industryIds" label="Industry" allLabel="Any industry" options={industries} />
           <FilterSelect param="countryCode" label="Lives in" allLabel="Any country" options={countries} />
           <FilterSelect param="preferredCountryCode" label="Wants to work in" allLabel="Any country" options={countries} />
           <FilterSelect param="availability" label="Availability" allLabel="Any availability" options={availabilityOptions} />

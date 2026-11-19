@@ -33,6 +33,8 @@ import { audit } from "@/modules/audit";
 import { softDeleteFile } from "@/modules/files";
 import type { StaffContext } from "@/modules/identity/authz";
 import { invalidateUserSessions } from "@/modules/identity/session";
+import { createStaffTask } from "@/modules/operations/service";
+import { handOverSoleOwnerships, type OwnerHandover } from "@/modules/organizations/erasure";
 
 import { ERASABLE_FILE_PURPOSES, RETENTION_EXCEPTIONS } from "./constants";
 
@@ -49,6 +51,8 @@ export type ErasureSummary = {
   notificationsDeleted: number;
   analytics: { sessions: number; events: number };
   membershipsDisabled: number;
+  /** Organisations the person solely owned: handed to another member or suspended as orphaned (never left ownerless). */
+  organizations: OwnerHandover[];
   retained: string[];
 };
 
@@ -135,6 +139,8 @@ export async function eraseAccount(ctx: StaffContext, input: { userId: string; r
     await tx.delete(oauthAccounts).where(eq(oauthAccounts.userId, userId));
     await tx.delete(userTwoFactor).where(eq(userTwoFactor.userId, userId));
     await tx.delete(verificationTokens).where(eq(verificationTokens.userId, userId));
+    // Before the memberships go: an organisation this person solely owns gets a new owner or is flagged to staff.
+    const handovers = await handOverSoleOwnerships(tx, userId, { requestCode: input.requestCode, actorUserId: ctx.user.id });
     const memberships = await tx
       .update(organizationMembers)
       .set({ status: "disabled", updatedAt: now })
@@ -169,15 +175,39 @@ export async function eraseAccount(ctx: StaffContext, input: { userId: string; r
       action: "privacy.account_erased",
       entityType: "user",
       entityId: userId,
-      metadata: { requestId: input.requestId, files: ownedFiles.length, candidateRows: candidateRowsDeleted, notifications: deletedNotifications.length },
+      metadata: {
+        requestId: input.requestId,
+        files: ownedFiles.length,
+        candidateRows: candidateRowsDeleted,
+        notifications: deletedNotifications.length,
+        organizations: handovers.map((h) => ({ organizationId: h.organizationId, outcome: h.outcome })),
+      },
       actorUserId: ctx.user.id,
       actorType: "staff",
       tx,
     });
-    return { candidateRowsDeleted, notificationsDeleted: deletedNotifications.length, membershipsDisabled: memberships.length };
+    return { candidateRowsDeleted, notificationsDeleted: deletedNotifications.length, membershipsDisabled: memberships.length, handovers };
   });
 
   await invalidateUserSessions(userId);
+  // Orphaned organisations also get a staff task so somebody owns the follow-up (the staff notification was sent in the transaction).
+  for (const handover of summary.handovers) {
+    if (handover.outcome !== "orphaned") continue;
+    try {
+      await createStaffTask(ctx, {
+        title: `Orphaned organisation: ${handover.organizationName}`.slice(0, 200),
+        description: `The only owner of ${handover.organizationName} erased their account (data request ${input.requestCode}) and no other active member could take over. The organisation is suspended. Contact the company to appoint a new owner, or close the organisation.`,
+        priority: "high",
+        dueAt: undefined,
+        assignedToUserId: undefined,
+        organizationId: handover.organizationId,
+        relatedType: undefined,
+        relatedId: undefined,
+      });
+    } catch (error) {
+      logger.warn("Erasure could not create the orphaned-organisation task", { organizationId: handover.organizationId, error: error instanceof Error ? error.message : String(error) });
+    }
+  }
   const analytics = await eraseAnalyticsForUser({ kind: "staff", staff: ctx }, userId);
 
   return {
@@ -186,6 +216,7 @@ export async function eraseAccount(ctx: StaffContext, input: { userId: string; r
     notificationsDeleted: summary.notificationsDeleted,
     analytics,
     membershipsDisabled: summary.membershipsDisabled,
+    organizations: summary.handovers,
     retained: RETENTION_EXCEPTIONS.map((r) => `${r.label}: ${r.reason}`),
   };
 }

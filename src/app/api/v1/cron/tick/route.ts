@@ -7,7 +7,8 @@ import { enqueueRecurringTasks } from "@/server/tasks/scheduler";
 
 /**
  * GET|POST /api/v1/cron/tick — serverless replacement for `npm run worker`.
- * Called every 5 minutes by Vercel Cron (vercel.json), or by any scheduler, with
+ * Called every 5 minutes by the GitHub Actions scheduler (.github/workflows/scheduler.yml) and once a day
+ * by Vercel Cron (vercel.json; Hobby plan limit), or by any scheduler, with
  * `Authorization: Bearer <CRON_SECRET>`. Runs the recurring-task scheduler, recovers stale tasks,
  * then processes due tasks until ~45 s have elapsed. Returns a JSON summary.
  */

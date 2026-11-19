@@ -145,6 +145,10 @@ hashInvitationToken(token): string
 - **Last owner protection**: the last active owner cannot be demoted, disabled, removed or leave;
   `transferOwnership` makes the target owner and the previous (member) owner an admin.
 
+### Account erasure (`erasure.ts`)
+
+- `handOverSoleOwnerships(tx, userId, { requestCode, actorUserId })` — called by the privacy module inside the erasure transaction, before the person's memberships are disabled. For every organisation the person is the only active owner of: promotes the longest-serving active member (template admins first, then earliest join) to owner (audit `organization.ownership_transferred`, notification `org.ownership_transferred`), or, when nobody else is active, suspends the organisation as orphaned (`statusReason` starts with `Orphaned:`, `metadata.orphanedReason = "owner_erased"`, audit `organization.orphaned`, staff notification `org.orphaned` to `orgs.manage`; the privacy module also opens a high-priority staff task). Organisations with another active owner are untouched. Never leaves an active organisation without an owner silently.
+
 ### Recruitment partners (`partner.ts`)
 
 ```ts

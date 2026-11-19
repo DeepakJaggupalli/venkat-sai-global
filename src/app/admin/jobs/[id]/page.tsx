@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Pencil } from "lucide-react";
 
 import { ActionButton } from "@/components/admin/action-button";
 import { DownloadExcelButton } from "@/components/admin/download-excel-button";
@@ -25,6 +25,7 @@ import { getOpenApprovalForEntity } from "@/modules/approvals/service";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
 import { pauseJobAction, publishJobAction, resumeJobAction, setJobInfoSourceAction, setJobRecruitingAgentAction, unfeatureJobAction } from "@/modules/jobs/actions";
 import { INFO_SOURCE_OPTIONS } from "@/modules/jobs/constants";
+import { canTransition } from "@/modules/jobs/lifecycle";
 import { getJobForStaff } from "@/modules/jobs/queries";
 
 import { assignJobRecruiterAction, bulkJobDetailAction } from "../actions";
@@ -80,6 +81,7 @@ export default async function AdminJobDetailPage({ params }: { params: Params })
         }
         backLink={{ href: "/admin/jobs", label: "Back to jobs" }}
         actions={[
+          ...(canManage && canTransition("edit", job.status) ? [{ label: "Edit", href: `/admin/jobs/${job.id}/edit`, icon: <Pencil />, variant: "outline" as const }] : []),
           ...(live ? [{ label: "View public page", href: `/jobs/${job.slug}`, icon: <ExternalLink />, variant: "outline" as const, external: true }] : []),
           ...(staffCan(ctx, "recruitment.view") ? [{ label: "Pipeline", href: `/admin/pipeline?job=${job.id}`, variant: "outline" as const }] : []),
           ...(staffCan(ctx, ["recruitment.view", "recruitment.manage"], "any") ? [<DownloadExcelButton key="excel" href="/admin/pipeline/export" searchParams={{ job: job.id }} label="Download applicants (Excel)" />] : []),

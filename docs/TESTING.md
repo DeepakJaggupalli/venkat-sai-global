@@ -94,6 +94,8 @@ logos):
 | `OTHER_INSTITUTION` | Owner of **E2E Other Training Institute** (verified, its own published course and open batch) |
 | `CANDIDATE` | Adult candidate (28), age gate and onboarding done, profile basics, applied to the domestic job, enrolled in the batch |
 | `MINOR` | Candidate aged 16 **without** guardian consent (People Portal shows only the guardian step) |
+| `TALENT_CONSENTED_MINOR` | Candidate aged 16 **with** guardian consent granted (full People Portal) |
+| `OTHER_EMPLOYER` | Owner of **E2E Other Employer Co** (**not** verified; its own draft job and requirement, for isolation checks) |
 | `NEW_USER` | **Fresh**: verified email, nothing else. Used by the employer and the institution onboarding specs |
 | `NEW_CANDIDATE` | **Fresh**: verified email, no profile. Used by the age-gate spec (the date of birth locks) |
 | `NEW_PARTNER` | **Fresh**: verified email, nothing else. Used by the partner onboarding spec |
@@ -107,7 +109,11 @@ domestic job with the shared application), `E2E_EMPLOYER_JOB_SLUG`, `E2E_EMPLOYE
 `E2E_OTHER_PARTNER_SUBMISSION_ID`, `E2E_INSTITUTION_ORG_ID`, `E2E_INSTITUTION_COURSE_ID`, `E2E_INSTITUTION_BATCH_ID`,
 `E2E_OTHER_INSTITUTION_ORG_ID`, `E2E_OTHER_BATCH_ID`, `E2E_PLAN_INR_ID`, `E2E_PLAN_OTHER_CURRENCY_ID`,
 `E2E_PLAN_OTHER_CURRENCY` (`USD`), `E2E_EMPLOYER_VERIFIED=1`, `E2E_PARTNER_VERIFIED=1`,
-`E2E_INSTITUTION_VERIFIED=1`, `E2E_SEEDED_AT`.
+`E2E_INSTITUTION_VERIFIED=1`, `E2E_SEEDED_AT`, plus `E2E_OTHER_EMPLOYER_ORG_ID` / `_JOB_ID` / `_REQUIREMENT_ID`,
+`E2E_TALENT_CONSENTED_MINOR_CANDIDATE_ID`, `E2E_EMPLOYER_QA_JOB_ID` / `E2E_EMPLOYER_QA_APPLICATION_ID`, `E2E_INSTITUTION_QA_BATCH_ID`,
+`E2E_OTHER_INSTITUTION_COURSE_ID`, `E2E_PARTNER_SETTLEMENT_ID` / `E2E_OTHER_PARTNER_SETTLEMENT_ID`, `E2E_TALENT_APPLY_JOB_ID` / `_SLUG`,
+`E2E_PUBLIC_EMPLOYER_SLUG` / `E2E_PUBLIC_INSTITUTION_SLUG`, `E2E_DRAFT_INDUSTRY_ID` / `_SLUG`, `E2E_DISCOVERABLE_CANDIDATE_IDS`
+(the full list: `grep -rhoE "E2E_[A-Z_]+" src/server/seed | sort -u`).
 
 Commercial: public employer plans `e2e_employer_inr` (INR 4,999 / month) and `e2e_employer_usd` (USD 79 / month),
 each with 5 job posts a month, and seller details with test values (no GSTIN, so invoices are not tax invoices).

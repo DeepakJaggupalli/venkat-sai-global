@@ -113,6 +113,15 @@ function buildConditions(filters: CandidateSearchFilters, ctx: SearchContext, ts
     c.push(sql`exists (select 1 from candidate_skills cs where cs.candidate_id = ${cp.id} and cs.verified)`);
   }
 
+  if (filters.industryIds.length) {
+    // Profile industry or the industry of any experience entry (both columns are indexed).
+    const ids = sql.join(
+      filters.industryIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    );
+    c.push(sql`(${cp.industryId} in (${ids}) or exists (select 1 from candidate_experience ce where ce.candidate_id = ${cp.id} and ce.industry_id in (${ids})))`);
+  }
+
   if (filters.experienceMinYears !== undefined) c.push(gte(cp.totalExperienceMonths, filters.experienceMinYears * 12));
   if (filters.experienceMaxYears !== undefined) c.push(sql`${cp.totalExperienceMonths} < ${(filters.experienceMaxYears + 1) * 12}`);
 

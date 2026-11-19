@@ -221,40 +221,47 @@ export async function addInternalNote(actor: NoteActor, input: InternalNoteInput
   });
 }
 
-async function loadNoteForActor(tx: DbOrTx, actor: NoteActor, id: string): Promise<InternalNoteRow> {
+async function loadNoteForActor(tx: DbOrTx, actor: NoteActor, id: string): Promise<InternalNoteRow & { entityType: NoteEntityType }> {
   const [note] = await tx.select().from(internalNotes).where(and(eq(internalNotes.id, id), isNull(internalNotes.deletedAt))).for("update").limit(1);
   if (!note) throw new ActionError("Note not found.");
   if (actor.kind === "org" && (note.visibility !== "org_internal" || note.organizationId !== actor.ctx.organization.id)) throw new ActionError("Note not found.");
-  if (!isNoteEntityType(note.entityType)) throw new ActionError("Note not found.");
-  await assertNoteAccess(tx, actor, note.entityType, note.entityId);
-  return note;
+  const entityType = note.entityType;
+  if (!isNoteEntityType(entityType)) throw new ActionError("Note not found.");
+  await assertNoteAccess(tx, actor, entityType, note.entityId);
+  return { ...note, entityType };
 }
 
 /** Edit (author only) or pin / unpin (anyone who can see the note) an internal note. */
-export async function updateInternalNote(actor: NoteActor, id: string, input: { body?: string; pinned?: boolean }): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function updateInternalNote(actor: NoteActor, id: string, input: { body?: string; pinned?: boolean }): Promise<NoteEntityRef> {
+  return db.transaction(async (tx) => {
     const note = await loadNoteForActor(tx, actor, id);
+    const ref: NoteEntityRef = { entityType: note.entityType, entityId: note.entityId };
     if (input.body !== undefined && note.authorUserId !== actor.ctx.user.id) throw new ActionError("Only the author can edit this note.", { code: "forbidden" });
     const patch: Partial<typeof internalNotes.$inferInsert> = {};
     if (input.body !== undefined) patch.body = input.body;
     if (input.pinned !== undefined) patch.pinned = input.pinned;
-    if (!Object.keys(patch).length) return;
+    if (!Object.keys(patch).length) return ref;
     await tx.update(internalNotes).set(patch).where(eq(internalNotes.id, id));
     await audit({ action: "note.updated", entityType: note.entityType, entityId: note.entityId, organizationId: note.organizationId, metadata: { noteId: id, fields: Object.keys(patch) }, actorUserId: actor.ctx.user.id, actorType: actor.kind === "staff" ? "staff" : "user", tx });
+    return ref;
   });
 }
 
 /** Soft-delete a note (its author, a super admin, or an organisation owner for their organisation's notes). */
-export async function deleteInternalNote(actor: NoteActor, id: string): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deleteInternalNote(actor: NoteActor, id: string): Promise<NoteEntityRef> {
+  return db.transaction(async (tx) => {
     const note = await loadNoteForActor(tx, actor, id);
     const allowed =
       note.authorUserId === actor.ctx.user.id || (actor.kind === "staff" && actor.ctx.isSuperAdmin) || (actor.kind === "org" && actor.ctx.isOwner);
     if (!allowed) throw new ActionError("Only the author can delete this note.", { code: "forbidden" });
     await tx.update(internalNotes).set({ deletedAt: new Date() }).where(eq(internalNotes.id, id));
     await audit({ action: "note.deleted", entityType: note.entityType, entityId: note.entityId, organizationId: note.organizationId, metadata: { noteId: id }, actorUserId: actor.ctx.user.id, actorType: actor.kind === "staff" ? "staff" : "user", tx });
+    return { entityType: note.entityType, entityId: note.entityId };
   });
 }
+
+/** The entity a note belongs to (returned by note writes so callers can refresh the page it is shown on). */
+export type NoteEntityRef = { entityType: NoteEntityType; entityId: string };
 
 export type InternalNoteView = {
   id: string;

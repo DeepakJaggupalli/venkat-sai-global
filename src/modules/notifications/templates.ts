@@ -518,6 +518,18 @@ Your billing dispute is now **{{statusLabel}}**.{{#resolution}} Resolution: {{re
     cta: "Open your workspace",
     sample: { recipientName: S.recipientName, organizationName: S.organizationName, status: "suspended", reason: S.reason },
   },
+  "org.ownership_transferred": {
+    subject: "You are now the owner of {{organizationName}}",
+    body: `${HELLO}\n\nThe previous owner of **{{organizationName}}** closed their Venkat Sai Global account, so ownership has passed to you as the longest-serving member of the team. You can manage members, billing and settings from the team page.`,
+    cta: "Open the team page",
+    sample: { recipientName: S.recipientName, organizationName: S.organizationName },
+  },
+  "org.orphaned": {
+    subject: "{{organizationName}} has no owner",
+    body: `${HELLO}\n\nThe only owner of **{{organizationName}}** erased their account{{#code}} (data request {{code}}){{/code}} and no other active member could take over, so the organisation has been suspended as orphaned.\n\nPlease contact the company to appoint a new owner, or close the organisation.`,
+    cta: "Open the organisation",
+    sample: { recipientName: S.recipientName, organizationName: S.organizationName, code: S.code },
+  },
   "partner.licence_reviewed": {
     subject: "Licence review{{#licenceName}}: {{licenceName}}{{/licenceName}}",
     body: `${HELLO}\n\nWe have reviewed {{#licenceName}}the licence **{{licenceName}}**{{/licenceName}}{{^licenceName}}a licence{{/licenceName}}{{#organizationName}} for **{{organizationName}}**{{/organizationName}}.{{#decision}}\n\nDecision: **{{decisionLabel}}**{{/decision}}{{#reason}}\n\n{{reason}}{{/reason}}`,

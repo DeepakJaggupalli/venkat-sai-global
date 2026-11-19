@@ -390,6 +390,8 @@ export const candidateSearchFiltersSchema = z
     q: z.string().trim().max(200).optional(),
     skillIds: uuidList(20),
     skillMatch: z.enum(["all", "any"]).default("any"),
+    /** Industries (taxonomy): the profile's industry or the industry of any experience entry (spec 9.4). */
+    industryIds: uuidList(20),
     verifiedSkillsOnly: f.bool(),
     experienceMinYears: f.optionalInt({ min: 0, max: 60 }),
     experienceMaxYears: f.optionalInt({ min: 0, max: 60 }),
@@ -438,7 +440,7 @@ export type CandidateSearchFilters = z.output<typeof candidateSearchFiltersSchem
 /** Loose input shape (query-string values) — every key optional. */
 export type CandidateSearchFiltersInput = Partial<z.input<typeof candidateSearchFiltersSchema>>;
 
-const ARRAY_PARAMS = ["skillIds", "availability", "languageCodes", "employmentTypes", "workModes"] as const;
+const ARRAY_PARAMS = ["skillIds", "industryIds", "availability", "languageCodes", "employmentTypes", "workModes"] as const;
 
 /**
  * URL search params → validated filters. Invalid values are dropped one key at a time (a bad

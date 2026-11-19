@@ -8,6 +8,7 @@ import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { RichTextEditor } from "@/components/shared/rich-text/rich-text-editor";
 import { SearchableSelect, SimpleSelect } from "@/components/shared/selects";
+import { TagInput } from "@/components/shared/tag-input";
 import type { SelectOption } from "@/components/shared/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ import { useCloseActionDialog } from "./action-dialog";
 export type AdminFieldSpec = {
   name: string;
   label: string;
-  kind?: "text" | "textarea" | "richtext" | "select" | "search-select" | "date" | "datetime-local" | "number" | "email" | "tel" | "checkbox" | "multi";
+  kind?: "text" | "textarea" | "richtext" | "select" | "search-select" | "date" | "datetime-local" | "number" | "email" | "tel" | "checkbox" | "multi" | "tags";
   required?: boolean;
   optional?: boolean;
   hint?: string;
@@ -42,7 +43,7 @@ export type AdminFieldSpec = {
   /** Span both columns in the two-column layout. */
   wide?: boolean;
   allowClear?: boolean;
-  /** Selected values for kind "multi" (submitted as `name[]`). */
+  /** Selected values for kind "multi", or the tags for kind "tags" (both submitted as `name[]`). */
   defaultValues?: string[];
 };
 
@@ -59,6 +60,8 @@ export type ActionFormProps<T> = {
   /** Navigate here after success (e.g. a newly created record). `{id}` is replaced by `data.id`. */
   successHref?: string;
   intro?: ReactNode;
+  /** Extra controls rendered after the declared fields (e.g. list editors that post their own hidden inputs). */
+  children?: ReactNode;
   className?: string;
   testId?: string;
 };
@@ -74,6 +77,7 @@ export function ActionForm<T>({
   resetOnSuccess = false,
   successHref,
   intro,
+  children,
   className,
   testId,
 }: ActionFormProps<T>) {
@@ -123,6 +127,7 @@ export function ActionForm<T>({
           ))}
         </div>
       ) : null}
+      {children}
       <div className="flex flex-wrap items-center gap-2">
         <SubmitButton variant={submitVariant} pendingLabel={pendingLabel}>
           {submitLabel}
@@ -174,6 +179,19 @@ function AdminField<T>({ spec, state }: { spec: AdminFieldSpec; state: ActionSta
                 defaultValue={dv == null ? undefined : String(dv)}
                 placeholder={spec.placeholder}
                 allowClear={spec.allowClear}
+              />
+            );
+          case "tags":
+            return (
+              <TagInput
+                id={field.id}
+                name={spec.name}
+                defaultValue={spec.defaultValues ?? []}
+                maxTags={spec.max ?? 20}
+                maxLength={100}
+                placeholder={spec.placeholder}
+                aria-describedby={field["aria-describedby"]}
+                aria-invalid={field["aria-invalid"]}
               />
             );
           case "multi":
