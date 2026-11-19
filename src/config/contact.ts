@@ -16,6 +16,8 @@ export const CONTACT = {
     { e164: "+919441339848", display: "94413 39848" },
   ],
   emails: { primary: "vsweld@gmail.com", hr: "hrvsweld@gmail.com" },
+  /** Business / bulk manpower contact for travel agencies and direct companies only (not for candidates). */
+  business: { name: "Prasad", e164: "+917780453087", display: "77804 53087" },
   /** Official WhatsApp channel (latest requirements). The business is most active on WhatsApp: prefer WhatsApp/call CTAs, email second. */
   whatsappChannelUrl: "https://whatsapp.com/channel/0029Vb75ZOP47XeC5hC3Il1B",
   address: {

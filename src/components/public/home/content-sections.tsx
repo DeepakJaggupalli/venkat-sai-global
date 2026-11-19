@@ -10,21 +10,22 @@ import { EntryCard } from "../blocks";
 import { CmsIcon } from "../cms-icon";
 import { CmsImage, pickAsset } from "../cms-media";
 import { CtaLink } from "../cta-link";
+import { EN_MARKETING, intlLocale, type MarketingT } from "../marketing-i18n";
 import { Section, SectionHeading, type SectionTone } from "../section";
 import { StockImage } from "../stock-image";
 import { htmlToText } from "../text";
 
-type SectionText = { heading?: string | null; intro?: string | null };
+type SectionText = { heading?: string | null; intro?: string | null; t?: MarketingT };
 
 /** About teaser: copy and up to four capabilities on the left, a photograph on the right. */
-export function AboutTeaser({ tone = "subtle", about, heading, intro }: SectionText & { about: AboutData | null } & { tone?: SectionTone }) {
-  const summary = intro || htmlToText(about?.history, 240) || `${BRAND.name} is the technology platform of ${BRAND.legalEntity}, based in ${BRAND.headquarters}.`;
+export function AboutTeaser({ tone = "subtle", about, heading, intro, t = EN_MARKETING }: SectionText & { about: AboutData | null } & { tone?: SectionTone }) {
+  const summary = intro || htmlToText(about?.history, 240) || t("about.summary", { name: BRAND.name, legalEntity: BRAND.legalEntity, headquarters: BRAND.headquarters });
   const capabilities = (about?.capabilities ?? []).filter((c) => c.title?.trim()).slice(0, 4);
   return (
     <Section tone={tone} labelledBy="home-about-title" data-testid="home-about">
       <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
         <div data-reveal>
-          <SectionHeading id="home-about-title" eyebrow="About Venkat Sai" title={heading || "A welding works that grew into a careers company"} intro={summary} />
+          <SectionHeading id="home-about-title" eyebrow={t("about.eyebrow")} title={heading || t("about.title")} intro={summary} />
           {capabilities.length ? (
             <ul className="mt-8 grid gap-x-8 gap-y-5 sm:grid-cols-2">
               {capabilities.map((c, i) => (
@@ -41,7 +42,7 @@ export function AboutTeaser({ tone = "subtle", about, heading, intro }: SectionT
           </p>
           <div className="mt-8">
             <CtaLink href="/about" cta="about_teaser" location="home_about" variant="outline" arrow>
-              Our story
+              {t("about.cta")}
             </CtaLink>
           </div>
         </div>
@@ -54,18 +55,18 @@ export function AboutTeaser({ tone = "subtle", about, heading, intro }: SectionT
 }
 
 /** Industries as calm chips with their icon. */
-export function IndustriesSection({ tone = "white", industries, heading, intro }: SectionText & { industries: readonly PublishedEntry<"industries">[] } & { tone?: SectionTone }) {
+export function IndustriesSection({ tone = "white", industries, heading, intro, t = EN_MARKETING }: SectionText & { industries: readonly PublishedEntry<"industries">[] } & { tone?: SectionTone }) {
   if (!industries.length) return null;
   return (
     <Section tone={tone} labelledBy="home-industries-title" data-testid="home-industries">
       <SectionHeading
         id="home-industries-title"
-        eyebrow="Industries"
-        title={heading || "Industries we work with"}
+        eyebrow={t("industries.eyebrow")}
+        title={heading || t("industries.title")}
         intro={intro}
         action={
           <CtaLink href="/industries" cta="all_industries" location="home_industries" variant="outline" arrow>
-            All industries
+            {t("industries.all")}
           </CtaLink>
         }
       />
@@ -89,18 +90,18 @@ export function IndustriesSection({ tone = "white", industries, heading, intro }
   );
 }
 
-export function SuccessStoriesSection({ tone = "subtle", stories, assets, heading, intro }: SectionText & { stories: readonly PublishedEntry<"case_studies">[]; assets: AssetMap } & { tone?: SectionTone }) {
+export function SuccessStoriesSection({ tone = "subtle", stories, assets, heading, intro, t = EN_MARKETING }: SectionText & { stories: readonly PublishedEntry<"case_studies">[]; assets: AssetMap } & { tone?: SectionTone }) {
   if (!stories.length) return null;
   return (
     <Section tone={tone} labelledBy="home-stories-title" data-testid="home-success-stories">
       <SectionHeading
         id="home-stories-title"
-        eyebrow="Success stories"
-        title={heading || "Work delivered with our clients"}
-        intro={intro || "Published with the client's consent."}
+        eyebrow={t("stories.eyebrow")}
+        title={heading || t("stories.title")}
+        intro={intro || t("stories.intro")}
         action={
           <CtaLink href="/success-stories" cta="all_success_stories" location="home_success_stories" variant="outline" arrow>
-            All success stories
+            {t("stories.all")}
           </CtaLink>
         }
       />
@@ -116,7 +117,7 @@ export function SuccessStoriesSection({ tone = "subtle", stories, assets, headin
               badge={<span className="rounded-full bg-teal-soft px-2.5 py-0.5 text-xs font-medium text-teal-strong">{s.data.clientName?.trim() || s.data.clientDescriptor}</span>}
               footer={
                 <span aria-hidden="true" className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  Read the story <ArrowRight className="size-4" />
+                  {t("stories.read")} <ArrowRight className="size-4" />
                 </span>
               }
             />
@@ -127,19 +128,19 @@ export function SuccessStoriesSection({ tone = "subtle", stories, assets, headin
   );
 }
 
-export function NewsSection({ tone = "white", news, assets, heading, intro }: SectionText & { news: readonly PublishedEntry<"news">[]; assets: AssetMap } & { tone?: SectionTone }) {
+export function NewsSection({ tone = "white", news, assets, heading, intro, t = EN_MARKETING }: SectionText & { news: readonly PublishedEntry<"news">[]; assets: AssetMap } & { tone?: SectionTone }) {
   if (!news.length) return null;
-  const fmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+  const fmt = new Intl.DateTimeFormat(intlLocale(t.locale), { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
   return (
     <Section tone={tone} labelledBy="home-news-title" data-testid="home-news">
       <SectionHeading
         id="home-news-title"
-        eyebrow="Latest news"
-        title={heading || "News and announcements"}
+        eyebrow={t("news.eyebrow")}
+        title={heading || t("news.title")}
         intro={intro}
         action={
           <CtaLink href="/news" cta="all_news" location="home_news" variant="outline" arrow>
-            All news
+            {t("news.all")}
           </CtaLink>
         }
       />

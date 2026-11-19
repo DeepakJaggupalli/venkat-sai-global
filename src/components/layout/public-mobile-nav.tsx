@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { WhatsAppIcon } from "@/components/public/contact-links";
+import { InstallAppButton } from "@/components/public/install-app-button";
 import { whatsappHref } from "@/config/contact";
 import { BRAND } from "@/config/site";
 import { cn } from "@/lib/utils";
@@ -165,6 +166,7 @@ export function PublicMobileNav({
             Employer? Request workers
           </Link>
         ) : null}
+        <InstallAppButton className="w-full justify-center" />
       </div>
     </SheetContent>
   );

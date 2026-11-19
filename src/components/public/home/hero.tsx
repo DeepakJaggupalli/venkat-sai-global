@@ -1,5 +1,6 @@
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import type { HomepageData } from "@/modules/content/collections";
 import type { PublicMediaAsset } from "@/modules/content/types";
@@ -7,6 +8,7 @@ import type { PublicMediaAsset } from "@/modules/content/types";
 import { type CtaSpec } from "../blocks";
 import { CmsImage, CmsVideo } from "../cms-media";
 import { CtaLink } from "../cta-link";
+import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
 import type { PosterCard } from "../requirements/data";
 import { NowHiringCard, RouteCard } from "./hero-card";
 
@@ -17,10 +19,10 @@ import { NowHiringCard, RouteCard } from "./hero-card";
 const LEGACY_HEADINGS = new Set(["Connecting Global Talent With Limitless Opportunities.", "Skilled hands from Vizag to the world"]);
 const LEGACY_CTA_LABELS = new Set(["explore opportunities", "hire through venkat sai", "become a partner"]);
 
-const DEFAULT_PRIMARY = { label: "Send your CV", href: "/send-cv" };
-const DEFAULT_SECONDARY = { label: "Explore jobs", href: "/jobs" };
+const SEND_CV_HREF = "/send-cv";
+const JOBS_HREF = "/jobs";
 
-const TRUST = ["No placement fees", "Visa, ticket and documents", "Trade-tested candidates"] as const;
+const TRUST = ["hero.trust.noFees", "hero.trust.paperwork", "hero.trust.tested"] as const;
 
 export function usableHeroCta(cta: CtaSpec | null | undefined, fallback: { label: string; href: string }): { label: string; href: string } {
   const label = cta?.label?.trim();
@@ -30,17 +32,23 @@ export function usableHeroCta(cta: CtaSpec | null | undefined, fallback: { label
   return { label, href };
 }
 
+const AUDIENCE_PILL =
+  "inline-flex min-h-10 items-center rounded-full border border-border bg-white px-4 text-sm font-medium text-foreground transition-colors hover:border-[#c9cdd5] hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2";
+
 /**
  * Homepage hero, white: accent label, a very large black headline, one grey line, the two pills (Send your CV,
  * Explore jobs) and three trust checks. On the right one clean card: the latest requirement poster, else a route
  * card. A CMS hero image or video (uploaded by the business) takes the card's place.
  * The copy enters once on load (CSS, opacity/transform only; static for reduced motion).
+ * CMS text stays as written; the designed defaults follow the page language (`t`).
  */
 export function HomeHero({
   hero,
   media,
   poster,
   openRequirements = 0,
+  t = EN_MARKETING,
+  languageSwitch,
 }: {
   hero: HomepageData["hero"] | null | undefined;
   media: PublicMediaAsset | null;
@@ -48,33 +56,37 @@ export function HomeHero({
   /** Number of published requirement posters (live count, shown as "N more open requirements"). */
   openRequirements?: number;
   whatsappE164?: string;
+  t?: MarketingT;
+  /** Small language switch shown under the trust row. */
+  languageSwitch?: ReactNode;
 }) {
   const cmsHeading = hero?.heading?.trim();
   const heading = cmsHeading && !LEGACY_HEADINGS.has(cmsHeading) ? cmsHeading : null;
-  const subheading =
-    (heading ? hero?.subheading?.trim() : null) ||
-    "We train welders, fitters, electricians and riggers in Visakhapatnam and place them with employers in the Gulf, Europe and Asia. Applying is always free.";
+  const subheading = (heading ? hero?.subheading?.trim() : null) || t("hero.subheading");
+  const defaultPrimary = { label: t("common.sendCv"), href: SEND_CV_HREF };
+  const defaultSecondary = { label: t("common.exploreJobs"), href: JOBS_HREF };
   // The main action is always "Send your CV" (CMS CTAs that still point elsewhere become the secondary pill).
-  const primary = usableHeroCta(hero?.primaryCta, DEFAULT_PRIMARY);
-  const secondary = usableHeroCta(hero?.secondaryCta, DEFAULT_SECONDARY);
-  const [first, second] = primary.href === DEFAULT_SECONDARY.href && secondary.href === DEFAULT_PRIMARY.href ? [secondary, primary] : [primary, secondary];
+  const primary = usableHeroCta(hero?.primaryCta, defaultPrimary);
+  const secondary = usableHeroCta(hero?.secondaryCta, defaultSecondary);
+  const [first, second] = primary.href === JOBS_HREF && secondary.href === SEND_CV_HREF ? [secondary, primary] : [primary, secondary];
   const image = media?.kind === "image" ? media : null;
   const video = media && (media.kind === "video" || media.kind === "embed") ? media : null;
+  const more = openRequirements - 1;
 
   return (
     <section aria-labelledby="home-hero-title" className="relative overflow-hidden bg-white" data-testid="home-hero">
       <div className="container-page grid items-center gap-12 pt-12 pb-20 sm:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:pt-20 lg:pb-28">
         <div className="min-w-0">
-          <p className="label-dot motion-safe:animate-[vsg-enter_0.7s_cubic-bezier(0.22,1,0.36,1)_both]">Overseas jobs · Training · Manpower</p>
+          <p className="label-dot motion-safe:animate-[vsg-enter_0.7s_cubic-bezier(0.22,1,0.36,1)_both]">{t("hero.eyebrow")}</p>
           <h1
             id="home-hero-title"
             className="mt-6 text-balance font-display text-[2.875rem] leading-[1.02] text-foreground motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_60ms_both] sm:text-7xl lg:text-[5.25rem] xl:text-[5.75rem]"
           >
             {heading ?? (
               <>
-                Skilled trades.
+                {t("hero.titleLead")}
                 <br />
-                <span className="bg-gradient-to-r from-[#0284c7] to-[#0891b2] bg-clip-text text-transparent">Global</span> careers.
+                <span className="bg-gradient-to-r from-[#0284c7] to-[#0891b2] bg-clip-text text-transparent">{t("hero.titleAccent")}</span> {t("hero.titleRest")}
               </>
             )}
           </h1>
@@ -90,15 +102,24 @@ export function HomeHero({
             </CtaLink>
           </div>
           <ul className="mt-10 flex flex-col gap-3 text-sm font-medium text-foreground motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_240ms_both] sm:flex-row sm:flex-wrap sm:gap-x-6">
-            {TRUST.map((item) => (
-              <li key={item} className="flex items-center gap-2">
+            {TRUST.map((key) => (
+              <li key={key} className="flex items-center gap-2">
                 <span aria-hidden="true" className="flex size-5 items-center justify-center rounded-full bg-teal-soft text-teal-strong">
                   <Check className="size-3" strokeWidth={3} />
                 </span>
-                {item}
+                {t(key)}
               </li>
             ))}
           </ul>
+          <div className="mt-8 flex flex-wrap gap-2 motion-safe:animate-[vsg-enter_0.8s_cubic-bezier(0.22,1,0.36,1)_280ms_both]" data-testid="hero-audience-links">
+            <a href="#manpower" className={AUDIENCE_PILL}>
+              {t("hero.forAgency")}
+            </a>
+            <a href="#manpower" className={AUDIENCE_PILL}>
+              {t("hero.forCompany")}
+            </a>
+          </div>
+          {languageSwitch ? <div className="mt-6">{languageSwitch}</div> : null}
         </div>
 
         <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:pl-4">
@@ -112,21 +133,19 @@ export function HomeHero({
               </div>
             ) : poster ? (
               <>
-                <NowHiringCard poster={poster} />
+                <NowHiringCard poster={poster} t={t} />
                 {openRequirements > 1 ? (
                   <Link
                     href="/requirements"
                     className="group/more mt-4 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-border bg-white/80 px-5 text-sm font-medium text-foreground backdrop-blur transition-colors hover:border-[#c9cdd5] focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
-                    <span>
-                      {openRequirements - 1} more open {openRequirements - 1 === 1 ? "requirement" : "requirements"}
-                    </span>
+                    <span>{t("hero.moreRequirements", { count: more })}</span>
                     <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground transition-transform duration-150 group-hover/more:translate-x-0.5 motion-reduce:transition-none" />
                   </Link>
                 ) : null}
               </>
             ) : (
-              <RouteCard />
+              <RouteCard t={t} />
             )}
           </div>
         </div>

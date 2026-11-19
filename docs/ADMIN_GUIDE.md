@@ -18,6 +18,13 @@ phone. Full details, including the one-time phone setup, are in `REQUIREMENT_POS
   the poster → Share → **Venkat Sai Global**. The "Post requirement" page opens with the image attached; pick the
   country, type the trades (one per line, salary after a dash: `Mechanical helper - 900 AED`), tap **Publish now**.
 - **iPhone, or any computer:** `/admin/requirements/posters/new` → Choose photo → Publish now.
+- **Everyone else can share too** (same app, same Share button): candidates and employers who share a photo or
+  document land on `/share/choose` and pick **Send as my CV** or **Post a job requirement (I'm hiring)**.
+- **Requirements posted by the public** (`/requirements/submit`) never go live on their own: each one is a draft
+  poster in the approval centre marked "Submitted by the public - check before publishing", with the contact
+  details in an employer enquiry (Leads → Enquiries; the enquiry links to the draft). Call the employer, fix the
+  draft in the content editor if needed (title, trades, company name), then **approve** it in `/admin/approvals`:
+  approval makes the poster image public and publishes the entry. Reject it if it is not genuine.
 - **Manage:** `/admin/requirements/posters` — Archive (closed, off the website), Unarchive, Delete (to the bin),
   Edit (opens the full editor at `/admin/content/requirement_posts/<id>` for company name, benefits, apply-by date).
 - Needs the Content Manager role (or `content.edit` + `media.manage`). Without `content.publish` the poster goes to
@@ -29,7 +36,8 @@ Published posters appear on the homepage, at `/requirements` and `/requirements/
 
 ## 2. CV submissions (`/admin/cv-submissions`)
 
-Every CV sent through `/send-cv` lands here, newest first, and a copy goes to the business inbox email. The
+Every CV sent through `/send-cv` lands here, newest first, and a copy goes to the business inbox email (CVs shared
+from a phone's Share button arrive the same way, with the shared file as the CV). The
 list shows name, phone (with **Call** and **WhatsApp** buttons — using them is logged), trade, country, the
 requirement it was for, date and status. Filter by status, trade, country or search by name.
 

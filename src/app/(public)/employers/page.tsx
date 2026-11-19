@@ -70,6 +70,9 @@ export default function EmployersPage() {
               <CtaLink href="/employers/request" cta="submit_workforce_requirement" location="employers_models" variant="primary" arrow>
                 Submit your workforce requirement
               </CtaLink>
+              <CtaLink href="/requirements/submit" cta="post_requirement_poster" location="employers_models" variant="outline" arrow>
+                Post a requirement
+              </CtaLink>
             </div>
           </div>
           <ul className="grid content-start gap-3 sm:grid-cols-2">

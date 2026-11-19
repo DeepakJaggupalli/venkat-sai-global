@@ -39,7 +39,17 @@ export function FeatureGrid({ items, columns = 3, className, icon }: { items: re
 }
 
 /** Numbered process steps: a hairline timeline (vertical on phones, a four-column row on desktop). */
-export function StepList({ steps, className }: { steps: readonly TitledItem[] | null | undefined; className?: string; /** @deprecated no dark bands any more */ onDark?: boolean }) {
+export function StepList({
+  steps,
+  className,
+  stepLabel = "Step {n}: ",
+}: {
+  steps: readonly TitledItem[] | null | undefined;
+  className?: string;
+  /** Screen-reader prefix, "{n}" is the step number. */
+  stepLabel?: string;
+  /** @deprecated no dark bands any more */ onDark?: boolean;
+}) {
   const list = clean(steps);
   if (!list.length) return null;
   return (
@@ -51,7 +61,7 @@ export function StepList({ steps, className }: { steps: readonly TitledItem[] | 
             {String(i + 1).padStart(2, "0")}
           </p>
           <h3 className="mt-2 font-heading text-lg font-bold tracking-tight text-foreground">
-            <span className="sr-only">Step {i + 1}: </span>
+            <span className="sr-only">{stepLabel.replace("{n}", String(i + 1))}</span>
             {step.title}
           </h3>
           {step.description ? <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{step.description}</p> : null}

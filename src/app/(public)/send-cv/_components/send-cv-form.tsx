@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef, useState, useTransition, type ChangeEvent, type FormEvent } from "react";
 
 import { ConsentCheckbox, Honeypot } from "@/components/public/forms/form-parts";
+import { SharedFileCard, type SharedFileView } from "@/components/public/shared-file-card";
 import { FormErrorAlert, FormField, fieldErrorsFor } from "@/components/shared/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,18 +28,21 @@ function formatSize(bytes: number): string {
 /**
  * The short "Send your CV" form. Posts the fields and the CV together to /send-cv/submit (a route handler, so
  * the file is not limited by the Server Action body size). Without JavaScript the same form posts normally and
- * the handler redirects back with the reference.
+ * the handler redirects back with the reference. A file shared from the phone (/share → ?shared=<token>) is shown
+ * instead of the picker and sent as the `shared` token (no new upload).
  */
 export function SendCvForm({
   trades,
   countries,
   requirement,
   whatsappGroupUrl,
+  shared = null,
 }: {
   trades: Option[];
   countries: Option[];
   requirement: { slug: string; title: string } | null;
   whatsappGroupUrl: string | null;
+  shared?: SharedFileView | null;
 }) {
   const [state, setState] = useState<ActionState<CvSubmissionResult>>(null);
   const [pending, startTransition] = useTransition();
@@ -46,6 +50,7 @@ export function SendCvForm({
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [requirementRef, setRequirementRef] = useState(requirement);
+  const [sharedFile, setSharedFile] = useState(shared);
   const fileInput = useRef<HTMLInputElement>(null);
 
   if (state?.ok && state.data) {
@@ -187,32 +192,52 @@ export function SendCvForm({
         <Textarea rows={3} maxLength={1000} className="text-base" />
       </FormField>
 
-      <FormField label="Your CV" name="cv" required errors={cvErrors} hint={`${CV_TYPES_LABEL}, up to 4 MB. A clear photo of your CV is fine.`}>
-        {(control) => (
-          <div className="space-y-2">
-            <label
-              htmlFor={control.id}
-              className={cn(
-                "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-navy/30 bg-surface-subtle px-4 py-3 text-base font-semibold text-navy hover:border-navy/60 focus-within:ring-3 focus-within:ring-ring/50",
-                cvErrors?.length ? "border-destructive" : null,
-              )}
-            >
-              <FileUp className="size-6 shrink-0" aria-hidden="true" />
-              <span>{file ? "Choose a different file" : "Choose your CV file or photo"}</span>
-            </label>
-            <input {...control} ref={fileInput} type="file" accept={CV_ACCEPT} onChange={onFile} className="sr-only" data-testid="cv-input" />
-            {file ? (
-              <p className="flex flex-wrap items-center gap-2 text-sm text-foreground" data-testid="cv-chosen">
-                <span className="font-medium">{file.name}</span>
-                <span className="text-muted-foreground">{formatSize(file.size)}</span>
-                <button type="button" onClick={clearFile} className="rounded-md px-2 py-1 text-sm font-medium text-navy underline underline-offset-4 hover:bg-surface-subtle">
-                  Remove
-                </button>
-              </p>
-            ) : null}
-          </div>
-        )}
-      </FormField>
+      {sharedFile ? (
+        <div className="space-y-2">
+          <input type="hidden" name="shared" value={sharedFile.token} />
+          <SharedFileCard
+            file={sharedFile}
+            label="Your CV (shared from your phone)"
+            action={
+              <button type="button" onClick={() => setSharedFile(null)} className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-navy underline underline-offset-4 hover:bg-surface-subtle">
+                Change
+              </button>
+            }
+          />
+          {cvErrors?.length ? (
+            <p role="alert" className="text-sm text-danger-strong">
+              {cvErrors[0]}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <FormField label="Your CV" name="cv" required errors={cvErrors} hint={`${CV_TYPES_LABEL}, up to 4 MB. A clear photo of your CV is fine.`}>
+          {(control) => (
+            <div className="space-y-2">
+              <label
+                htmlFor={control.id}
+                className={cn(
+                  "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-navy/30 bg-surface-subtle px-4 py-3 text-base font-semibold text-navy hover:border-navy/60 focus-within:ring-3 focus-within:ring-ring/50",
+                  cvErrors?.length ? "border-destructive" : null,
+                )}
+              >
+                <FileUp className="size-6 shrink-0" aria-hidden="true" />
+                <span>{file ? "Choose a different file" : "Choose your CV file or photo"}</span>
+              </label>
+              <input {...control} ref={fileInput} type="file" accept={CV_ACCEPT} onChange={onFile} className="sr-only" data-testid="cv-input" />
+              {file ? (
+                <p className="flex flex-wrap items-center gap-2 text-sm text-foreground" data-testid="cv-chosen">
+                  <span className="font-medium">{file.name}</span>
+                  <span className="text-muted-foreground">{formatSize(file.size)}</span>
+                  <button type="button" onClick={clearFile} className="rounded-md px-2 py-1 text-sm font-medium text-navy underline underline-offset-4 hover:bg-surface-subtle">
+                    Remove
+                  </button>
+                </p>
+              ) : null}
+            </div>
+          )}
+        </FormField>
+      )}
 
       <ConsentCheckbox state={state} label="I agree that Venkat Sai Global may call, WhatsApp or message me about jobs and keep my CV for this purpose." />
 

@@ -19,13 +19,31 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png", purpose: "any" },
     ],
-    // Android (installed app): Share -> Venkat Sai Global on a poster in Gallery or WhatsApp opens the staff
-    // "Post requirement" page with the image (docs/REQUIREMENT_POSTERS.md). iOS has no share targets.
+    // Android (installed app): Share -> Venkat Sai Global on a photo or document in Gallery, Files or WhatsApp.
+    // POST /share routes staff with poster permissions to "Post requirement" and everyone else to /share/choose
+    // ("Send as my CV" / "Post a job requirement"); docs/REQUIREMENT_POSTERS.md. iOS has no share targets.
     share_target: {
-      action: "/admin/requirements/posters/share",
+      action: "/share",
       method: "POST",
       enctype: "multipart/form-data",
-      params: { title: "title", text: "text", url: "url", files: [{ name: "poster", accept: ["image/*"] }] },
+      params: {
+        title: "title",
+        text: "text",
+        url: "url",
+        files: [
+          {
+            name: "file",
+            accept: [
+              "image/*",
+              "application/pdf",
+              ".doc",
+              ".docx",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ],
+          },
+        ],
+      },
     },
   };
 }

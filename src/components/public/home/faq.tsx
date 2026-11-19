@@ -3,20 +3,21 @@ import type { PublishedEntry } from "@/modules/content/types";
 
 import { FaqSummary } from "../blocks";
 import { CtaLink } from "../cta-link";
+import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
 import { Section, SectionHeading, type SectionTone } from "../section";
 
 /** Homepage FAQ: published CMS questions as an accordion (details/summary). Renders nothing without questions. */
-export function HomeFaqSection({ tone = "white", faqs }: { faqs: readonly PublishedEntry<"faqs">[] } & { tone?: SectionTone }) {
+export function HomeFaqSection({ tone = "white", faqs, t = EN_MARKETING }: { faqs: readonly PublishedEntry<"faqs">[]; t?: MarketingT } & { tone?: SectionTone }) {
   const list = faqs.filter((f) => f.title?.trim() && f.data.answer);
   if (!list.length) return null;
   return (
     <Section tone={tone} labelledBy="home-faq-title" data-testid="home-faq">
       <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
         <div>
-          <SectionHeading id="home-faq-title" eyebrow="Questions" title="Good to know" intro="Straight answers about applying, training and travel." />
+          <SectionHeading id="home-faq-title" eyebrow={t("common.questions")} title={t("faq.title")} intro={t("faq.intro")} />
           <div className="mt-8">
             <CtaLink href="/faqs" cta="all_faqs" location="home_faq" variant="outline" arrow>
-              All questions
+              {t("faq.all")}
             </CtaLink>
           </div>
         </div>

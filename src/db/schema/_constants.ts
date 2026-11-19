@@ -94,6 +94,8 @@ export const FILE_PURPOSES = [
   "cv_submission_document",
   /** "Prepare my resume" service: the candidate's photo and the generated DOCX/PDF; staff-only, sensitive. */
   "resume_service",
+  /** Web Share Target / "Choose a file" on /share: short-lived (2 h) private holding area before the visitor picks CV or requirement. */
+  "shared_upload",
   "invoice",
   "data_export",
   "other",

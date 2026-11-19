@@ -133,52 +133,58 @@ async function cancelEntryApprovals(entryId: string, actorUserId: string | null,
 export async function createEntry(ctx: StaffContext, input: CreateEntryInput): Promise<{ id: string; slug: string; version: number }> {
   assertStaff(ctx, "content.edit");
   try {
-    return await db.transaction(async (tx) => {
-      const fixed = fixedSlugFor(input.collection);
-      let slug: string;
-      if (fixed) {
-        const [existing] = await tx
-          .select({ id: cmsEntries.id })
-          .from(cmsEntries)
-          .where(and(eq(cmsEntries.collection, input.collection), eq(cmsEntries.locale, input.locale), eq(cmsEntries.slug, fixed)))
-          .limit(1);
-        if (existing) throw new ActionError(`${getCollection(input.collection).label} already exists in this language. Edit it instead.`);
-        slug = fixed;
-      } else if (input.slug) {
-        await claimSlug(input.collection, input.locale, input.slug, null, tx);
-        slug = input.slug;
-      } else {
-        slug = await uniqueSlugFor(input.collection, input.locale, input.title, tx);
-      }
-      const content = await prepareEntryContent(input.collection, { ...input, slug }, tx);
-      const [entry] = await tx
-        .insert(cmsEntries)
-        .values({
-          collection: input.collection,
-          locale: input.locale,
-          ...contentColumns(content),
-          searchText: entrySearchText(input.collection, content),
-          status: "draft",
-          currentVersion: 1,
-          createdByUserId: ctx.user.id,
-          updatedByUserId: ctx.user.id,
-        })
-        .returning({ id: cmsEntries.id });
-      await insertVersion(entry!.id, 1, content, input.note ?? "Created", ctx.user.id, tx);
-      await syncEntryUsages(entry!.id, tx);
-      await audit({
-        action: "content.entry_created",
-        entityType: "cms_entry",
-        entityId: entry!.id,
-        actorUserId: ctx.user.id,
-        metadata: { collection: input.collection, slug, locale: input.locale },
-        tx,
-      });
-      return { id: entry!.id, slug, version: 1 };
-    });
+    return await db.transaction((tx) => insertDraftEntry(input, ctx.user.id, tx));
   } catch (error) {
     rethrowConstraint(error);
   }
+}
+
+/**
+ * The draft insert behind createEntry, in the caller's transaction. No permission check: trusted callers only
+ * (createEntry, and public submissions that create a draft for staff to review, actor null).
+ */
+export async function insertDraftEntry(input: CreateEntryInput, actorUserId: string | null, tx: Tx): Promise<{ id: string; slug: string; version: number }> {
+  const fixed = fixedSlugFor(input.collection);
+  let slug: string;
+  if (fixed) {
+    const [existing] = await tx
+      .select({ id: cmsEntries.id })
+      .from(cmsEntries)
+      .where(and(eq(cmsEntries.collection, input.collection), eq(cmsEntries.locale, input.locale), eq(cmsEntries.slug, fixed)))
+      .limit(1);
+    if (existing) throw new ActionError(`${getCollection(input.collection).label} already exists in this language. Edit it instead.`);
+    slug = fixed;
+  } else if (input.slug) {
+    await claimSlug(input.collection, input.locale, input.slug, null, tx);
+    slug = input.slug;
+  } else {
+    slug = await uniqueSlugFor(input.collection, input.locale, input.title, tx);
+  }
+  const content = await prepareEntryContent(input.collection, { ...input, slug }, tx);
+  const [entry] = await tx
+    .insert(cmsEntries)
+    .values({
+      collection: input.collection,
+      locale: input.locale,
+      ...contentColumns(content),
+      searchText: entrySearchText(input.collection, content),
+      status: "draft",
+      currentVersion: 1,
+      createdByUserId: actorUserId,
+      updatedByUserId: actorUserId,
+    })
+    .returning({ id: cmsEntries.id });
+  await insertVersion(entry!.id, 1, content, input.note ?? "Created", actorUserId, tx);
+  await syncEntryUsages(entry!.id, tx);
+  await audit({
+    action: "content.entry_created",
+    entityType: "cms_entry",
+    entityId: entry!.id,
+    actorUserId,
+    metadata: { collection: input.collection, slug, locale: input.locale },
+    tx,
+  });
+  return { id: entry!.id, slug, version: 1 };
 }
 
 /**

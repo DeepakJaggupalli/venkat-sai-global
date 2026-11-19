@@ -125,8 +125,9 @@ export async function storeFile(input: StoreFileInput): Promise<FileRow> {
 
   // --- Malware scan -------------------------------------------------------------------------
   // Server-generated purposes (e.g. data exports) are produced by the platform itself; scanning
-  // them adds nothing and large exports would exceed clamd's stream limit.
-  const generatedOnly = policy.upload.every((rule) => rule.kind === "system");
+  // them adds nothing and large exports would exceed clamd's stream limit. Visitor uploads that
+  // arrive through a module's own route (CVs, shared files) are scanned like any other upload.
+  const generatedOnly = !policy.visitorUpload && policy.upload.every((rule) => rule.kind === "system");
   const scanning = isMalwareScanningEnabled() && !generatedOnly;
   let scanStatus: FileScanStatus = scanning ? "pending" : "not_scanned";
   let scanDetail: string | null = null;

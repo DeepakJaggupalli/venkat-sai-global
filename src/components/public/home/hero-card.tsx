@@ -1,33 +1,57 @@
 import { ArrowRight, Check, Plane } from "lucide-react";
 import Link from "next/link";
 
+import type { Locale } from "@/i18n/config";
 import { formatRelative } from "@/lib/format";
 
 import { CmsImage } from "../cms-media";
 import { Flag } from "../flag";
+import { EN_MARKETING, splitAround, type MarketingT } from "../marketing-i18n";
 import type { PosterCard } from "../requirements/data";
 
 /**
  * The "product card" on the right of the homepage hero: the latest published requirement poster as a clean,
  * structured card (flag, destination, trades with pay, an Apply pill), or a static route card when nothing is
  * published. Server components; the poster image is a small thumbnail so the card stays calm.
+ * Poster content (trades, pay, benefits) is shown as published.
  */
 
 const CARD = "relative w-full rounded-3xl border border-border bg-white p-6 shadow-[0_1px_2px_rgb(10_10_11/0.04),0_24px_60px_-12px_rgb(10_10_11/0.12)] sm:p-7";
 
-export function NowHiringCard({ poster }: { poster: PosterCard }) {
+/** "3 days ago" in the page language (English keeps the existing wording). */
+function relativeTime(date: Date, locale: Locale): string {
+  if (locale === "en") return formatRelative(date);
+  const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+    ["year", 31_536_000],
+    ["month", 2_592_000],
+    ["day", 86_400],
+    ["hour", 3_600],
+    ["minute", 60],
+  ];
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  for (const [unit, size] of units) {
+    if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
+  }
+  return rtf.format(seconds, "second");
+}
+
+export function NowHiringCard({ poster, t = EN_MARKETING }: { poster: PosterCard; t?: MarketingT }) {
   const trades = poster.trades.slice(0, 3);
   const lead = trades[0];
   const applyHref = `/send-cv?requirement=${encodeURIComponent(poster.slug)}`;
+  const [postedBefore, postedAfter] = splitAround(t("card.posted"), "time");
   return (
     <article className={CARD} aria-labelledby="hero-card-title" data-testid="hero-now-hiring">
       <div className="flex items-center justify-between gap-3">
         <p className="inline-flex items-center gap-2 rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal-strong">
           <span aria-hidden="true" className="size-1.5 rounded-full bg-teal" />
-          Now hiring
+          {t("card.nowHiring")}
         </p>
         <p className="text-xs text-muted-foreground">
-          Posted <time dateTime={poster.publishedAt.toISOString()}>{formatRelative(poster.publishedAt)}</time>
+          {postedBefore}
+          <time dateTime={poster.publishedAt.toISOString()}>{relativeTime(poster.publishedAt, t.locale)}</time>
+          {postedAfter}
         </p>
       </div>
 
@@ -57,17 +81,17 @@ export function NowHiringCard({ poster }: { poster: PosterCard }) {
       {trades.length > 1 || poster.benefits.length ? (
         <div className="mt-6 space-y-3 border-t border-border pt-5">
           {trades.length > 1 ? (
-            <ul aria-label="Trades" className="space-y-2 text-sm">
-              {trades.slice(1).map((t, i) => (
-                <li key={`${t.trade}-${i}`} className="flex flex-wrap justify-between gap-x-4">
-                  <span className="font-medium text-foreground">{t.trade}</span>
-                  {t.pay ? <span className="text-muted-foreground tabular-nums">{t.pay}</span> : null}
+            <ul aria-label={t("card.trades")} className="space-y-2 text-sm">
+              {trades.slice(1).map((trade, i) => (
+                <li key={`${trade.trade}-${i}`} className="flex flex-wrap justify-between gap-x-4">
+                  <span className="font-medium text-foreground">{trade.trade}</span>
+                  {trade.pay ? <span className="text-muted-foreground tabular-nums">{trade.pay}</span> : null}
                 </li>
               ))}
             </ul>
           ) : null}
           {poster.benefits.length ? (
-            <ul aria-label="Benefits" className="flex flex-wrap gap-1.5">
+            <ul aria-label={t("card.benefits")} className="flex flex-wrap gap-1.5">
               {poster.benefits.slice(0, 4).map((b) => (
                 <li key={b} className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground">
                   <Check aria-hidden="true" className="size-3 text-teal-strong" strokeWidth={3} />
@@ -85,33 +109,35 @@ export function NowHiringCard({ poster }: { poster: PosterCard }) {
           className="group/apply inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b] focus-visible:outline-2 focus-visible:outline-offset-2"
           data-testid="hero-card-apply"
         >
-          Apply now
+          {t("card.apply")}
           <ArrowRight aria-hidden="true" className="size-4 transition-transform duration-150 group-hover/apply:translate-x-0.5 motion-reduce:transition-none" />
         </Link>
         <Link href={poster.href} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-          View details
+          {t("card.details")}
         </Link>
-        <span className="ml-auto text-xs text-muted-foreground">Free to apply</span>
+        <span className="ml-auto text-xs text-muted-foreground">{t("card.free")}</span>
       </div>
     </article>
   );
 }
 
+const ROUTE_ITEMS = ["route.visa", "route.medical", "route.documents", "route.ticket"] as const;
+
 /** Static card used when no requirement poster is published: the route from Visakhapatnam and what we handle. */
-export function RouteCard() {
+export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
   return (
     <article className={CARD} aria-labelledby="hero-card-title" data-testid="hero-route-card">
-      <p className="label-dot">Your route abroad</p>
+      <p className="label-dot">{t("route.eyebrow")}</p>
       <h2 id="hero-card-title" className="sr-only">
-        From Visakhapatnam to your job abroad
+        {t("route.title")}
       </h2>
       <div className="mt-8 grid grid-cols-[auto_1fr_auto] items-center gap-4">
         <div>
           <p className="flex items-center gap-2 font-display text-xl text-foreground">
             <Flag code="IN" />
-            Vizag
+            {t("route.from")}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">Visakhapatnam, India</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("route.fromDetail")}</p>
         </div>
         <div aria-hidden="true" className="relative flex items-center">
           <span className="h-px w-full border-t border-dashed border-[#c9cdd5]" />
@@ -121,24 +147,24 @@ export function RouteCard() {
         </div>
         <div className="text-right">
           <p className="flex items-center justify-end gap-2 font-display text-xl text-foreground">
-            Dubai
+            {t("route.to")}
             <Flag code="AE" />
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">United Arab Emirates</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("route.toDetail")}</p>
         </div>
       </div>
-      <ul aria-label="What we help with" className="mt-8 flex flex-wrap gap-2">
-        {["Visa", "Medical", "Documents", "Ticket"].map((item) => (
-          <li key={item} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground">
+      <ul aria-label={t("route.helpLabel")} className="mt-8 flex flex-wrap gap-2">
+        {ROUTE_ITEMS.map((key) => (
+          <li key={key} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground">
             <Check aria-hidden="true" className="size-3.5 text-teal-strong" strokeWidth={3} />
-            {item}
+            {t(key)}
           </li>
         ))}
       </ul>
       <div className="mt-8 flex items-center justify-between gap-4 border-t border-border pt-5">
-        <p className="text-sm text-muted-foreground">You never pay a placement fee.</p>
+        <p className="text-sm text-muted-foreground">{t("route.noFee")}</p>
         <Link href="/requirements" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-          Requirements
+          {t("route.requirements")}
           <ArrowRight aria-hidden="true" className="size-4" />
         </Link>
       </div>

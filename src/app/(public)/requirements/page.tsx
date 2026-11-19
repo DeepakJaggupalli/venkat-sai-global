@@ -2,6 +2,7 @@ import { ArrowRight, Megaphone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { InstallAppButton } from "@/components/public/install-app-button";
 import { PageHero } from "@/components/public/page-hero";
 import { CallButton, CONTACT_BUTTON_STYLES, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { loadPosterCountries, loadPosterPage, whatsappGroupUrlFrom } from "@/components/public/requirements/data";
@@ -92,8 +93,12 @@ export default async function RequirementsPage({ searchParams }: Props) {
           />
         )}
       </div>
-      <div className="container-page pb-16">
+      <div className="container-page flex flex-col gap-4 pb-16 sm:flex-row sm:flex-wrap sm:items-center">
         <FollowWhatsAppLink groupUrl={whatsappGroupUrlFrom(settings)} className="w-full sm:w-auto" />
+        <Link href="/requirements/submit" className={cn(CONTACT_BUTTON_STYLES.outline, "w-full sm:w-auto")} data-testid="post-requirement-link">
+          Hiring? Post a requirement
+        </Link>
+        <InstallAppButton />
       </div>
       <QuickCvCta />
     </>

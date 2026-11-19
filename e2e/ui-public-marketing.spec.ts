@@ -20,9 +20,9 @@ test.describe("homepage", () => {
     await page.goto("/");
     const hero = page.getByTestId("home-hero");
     await expect(hero.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(hero.getByRole("link", { name: /explore opportunities/i })).toBeVisible();
-    await expect(hero.getByRole("link", { name: /hire through venkat sai/i })).toBeVisible();
-    await expect(hero.getByRole("link", { name: /become a partner/i })).toBeVisible();
+    await expect(hero.getByRole("link", { name: /send your cv/i })).toBeVisible();
+    await expect(hero.getByRole("link", { name: /explore jobs/i })).toBeVisible();
+    await expect(hero.getByRole("link", { name: /travel agency/i })).toHaveAttribute("href", "#manpower");
     await expect(page.getByTestId("home-opportunities")).toBeVisible();
     expect(cspOrHydration(errors)).toEqual([]);
   });

@@ -55,6 +55,7 @@ export function PageHero({
   photo,
   visual,
   meta,
+  after,
   className,
 }: {
   title: ReactNode;
@@ -69,6 +70,8 @@ export function PageHero({
   visual?: ReactNode;
   /** Small facts row under the intro (e.g. "Last reviewed"). */
   meta?: ReactNode;
+  /** Small extra row under the actions (e.g. a language switch). */
+  after?: ReactNode;
   className?: string;
 }) {
   const image = media && media.kind === "image" ? media : null;
@@ -98,6 +101,7 @@ export function PageHero({
           {intro ? <div className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">{intro}</div> : null}
           {meta ? <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">{meta}</div> : null}
           {actions ? <div className="mt-9 flex flex-wrap gap-3">{actions}</div> : null}
+          {after ? <div className="mt-6">{after}</div> : null}
         </div>
         {side ? <div className="relative min-w-0">{side}</div> : null}
       </div>

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { Logo } from "@/components/brand/logo";
 import { ContactIcons, ContactList, MapEmbed, resolveContact, WhatsAppIcon, type ResolvedContact } from "@/components/public/contact-links";
+import { InstallAppButton } from "@/components/public/install-app-button";
 import { CONTACT } from "@/config/contact";
 import { BRAND } from "@/config/site";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,7 @@ export function PublicFooter({
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
+          <InstallAppButton className="mt-4" />
           {safeSocial.length > 0 && (
             <ul role="list" aria-label="Social media" className="mt-6 flex flex-wrap gap-2">
               {safeSocial.map((link) => (

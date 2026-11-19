@@ -6,6 +6,7 @@ import type { JobCard } from "@/modules/jobs/types";
 import type { CatalogueCourse } from "@/modules/training/queries";
 
 import { CtaLink } from "../cta-link";
+import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
 import { CourseMiniCard, JobMiniCard } from "../opportunity-cards";
 import { Section, SectionHeading, type SectionTone } from "../section";
 
@@ -36,12 +37,14 @@ export function OpportunitiesSection({
   courses,
   heading,
   intro,
+  t = EN_MARKETING,
 }: {
   jobs: readonly JobCard[];
   internships: readonly JobCard[];
   courses: readonly CatalogueCourse[];
   heading?: string | null;
   intro?: string | null;
+  t?: MarketingT;
 } & { tone?: SectionTone }) {
   const columns = [jobs.length, internships.length, courses.length].filter(Boolean).length;
   if (!columns) return null;
@@ -49,32 +52,32 @@ export function OpportunitiesSection({
     <Section tone={tone} labelledBy="home-opportunities-title" data-testid="home-opportunities">
       <SectionHeading
         id="home-opportunities-title"
-        eyebrow="Open now"
-        title={heading || "Jobs and training open right now"}
-        intro={intro || "Jobs, internships and training programmes published on Venkat Sai Global. Applying is always free for candidates."}
+        eyebrow={t("opportunities.eyebrow")}
+        title={heading || t("opportunities.title")}
+        intro={intro || t("opportunities.intro")}
         action={
           <CtaLink href="/sign-up" cta="build_career_profile" location="home_opportunities" variant="outline" arrow>
-            Build your career profile
+            {t("common.buildProfile")}
           </CtaLink>
         }
       />
       <div className={cn("mt-12 grid gap-8", columns === 3 ? "lg:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "max-w-xl")}>
         {jobs.length ? (
-          <Column id="home-opp-jobs" icon={<Briefcase />} title="Jobs" viewAll={{ href: "/jobs", label: "All jobs", cta: "view_all_jobs" }}>
+          <Column id="home-opp-jobs" icon={<Briefcase />} title={t("opportunities.jobs")} viewAll={{ href: "/jobs", label: t("opportunities.allJobs"), cta: "view_all_jobs" }}>
             {jobs.map((job) => (
               <JobMiniCard key={job.id} job={job} headingLevel="h4" />
             ))}
           </Column>
         ) : null}
         {internships.length ? (
-          <Column id="home-opp-internships" icon={<GraduationCap />} title="Internships" viewAll={{ href: "/jobs?type=internship", label: "All internships", cta: "view_all_internships" }}>
+          <Column id="home-opp-internships" icon={<GraduationCap />} title={t("opportunities.internships")} viewAll={{ href: "/jobs?type=internship", label: t("opportunities.allInternships"), cta: "view_all_internships" }}>
             {internships.map((job) => (
               <JobMiniCard key={job.id} job={job} headingLevel="h4" />
             ))}
           </Column>
         ) : null}
         {courses.length ? (
-          <Column id="home-opp-training" icon={<BookOpen />} title="Training" viewAll={{ href: "/training", label: "All programmes", cta: "view_all_training" }}>
+          <Column id="home-opp-training" icon={<BookOpen />} title={t("opportunities.training")} viewAll={{ href: "/training", label: t("opportunities.allTraining"), cta: "view_all_training" }}>
             {courses.map((course) => (
               <CourseMiniCard key={course.id} course={course} headingLevel="h4" />
             ))}

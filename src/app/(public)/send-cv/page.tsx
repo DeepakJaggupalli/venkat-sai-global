@@ -2,12 +2,15 @@ import { Clock, FilePen, PhoneCall, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import { InstallAppButton } from "@/components/public/install-app-button";
 import { PageHero } from "@/components/public/page-hero";
 import { CallButton, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { whatsappGroupUrlFrom } from "@/components/public/requirements/data";
 import { buildPageMetadata, settle } from "@/components/public/server";
+import { loadSharedFile } from "@/components/public/shared-file";
 import { getSiteSettings } from "@/components/public/site-data";
 import { sp as pick, type SearchParams } from "@/lib/http";
+import { getFilePolicy } from "@/modules/files/policies";
 import { findRequirementPoster } from "@/modules/operations/cv-submissions";
 import { listCountries, listJobCategories } from "@/modules/taxonomy/queries";
 
@@ -25,12 +28,20 @@ export default async function SendCvPage({ searchParams }: { searchParams: Promi
   const requirementSlug = pick(sp, "requirement")?.toLowerCase();
   const sent = pick(sp, "sent");
   const error = pick(sp, "error");
-  const [settings, categories, countries, requirement] = await Promise.all([
+  const [settings, categories, countries, requirement, shared] = await Promise.all([
     getSiteSettings(),
     settle("job_categories", () => listJobCategories(), []),
     settle("countries", () => listCountries({ destinationsOnly: true }), []),
     requirementSlug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(requirementSlug) ? settle("requirement_poster", () => findRequirementPoster(requirementSlug), null) : Promise.resolve(null),
+    loadSharedFile(pick(sp, "shared")),
   ]);
+  // A file shared from the phone (/share/choose → "Send as my CV"), when its type is accepted for CVs.
+  const sharedUsable = shared.file && (getFilePolicy("cv_submission").allowedMimeTypes as readonly string[]).includes(shared.file.mimeType) ? shared.file : null;
+  const sharedNotice = shared.expired
+    ? "The file you shared has expired or was already sent. Please choose your CV below."
+    : shared.file && !sharedUsable
+      ? "The file you shared cannot be sent as a CV. Please choose a PDF, Word file, JPG or PNG below."
+      : null;
   const whatsappGroupUrl = whatsappGroupUrlFrom(settings);
   const sentCode = sent && /^[A-Z0-9-]{1,40}$/.test(sent) && sent !== "1" ? sent : null;
 
@@ -61,11 +72,17 @@ export default async function SendCvPage({ searchParams }: { searchParams: Promi
                     : "Your CV could not be sent. Please check every required field and that the CV is a PDF, Word file or photo under 4 MB."}
                 </p>
               ) : null}
+              {sharedNotice ? (
+                <p role="status" className="mb-5 rounded-xl border border-border bg-surface-subtle p-4 text-sm text-foreground" data-testid="shared-notice">
+                  {sharedNotice}
+                </p>
+              ) : null}
               <SendCvForm
                 trades={categories.map((c) => ({ value: c.id, label: c.name }))}
                 countries={countries.map((c) => ({ value: c.code, label: c.name }))}
                 requirement={requirement ? { slug: requirement.slug, title: requirement.title } : null}
                 whatsappGroupUrl={whatsappGroupUrl}
+                shared={sharedUsable}
               />
             </>
           )}
@@ -96,6 +113,7 @@ export default async function SendCvPage({ searchParams }: { searchParams: Promi
               Prepare my resume
             </Link>
           </div>
+          <InstallAppButton />
         </aside>
       </div>
     </>

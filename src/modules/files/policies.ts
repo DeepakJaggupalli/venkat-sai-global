@@ -132,6 +132,11 @@ export type FilePolicy = {
   orgView: { permissions: readonly OrgPermission[] } | null;
   /** Only the owner may ever read (no grants, organisation or staff access). */
   ownerOnly: boolean;
+  /**
+   * Uploaded by visitors through a module's own route handler (upload rule "system", never POST /api/v1/uploads):
+   * still malware-scanned like any upload. Server-generated purposes (exports, invoices) skip the scan.
+   */
+  visitorUpload?: boolean;
 };
 
 const MB = 1024 * 1024;
@@ -415,6 +420,7 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
   cv_submission: {
     ...base,
     purpose: "cv_submission",
+    visitorUpload: true,
     label: "CV",
     allowedMimeTypes: [MIME.pdf, MIME.doc, MIME.docx, MIME.jpeg, MIME.png],
     maxBytes: 4 * MB,
@@ -429,6 +435,7 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
   cv_submission_document: {
     ...base,
     purpose: "cv_submission_document",
+    visitorUpload: true,
     label: "Document",
     allowedMimeTypes: [MIME.pdf, MIME.jpeg, MIME.png, MIME.webp],
     maxBytes: 4 * MB,
@@ -444,6 +451,7 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
   resume_service: {
     ...base,
     purpose: "resume_service",
+    visitorUpload: true,
     label: "Resume",
     allowedMimeTypes: [MIME.jpeg, MIME.png, MIME.pdf, MIME.docx],
     maxBytes: 10 * MB,
@@ -452,6 +460,24 @@ export const FILE_POLICIES: Record<FilePurpose, FilePolicy> = {
     dataCategory: "documents",
     upload: [{ kind: "system" }],
     staffView: ["candidates.manage"],
+  },
+  // Web Share Target (POST /share) and the "Choose a file" picker on /share/choose (src/modules/files/shared-uploads.ts):
+  // a photo or document shared by anyone, guests included, held privately until the visitor chooses "Send as my CV"
+  // (re-linked to cv_submission) or "Post a requirement" (copied into cms_media for a draft poster). Only reachable
+  // through a signed 2-hour token; deleted when unused after SHARED_UPLOAD_TTL_MINUTES. Never public, nobody else
+  // reads it. 4 MB keeps the request under the 4.5 MB Vercel limit.
+  shared_upload: {
+    ...base,
+    purpose: "shared_upload",
+    visitorUpload: true,
+    label: "Shared file",
+    allowedMimeTypes: [...RASTER_IMAGES, ...DOCUMENTS],
+    maxBytes: 4 * MB,
+    imageVariants: ["thumb"],
+    sensitive: true,
+    dataCategory: "documents",
+    upload: [{ kind: "system" }],
+    ownerOnly: true,
   },
   invoice: {
     ...base,

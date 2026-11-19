@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ProgressiveBlur } from "@/components/motion-primitives/progressive-blur";
 
 import { Flag } from "../flag";
+import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
 import { Marquee } from "../marquee";
 import { PausableRails } from "../pausable-rails";
 
@@ -29,20 +30,21 @@ export const DEFAULT_DESTINATION_COUNTRIES: readonly MarqueeCountry[] = [
   { code: "IN", name: "India" },
 ];
 
-export const TRADES: readonly string[] = [
-  "Welder 6G",
-  "Welder 3G / 4G",
-  "TIG welder",
-  "Pipe fitter",
-  "Structural fitter",
-  "Fabricator",
-  "Electrician",
-  "Rigger",
-  "Scaffolder",
-  "Grinder",
-  "NDT technician",
-  "Mechanical helper",
-];
+/** Trade chips (keys in the public-marketing catalogue). */
+export const TRADE_KEYS = [
+  "trade.welder6g",
+  "trade.welder3g4g",
+  "trade.tigWelder",
+  "trade.pipeFitter",
+  "trade.structuralFitter",
+  "trade.fabricator",
+  "trade.electrician",
+  "trade.rigger",
+  "trade.scaffolder",
+  "trade.grinder",
+  "trade.ndtTechnician",
+  "trade.mechanicalHelper",
+] as const;
 
 const CHIP = "inline-flex h-11 items-center gap-2.5 rounded-full border border-border bg-white px-4 text-[15px] font-medium whitespace-nowrap text-foreground";
 
@@ -82,13 +84,16 @@ export function DestinationMarquees({
   heading,
   intro,
   guidesHref,
+  t = EN_MARKETING,
 }: {
   countries: readonly MarqueeCountry[];
   heading?: string | null;
   intro?: string | null;
   /** "Country guides" link (shown when the CMS global reach section is on and guides exist). */
   guidesHref?: string | null;
+  t?: MarketingT;
 }) {
+  const trades = TRADE_KEYS.map((key) => t(key));
   const list = countries.length >= 6 ? countries : DEFAULT_DESTINATION_COUNTRIES;
   return (
     <section aria-labelledby="home-where-title" className="overflow-hidden border-y border-border bg-surface-subtle py-16 sm:py-20 lg:py-24" data-testid="home-marquees">
@@ -96,7 +101,7 @@ export function DestinationMarquees({
         <div className="space-y-4">
           <div className="relative">
             <Marquee
-              label="Countries where our people work"
+              label={t("where.countries")}
               items={list}
               itemKey={(c) => c.code + c.name}
               speed="slow"
@@ -110,8 +115,8 @@ export function DestinationMarquees({
           </div>
           <div className="relative">
             <Marquee
-              label="Trades we train and recruit"
-              items={TRADES}
+              label={t("where.trades")}
+              items={trades}
               itemKey={(t) => t}
               reverse
               speed="slow"
@@ -129,16 +134,16 @@ export function DestinationMarquees({
         </div>
       </PausableRails>
       <div className="container-page mt-12 text-center sm:mt-14" data-reveal>
-        <p className="label-dot justify-center">Where our people work</p>
+        <p className="label-dot justify-center">{t("where.eyebrow")}</p>
         <h2 id="home-where-title" className="mx-auto mt-4 max-w-3xl text-balance font-display text-[2rem] text-foreground sm:text-[2.75rem] lg:text-[3.25rem]">
-          {heading || "From Vizag to sites across the Gulf, Europe and Asia"}
+          {heading || t("where.title")}
         </h2>
         <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-          {intro || "We place welders, fitters, electricians, riggers and scaffolders with employers abroad, and prepare them for the job here in Visakhapatnam."}
+          {intro || t("where.intro")}
         </p>
         {guidesHref ? (
           <Link href={guidesHref} className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-            Country guides
+            {t("where.guides")}
             <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         ) : null}

@@ -11,6 +11,8 @@ import type { TaskHandlers } from "./types";
  *  - succeeded tasks older than 14 days, dead tasks older than 90 days
  *  - safety net: purges the stored bytes of soft-deleted files whose grace period has passed
  *    (normally done by the per-file "files.purge" task)
+ *  - safety net: deletes unused shared uploads (Web Share Target) older than 2 hours
+ *    (normally done by the per-file "files.expire_shared_upload" task)
  * Deletes run in batches so no single statement holds locks for long.
  */
 const BATCH = 5000;
@@ -63,6 +65,16 @@ export const tasks: TaskHandlers = {
       }
     }
 
-    ctx.log("system.cleanup finished", { rateLimitBuckets, devOutbox, succeededTasks, deadTasks, filesPurged });
+    let sharedUploadsExpired = 0;
+    const { expireSharedUpload, listExpiredSharedUploads } = await import("@/modules/files/shared-uploads");
+    for (const fileId of await listExpiredSharedUploads(200)) {
+      try {
+        if ((await expireSharedUpload(fileId)) === "expired") sharedUploadsExpired += 1;
+      } catch (error) {
+        ctx.log("system.cleanup: failed to expire shared upload", { fileId, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+
+    ctx.log("system.cleanup finished", { rateLimitBuckets, devOutbox, succeededTasks, deadTasks, filesPurged, sharedUploadsExpired });
   },
 };

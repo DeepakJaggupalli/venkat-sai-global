@@ -12,11 +12,14 @@ import { HomeFaqSection } from "@/components/public/home/faq";
 import { FeaturedServicesSection } from "@/components/public/home/featured-services";
 import { HomeHero, usableHeroCta } from "@/components/public/home/hero";
 import { EmployerBand, HowItWorksSection, TrainingTeaser } from "@/components/public/home/journey";
+import { ManpowerSection } from "@/components/public/home/manpower";
 import { DestinationMarquees } from "@/components/public/home/marquees";
 import { MetricsSection } from "@/components/public/home/metrics";
 import { OpportunitiesSection } from "@/components/public/home/opportunities";
 import { resolveHomepageSections, type ResolvedSection } from "@/components/public/home/sections";
 import { JsonLd } from "@/components/public/json-ld";
+import { LanguageSwitch } from "@/components/public/language-switch";
+import { getMarketingT } from "@/components/public/marketing-locale";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { loadPosterPage } from "@/components/public/requirements/data";
 import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
@@ -66,7 +69,10 @@ function referenced<K extends CmsCollection>(references: ReferenceMap | undefine
 const EMPTY_PAGE = { items: [], assets: {} as AssetMap, references: {} as ReferenceMap, total: 0, page: 1, pageSize: 0, pageCount: 0 };
 
 export default async function HomePage({ searchParams }: Props) {
-  const preview = previewTokenFrom(await searchParams);
+  const sp = await searchParams;
+  const preview = previewTokenFrom(sp);
+  // Designed copy follows the visitor's language (?lang= → saved preference → English); CMS text stays as written.
+  const t = await getMarketingT(sp.lang);
   const detail = await settle("homepage", () => getSingleton("homepage", { preview }), null);
   const home = detail?.entry.data ?? null;
   const sections = resolveHomepageSections(home?.sections);
@@ -120,8 +126,8 @@ export default async function HomePage({ searchParams }: Props) {
   // The specification seed's closing band is treated as "not customised" so the new defaults show.
   const LEGACY_CTA_HEADINGS = new Set([BRAND.tagline, "Your next job could be abroad"]);
   const ctaCustomised = Boolean(ctaBand?.heading?.trim() && !LEGACY_CTA_HEADINGS.has(ctaBand.heading.trim()));
-  const ctaPrimary = usableHeroCta(ctaCustomised ? ctaBand?.primaryCta : null, { label: "Send your CV", href: "/send-cv" });
-  const ctaSecondary = usableHeroCta(ctaCustomised ? ctaBand?.secondaryCta : null, { label: "Explore jobs", href: "/jobs" });
+  const ctaPrimary = usableHeroCta(ctaCustomised ? ctaBand?.primaryCta : null, { label: t("common.sendCv"), href: "/send-cv" });
+  const ctaSecondary = usableHeroCta(ctaCustomised ? ctaBand?.secondaryCta : null, { label: t("common.exploreJobs"), href: "/jobs" });
   const servicesSection = section("services");
   const candidatesSection = section("candidates");
   const metricsSection = section("metrics");
@@ -134,21 +140,22 @@ export default async function HomePage({ searchParams }: Props) {
 
   type Block = { key: string; render: (tone: SectionTone) => ReactNode };
   const blocks: Block[] = [];
-  if (servicesSection) blocks.push({ key: "services", render: (tone) => <FeaturedServicesSection key="services" tone={tone} services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} /> });
+  if (servicesSection) blocks.push({ key: "services", render: (tone) => <FeaturedServicesSection key="services" tone={tone} services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} t={t} /> });
+  blocks.push({ key: "manpower", render: (tone) => <ManpowerSection key="manpower" tone={tone} t={t} /> });
   blocks.push({ key: "requirements", render: (tone) => <LatestRequirements key="requirements" limit={6} tone={tone === "subtle" ? "subtle" : "white"} /> });
-  if (candidatesSection) blocks.push({ key: "candidates", render: (tone) => <HowItWorksSection key="candidates" tone={tone} heading={candidatesSection.heading} intro={candidatesSection.intro} /> });
-  blocks.push({ key: "training", render: (tone) => <TrainingTeaser key="training" tone={tone} /> });
-  if (metricsSection && metrics.length) blocks.push({ key: "metrics", render: (tone) => <MetricsSection key="metrics" tone={tone} metrics={metrics} heading={metricsSection.heading} intro={metricsSection.intro} /> });
+  if (candidatesSection) blocks.push({ key: "candidates", render: (tone) => <HowItWorksSection key="candidates" tone={tone} heading={candidatesSection.heading} intro={candidatesSection.intro} t={t} /> });
+  blocks.push({ key: "training", render: (tone) => <TrainingTeaser key="training" tone={tone} t={t} /> });
+  if (metricsSection && metrics.length) blocks.push({ key: "metrics", render: (tone) => <MetricsSection key="metrics" tone={tone} metrics={metrics} heading={metricsSection.heading} intro={metricsSection.intro} t={t} /> });
   if (opportunitiesSection && hasOpportunities)
     blocks.push({
       key: "opportunities",
       render: (tone) => (
-        <OpportunitiesSection key="opportunities" tone={tone} jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} intro={opportunitiesSection.intro} />
+        <OpportunitiesSection key="opportunities" tone={tone} jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} intro={opportunitiesSection.intro} t={t} />
       ),
     });
-  if (employersSection) blocks.push({ key: "employers", render: (tone) => <EmployerBand key="employers" tone={tone} heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} /> });
+  if (employersSection) blocks.push({ key: "employers", render: (tone) => <EmployerBand key="employers" tone={tone} heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} t={t} /> });
   for (const item of tail) {
-    const text = { heading: item.heading, intro: item.intro };
+    const text = { heading: item.heading, intro: item.intro, t };
     switch (item.key) {
       case "about":
         blocks.push({ key: item.key, render: (tone) => <AboutTeaser key={item.key} tone={tone} about={about} {...text} /> });
@@ -166,8 +173,8 @@ export default async function HomePage({ searchParams }: Props) {
         break;
     }
   }
-  if (audiences.length) blocks.push({ key: "audiences", render: (tone) => <AudienceCards key="audiences" tone={tone === "subtle" ? "subtle" : "white"} audiences={audiences} /> });
-  if (faqs.items.length) blocks.push({ key: "faq", render: (tone) => <HomeFaqSection key="faq" tone={tone} faqs={faqs.items} /> });
+  if (audiences.length) blocks.push({ key: "audiences", render: (tone) => <AudienceCards key="audiences" tone={tone === "subtle" ? "subtle" : "white"} audiences={audiences} t={t} /> });
+  if (faqs.items.length) blocks.push({ key: "faq", render: (tone) => <HomeFaqSection key="faq" tone={tone} faqs={faqs.items} t={t} /> });
   // The rails band after the hero is grey, so the first block is white and they alternate from there.
   const toneAt = (index: number): SectionTone => (index % 2 === 0 ? "white" : "subtle");
   const closingTone = toneAt(blocks.length);
@@ -196,11 +203,18 @@ export default async function HomePage({ searchParams }: Props) {
   };
 
   return (
-    <>
+    <div lang={t.locale}>
       {detail?.preview ? null : <JsonLd data={organization} />}
       <PreviewRibbon show={Boolean(detail?.preview)} />
       <RevealScope>
-        <HomeHero hero={home?.hero} media={heroMedia} poster={latestPoster} openRequirements={posters.total} />
+        <HomeHero
+          hero={home?.hero}
+          media={heroMedia}
+          poster={latestPoster}
+          openRequirements={posters.total}
+          t={t}
+          languageSwitch={<LanguageSwitch path="/" locale={t.locale} label={t("language.label")} />}
+        />
         {banners.length ? (
           <div className="border-y border-border bg-teal-soft/60" data-testid="homepage-banners">
             <ul className="container-page divide-y divide-border">
@@ -213,7 +227,7 @@ export default async function HomePage({ searchParams }: Props) {
                     {b.body ? <span className="text-muted-foreground">{b.body}</span> : null}
                     {href ? (
                       <Link href={href} className="font-semibold text-teal-strong underline underline-offset-4">
-                        {b.linkLabel?.trim() || "Learn more"}
+                        {b.linkLabel?.trim() || t("common.learnMore")}
                       </Link>
                     ) : null}
                   </li>
@@ -227,14 +241,15 @@ export default async function HomePage({ searchParams }: Props) {
           heading={reachSection?.heading}
           intro={reachSection?.intro}
           guidesHref={reachSection && destinations.items.length ? "/global-reach" : null}
+          t={t}
         />
         {blocks.map((block, index) => block.render(toneAt(index)))}
         {ctaSection ? (
           <CtaBand
             location="home_cta_band"
             tone={closingTone === "subtle" ? "subtle" : "white"}
-            heading={ctaSection.heading || (ctaCustomised ? ctaBand?.heading?.trim() : null) || "Your trade can take you anywhere."}
-            body={ctaSection.intro || (ctaCustomised ? ctaBand?.body?.trim() : null) || "Send your CV and trade today. We call you when a matching requirement opens. Applying is always free."}
+            heading={ctaSection.heading || (ctaCustomised ? ctaBand?.heading?.trim() : null) || t("ctaBand.heading")}
+            body={ctaSection.intro || (ctaCustomised ? ctaBand?.body?.trim() : null) || t("ctaBand.body")}
             primary={{ ...ctaPrimary, id: "cta_band_primary" }}
             secondary={{ ...ctaSecondary, id: "cta_band_secondary" }}
           />
@@ -243,8 +258,9 @@ export default async function HomePage({ searchParams }: Props) {
           tone={ctaSection ? contactTone : closingTone}
           contact={contactDetails}
           channel={{ url: contactDetails.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl, kind: contactDetails.whatsappGroupUrl ? "group" : "channel" }}
+          t={t}
         />
       </RevealScope>
-    </>
+    </div>
   );
 }

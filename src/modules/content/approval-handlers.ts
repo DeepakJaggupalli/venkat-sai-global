@@ -19,7 +19,9 @@ import { applyMediaPublic } from "./media";
  *    publishEntry / scheduleEntry / rollbackEntry). Approval publishes the pinned version — or schedules it
  *    when the request carries a future publishAt — after re-checking the consent evidence and all publication
  *    rules. Rejection / changes requested leave the entry as it is.
- *  - content_publication: editors without content.publish asking for publication (requestPublication).
+ *  - content_publication: editors without content.publish asking for publication (requestPublication), and
+ *    drafts submitted by the public (public-submissions.ts). Those carry `publicAssetIds`: media kept internal
+ *    until approval, made public (readiness re-checked) right before the entry is published.
  *  - media_asset: public use of a media item showing identifiable people. Approval makes it public (consent is
  *    re-checked); rejection leaves it internal.
  *  - partner_announcement: announcements requested by partner organisations. Approval publishes (or schedules)
@@ -32,6 +34,7 @@ const publicationPayload = z.object({
   collection: z.string().optional(),
   version: z.number().int().min(1),
   publishAt: z.iso.datetime({ offset: true }).nullable().optional(),
+  publicAssetIds: z.array(z.uuid()).max(10).optional(),
 });
 
 function parsePublication(request: ApprovalRequestRow): z.infer<typeof publicationPayload> {
@@ -49,6 +52,7 @@ const publicationHandler: ApprovalHandler = {
   async onDecision({ request, decision, reason, actorUserId, tx }) {
     const payload = parsePublication(request);
     if (decision === "approved") {
+      for (const assetId of payload.publicAssetIds ?? []) await applyMediaPublic(assetId, actorUserId, tx);
       const outcome = await applyApprovedPublication(
         { entryId: payload.entryId, version: payload.version, publishAt: payload.publishAt ? new Date(payload.publishAt) : null },
         actorUserId,

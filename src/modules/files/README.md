@@ -71,11 +71,22 @@ Client-safe imports: `@/modules/files/policies` (`getClientFilePolicy`, `prechec
 - **`<FileLink file download? showMeta? />`** — open in a new tab or download; accessible name
   includes type and size.
 
+### Shared uploads (`@/modules/files/shared-uploads`, server-only)
+
+Web Share Target / `/share/choose` holding area (purpose `shared_upload`): `storeSharedUpload(upload, { ownerUserId,
+ipHash, shared })` → `{ file, token, expiresAt }` (rate limited per IP, expiry task enqueued); `getSharedUpload(token)`;
+`claimSharedUpload(token, { purpose, ownerUserId, metadata }, tx)` (re-link once); `consumeSharedUpload(token,
+{ purpose, mimeTypes }, tx)` (bytes once, holding file deleted); `expireSharedUpload(fileId)`. Tokens:
+`shared-upload-token.ts` (HMAC, 2 hours, bound to the file id). Policies with `visitorUpload: true` (CVs, CV
+documents, resume service, shared uploads) are malware-scanned although their upload rule is "system".
+
 ### Background tasks (`tasks.ts`)
 
 - `files.process` `{ fileId }` — deferred malware scan (retried with backoff while ClamAV is
   unavailable) and missing image variants. Enqueued by `storeFile` when `deferProcessing` is set or
   the scanner failed at upload.
+- `files.expire_shared_upload` `{ fileId }` — deletes an unused shared upload (and purges its bytes) 2 hours
+  after the share, or at once when it was consumed. `system.cleanup` sweeps missed ones.
 - `files.purge` `{ fileId }` — deletes the stored bytes of a soft-deleted file after 30 days.
   `system.cleanup` sweeps overdue purges as a safety net.
 
@@ -124,6 +135,7 @@ if (await canAccessFile(await getCurrentFileViewer(), file)) link = fileUrl(file
 | cv_submission | PDF DOC DOCX JPG PNG | 4 MB | private | — | system only (public /send-cv route handler, no owner) | candidates.view_documents / recruitment.manage | — |
 | cv_submission_document | PDF images | 4 MB | private | thumb | system only (operations route handlers: signed candidate link or staff candidates.manage) | candidates.view_documents / recruitment.manage | — |
 | resume_service | JPG PNG PDF DOCX | 10 MB | private | thumb | system only (resume-service: public photo, generated resume) | candidates.manage | — |
+| shared_upload | JPG PNG WebP PDF DOCX DOC | 4 MB | private (owner-only, 2 h) | thumb | system only (`/share` Web Share Target; `shared-uploads.ts`) | — (token holder only) | — |
 | invoice | PDF | 10 MB | private | — | staff commercial.invoices · system | commercial.view | billing roles |
 | data_export | ZIP JSON CSV PDF | 500 MB | private | — | system only | **owner only** | **owner only** |
 | other | PDF images DOCX XLSX CSV TXT | 10 MB | private | — | staff settings.manage · system | — | — |

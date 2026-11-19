@@ -19,8 +19,10 @@ and it appears on the website once a publisher approves it.
    description and its first line as the title). Optionally pick the country and type the trades, then tap
    **Publish now**.
 
-If you are signed out, the app asks you to sign in first; share the image again afterwards (the shared file
-cannot survive the sign-in step).
+The share goes to `POST /share` (manifest `share_target`, field `file`, images, PDF and Word). Staff with the
+poster permissions who share an **image** get the staff page above. Signed out, the share is treated like a
+visitor's (next section); sign in and share again to publish directly. The older action
+`/admin/requirements/posters/share` still works for apps installed before the change.
 
 ### iPhone (and any other phone or computer)
 
@@ -49,6 +51,40 @@ A trailing upper-case code (AED, SAR, QAR…) is stored as the currency; no curr
 - Full editing (company name, benefits, apply-by date, SEO): **Edit** opens the generic CMS editor at
   `/admin/content/requirement_posts/<id>`.
 
+## Sharing from a phone (everyone)
+
+Candidates, employers and signed-in users install the same app ("Install app" pill in the mobile menu, footer,
+`/send-cv`, `/requirements` and `/share/choose`; on iPhone a tip says Share → Add to Home Screen, and to use the
+**Choose photo** button because iOS cannot share into web apps). Sharing a photo or document:
+
+1. `POST /share` checks the file through the files module (type sniffing, max 4 MB, scan status), stores it as a
+   private **shared upload** (purpose `shared_upload`: owner = the signed-in user or nobody, never public, deleted
+   after 2 hours by `files.expire_shared_upload`, `system.cleanup` as safety net), rate limited per IP (10 per
+   10 minutes, 40 per day), then redirects to `/share/choose?t=<signed token>` (HMAC, 2 hours, bound to the file).
+2. `/share/choose` shows the file (thumbnail or name) and two choices: **Send as my CV** (`/send-cv?shared=<t>`)
+   and **Post a job requirement (I'm hiring)** (`/requirements/submit?shared=<t>`). Opened directly it offers a
+   normal file picker (gallery on iPhone and Android) with the same two choices.
+3. The token is spent once: as a CV the stored file is re-linked to `cv_submission`; as a poster its bytes are
+   copied into the media library and the shared upload deleted.
+
+## Requirements posted by the public (`/requirements/submit`)
+
+Linked from `/requirements` and `/employers` as "Post a requirement". Short form: company, contact name,
+phone/WhatsApp (required), email, country, trades and salary (one per line), notes, the poster photo (or the
+shared one), consent; honeypot and rate limits (5 per 10 minutes and 20 per day per IP, 3 per hour per phone).
+On submit, in one transaction:
+
+- the poster becomes a private media-library image and an **internal** media item;
+- a `requirement_posts` **draft** is created (title from the first trade and country; only country and trades in
+  the entry, never contact details) and sent to the approval centre as a content publication marked
+  **"Submitted by the public - check before publishing"**;
+- the contact details go to an **employer enquiry** (ENQ code, linked to an employer lead, with a link to the
+  draft); staff with `content.edit` get an in-app alert and the business inbox an email copy with the phone.
+
+Nothing is public until a reviewer with `content.publish` approves: the approval makes the poster image public
+and publishes the entry. The visitor sees "We will check and publish it after calling you" with WhatsApp, Call
+and Email buttons.
+
 ## Public pages
 
 - Homepage band: `<LatestRequirements />` (`src/components/public/requirements/latest-requirements.tsx`), hidden
@@ -59,6 +95,9 @@ A trailing upper-case code (AED, SAR, QAR…) is stored as the currency; no curr
 - Both are in `sitemap.xml`. Images are the files module's pre-generated WebP variants.
 
 ## Send your CV (`/send-cv`)
+
+With `?shared=<token>` (from `/share/choose`) the shared file is shown as the CV and no new upload is needed; the
+submit route accepts the `shared` token instead of the `cv` file (one-time use).
 
 Short form, no account: name, mobile/WhatsApp (required), trade (job categories + "Other"), years of
 experience, preferred country, passport yes/no, **passport number** (optional, 6–12 letters/digits, stored

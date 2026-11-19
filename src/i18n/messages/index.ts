@@ -10,6 +10,7 @@ import en_talent_training from "./en/talent-training.json";
 import en_talent_account from "./en/talent-account.json";
 import en_talent_messages from "./en/talent-messages.json";
 import en_public_safety from "./en/public-safety.json";
+import en_public_marketing from "./en/public-marketing.json";
 import hi_common from "./hi/common.json";
 import hi_auth from "./hi/auth.json";
 import hi_talent_dashboard from "./hi/talent-dashboard.json";
@@ -19,6 +20,7 @@ import hi_talent_training from "./hi/talent-training.json";
 import hi_talent_account from "./hi/talent-account.json";
 import hi_talent_messages from "./hi/talent-messages.json";
 import hi_public_safety from "./hi/public-safety.json";
+import hi_public_marketing from "./hi/public-marketing.json";
 import te_common from "./te/common.json";
 import te_auth from "./te/auth.json";
 import te_talent_dashboard from "./te/talent-dashboard.json";
@@ -28,6 +30,7 @@ import te_talent_training from "./te/talent-training.json";
 import te_talent_account from "./te/talent-account.json";
 import te_talent_messages from "./te/talent-messages.json";
 import te_public_safety from "./te/public-safety.json";
+import te_public_marketing from "./te/public-marketing.json";
 
 export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
   en: {
@@ -40,6 +43,7 @@ export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
     "talent-account": en_talent_account as Messages,
     "talent-messages": en_talent_messages as Messages,
     "public-safety": en_public_safety as Messages,
+    "public-marketing": en_public_marketing as Messages,
   },
   hi: {
     "common": hi_common as Messages,
@@ -51,6 +55,7 @@ export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
     "talent-account": hi_talent_account as Messages,
     "talent-messages": hi_talent_messages as Messages,
     "public-safety": hi_public_safety as Messages,
+    "public-marketing": hi_public_marketing as Messages,
   },
   te: {
     "common": te_common as Messages,
@@ -62,5 +67,6 @@ export const MESSAGES: Record<Locale, Record<Namespace, Messages>> = {
     "talent-account": te_talent_account as Messages,
     "talent-messages": te_talent_messages as Messages,
     "public-safety": te_public_safety as Messages,
+    "public-marketing": te_public_marketing as Messages,
   },
 };

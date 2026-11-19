@@ -39,16 +39,18 @@ export type LandingCopy = {
   eligible?: { title: string; intro?: string; items: string[] };
   steps: { title: string; intro?: string; items: TitledItem[] };
   cta: { heading: string; body: string; primary: LandingCta; secondary?: LandingCta };
+  /** Section labels in the page language (English when left out). */
+  labels?: { whyUs?: string; whoCanJoin?: string; howItWorks?: string; questions?: string; faqTitle?: string; step?: string };
 };
 
-async function AudienceFaqs({ audience }: { audience: LandingCopy["faqAudience"] }) {
+async function AudienceFaqs({ audience, eyebrow, title }: { audience: LandingCopy["faqAudience"]; eyebrow: string; title: string }) {
   const page = await settle(`faqs.${audience}`, () => getPublishedEntries("faqs", { category: audience, limit: 20 }), null);
   const faqs = (page?.items ?? []).filter((f) => f.title?.trim() && f.data.answer);
   if (!faqs.length) return null;
   return (
     <Section tone="white" labelledBy="landing-faq-title">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
-        <SectionHeading id="landing-faq-title" eyebrow="Questions" title="Frequently asked questions" />
+        <SectionHeading id="landing-faq-title" eyebrow={eyebrow} title={title} />
         <div className="divide-y divide-border self-start border-y border-border" data-testid="landing-faqs">
           {faqs.map((f) => (
             <details key={f.id} className="group">
@@ -62,8 +64,9 @@ async function AudienceFaqs({ audience }: { audience: LandingCopy["faqAudience"]
   );
 }
 
-export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy; children?: ReactNode; afterSteps?: ReactNode }) {
+export function LandingPage({ copy, children, afterSteps, heroAfter }: { copy: LandingCopy; children?: ReactNode; afterSteps?: ReactNode; heroAfter?: ReactNode }) {
   const location = `${copy.audience}_landing`;
+  const labels = copy.labels ?? {};
   return (
     <>
       <PageHero
@@ -72,6 +75,7 @@ export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy;
         title={copy.title}
         intro={copy.intro}
         photo={IMAGE_CREDITS.find((c) => c.src === AUDIENCE_PHOTO[copy.audience]) ?? null}
+        after={heroAfter}
         actions={
           <>
             <CtaLink href={copy.primary.href} cta={copy.primary.id} location={`${location}_hero`} variant="accent" arrow data-testid="landing-primary-cta">
@@ -87,28 +91,28 @@ export function LandingPage({ copy, children, afterSteps }: { copy: LandingCopy;
       />
 
       <Section tone="subtle" labelledBy="landing-benefits-title">
-        <SectionHeading id="landing-benefits-title" eyebrow="Why Venkat Sai" title={copy.benefits.title} intro={copy.benefits.intro} />
+        <SectionHeading id="landing-benefits-title" eyebrow={labels.whyUs ?? "Why Venkat Sai"} title={copy.benefits.title} intro={copy.benefits.intro} />
         <FeatureGrid items={copy.benefits.items} className="mt-10" />
       </Section>
 
       {copy.eligible ? (
         <Section labelledBy="landing-eligible-title">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <SectionHeading id="landing-eligible-title" eyebrow="Who can join" title={copy.eligible.title} intro={copy.eligible.intro} />
+            <SectionHeading id="landing-eligible-title" eyebrow={labels.whoCanJoin ?? "Who can join"} title={copy.eligible.title} intro={copy.eligible.intro} />
             <CheckList items={copy.eligible.items} columns={2} className="content-start" />
           </div>
         </Section>
       ) : null}
 
       <Section tone={copy.eligible ? "subtle" : "white"} labelledBy="landing-steps-title">
-        <SectionHeading id="landing-steps-title" eyebrow="How it works" title={copy.steps.title} intro={copy.steps.intro} />
-        <StepList steps={copy.steps.items} className="mt-14" />
+        <SectionHeading id="landing-steps-title" eyebrow={labels.howItWorks ?? "How it works"} title={copy.steps.title} intro={copy.steps.intro} />
+        <StepList steps={copy.steps.items} className="mt-14" stepLabel={labels.step} />
         {afterSteps}
       </Section>
 
       {children}
 
-      <AudienceFaqs audience={copy.faqAudience} />
+      <AudienceFaqs audience={copy.faqAudience} eyebrow={labels.questions ?? "Questions"} title={labels.faqTitle ?? "Frequently asked questions"} />
 
       <CtaBand tone="subtle" location={`${location}_cta_band`} heading={copy.cta.heading} body={copy.cta.body} primary={copy.cta.primary} secondary={copy.cta.secondary} />
     </>

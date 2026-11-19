@@ -7,7 +7,8 @@ import { CV_MAX_BYTES, cvSubmissionSchema, type CvSubmissionResult } from "@/mod
 import { submitCvSubmission } from "@/modules/operations/cv-submissions";
 
 /**
- * POST /send-cv/submit — the public "Send your CV" form (multipart: fields + `cv` file).
+ * POST /send-cv/submit — the public "Send your CV" form (multipart: fields + `cv` file, or `shared`: the signed
+ * token of a file shared to the site from the phone's share sheet or /share/choose, used once instead of `cv`).
  *
  * A route handler rather than a Server Action because the CV travels in the same request (up to 4 MB, under
  * the 4.5 MB Vercel body limit; Server Actions are capped lower). No account needed. Same-origin only (CSRF);
@@ -43,16 +44,19 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const cv = form.get("cv");
+  const shared = form.get("shared");
+  const sharedToken = typeof shared === "string" && shared.trim() && shared.length <= 200 ? shared.trim() : null;
+  const hasFile = cv instanceof File && cv.size > 0;
   const parsed = cvSubmissionSchema.safeParse(formDataToObject(form));
   if (!parsed.success) {
     const fieldErrors = zodFieldErrors(parsed.error);
-    if (!(cv instanceof File) || cv.size === 0) fieldErrors.cv = ["Attach your CV"];
+    if (!hasFile && !sharedToken) fieldErrors.cv = ["Attach your CV"];
     return respond(request, 400, { ok: false, error: "Please check the highlighted fields.", fieldErrors, code: "invalid" });
   }
 
   try {
     const meta = await getRequestMeta();
-    const upload = cv instanceof File && cv.size > 0 ? { data: new Uint8Array(await cv.arrayBuffer()), name: cv.name, type: cv.type || null } : null;
+    const upload = hasFile ? { data: new Uint8Array(await cv.arrayBuffer()), name: cv.name, type: cv.type || null } : sharedToken ? { sharedToken } : null;
     const result = await submitCvSubmission(parsed.data, upload, { ipHash: meta.ipHash, sourcePage: "/send-cv" });
     return respond(request, 200, { ok: true, data: result, message: "Thank you. We have received your CV." });
   } catch (error) {

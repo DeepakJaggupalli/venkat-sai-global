@@ -14,6 +14,7 @@ import { audit, logDataAccess, logSecurityEvent } from "@/modules/audit";
 import { last4, normaliseIdentityNumber } from "@/modules/candidates/profile-rules";
 import { getPublishedEntryBySlug } from "@/modules/content/queries";
 import { FileValidationError, fileUrl, storeFile } from "@/modules/files";
+import { claimSharedUpload } from "@/modules/files/shared-uploads";
 import { staffCan, type StaffContext } from "@/modules/identity/authz";
 import { notifyStaff } from "@/modules/notifications";
 import { getSetting } from "@/modules/settings";
@@ -37,6 +38,8 @@ import { assertStaff, enforceRateLimits, likePattern } from "./internal";
 export const CV_SUBMISSIONS_ADMIN_PATH = "/admin/cv-submissions";
 
 export type CvUpload = { data: Uint8Array; name: string; type: string | null };
+/** A file already shared to the site (Web Share Target / /share/choose): its signed token, spent once. */
+export type CvSharedFile = { sharedToken: string };
 
 type FieldErrors = Record<string, string[]>;
 
@@ -73,16 +76,17 @@ export async function findRequirementPoster(slug: string | undefined | null): Pr
  * Record a public CV submission. Honeypot hits are dropped silently (security event only, code null). Rate
  * limited per IP hash and phone. The CV goes through the files module (type sniffing, size limit, malware scan
  * status) as a private, ownerless `cv_submission` file in the same transaction as the row. Staff with
- * candidates.manage get an in-app alert and the business inbox an email copy.
+ * candidates.manage get an in-app alert and the business inbox an email copy. Instead of a new upload, the CV may be
+ * a shared file (token from /share): it is re-linked to the `cv_submission` purpose in the same transaction (once).
  */
-export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpload | null, meta: PublicSubmissionMeta & { sourcePage?: string | null }): Promise<CvSubmissionResult> {
+export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpload | CvSharedFile | null, meta: PublicSubmissionMeta & { sourcePage?: string | null }): Promise<CvSubmissionResult> {
   if (input.website?.trim()) {
     await logSecurityEvent({ type: "form_honeypot_triggered", severity: "info", metadata: { form: "send_cv" } });
     return { code: null, name: input.name, trade: "", requirementTitle: null, uploadToken: null };
   }
   if (!input.consentToContact) invalid({ consentToContact: ["Please agree that we may call or WhatsApp you about jobs"] });
-  if (!upload || upload.data.byteLength === 0) invalid({ cv: ["Attach your CV"] });
-  if (upload.data.byteLength > CV_MAX_BYTES) invalid({ cv: ["The CV is larger than 4 MB. Send a smaller file, or a photo of the first page."] });
+  if (!upload || ("data" in upload ? upload.data.byteLength === 0 : !upload.sharedToken)) invalid({ cv: ["Attach your CV"] });
+  if ("data" in upload && upload.data.byteLength > CV_MAX_BYTES) invalid({ cv: ["The CV is larger than 4 MB. Send a smaller file, or a photo of the first page."] });
 
   await enforceRateLimits(
     [
@@ -108,16 +112,19 @@ export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpl
   try {
     return await db.transaction(async (tx) => {
       const code = await nextCode("CV", { tx });
-      const file = await storeFile({
-        data: upload.data,
-        originalName: upload.name || "cv",
-        declaredMimeType: upload.type,
-        purpose: "cv_submission",
-        ownerUserId: null,
-        visibility: "private",
-        metadata: { source: "send_cv", reference: code },
-        tx,
-      });
+      const file =
+        "data" in upload
+          ? await storeFile({
+              data: upload.data,
+              originalName: upload.name || "cv",
+              declaredMimeType: upload.type,
+              purpose: "cv_submission",
+              ownerUserId: null,
+              visibility: "private",
+              metadata: { source: "send_cv", reference: code },
+              tx,
+            })
+          : await claimSharedUpload(upload.sharedToken, { purpose: "cv_submission", ownerUserId: null, metadata: { source: "send_cv_shared", reference: code } }, tx);
       const [row] = await tx
         .insert(cvSubmissions)
         .values({
@@ -171,6 +178,9 @@ export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpl
     });
   } catch (error) {
     if (error instanceof FileValidationError) invalid({ cv: [error.message] }, error.message);
+    if (error instanceof ActionError && error.code === "shared_file_expired") {
+      invalid({ cv: ["The shared file has expired or was already sent. Choose your CV again."] }, "The shared file has expired or was already sent. Choose your CV again.");
+    }
     throw error;
   }
 }
