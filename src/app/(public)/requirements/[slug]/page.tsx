@@ -10,10 +10,13 @@ import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { CallButton, CONTACT_BUTTON_STYLES, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { loadPoster } from "@/components/public/requirements/data";
 import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
+import { ShareToWhatsApp } from "@/components/public/requirements/share-to-whatsapp";
 import { buildPageMetadata, previewTokenFrom } from "@/components/public/server";
 import { DateText } from "@/components/shared/date-text";
+import { absoluteUrl } from "@/lib/env";
 import type { SearchParams } from "@/lib/http";
 import { cn } from "@/lib/utils";
+import { posterShareDetails } from "@/modules/recruitment-posters/share";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<SearchParams> };
 
@@ -95,6 +98,14 @@ export default async function RequirementPage({ params, searchParams }: Props) {
               </Link>
               <WhatsAppButton message={whatsappMessage} />
               <CallButton className={CONTACT_BUTTON_STYLES.outline} />
+              <ShareToWhatsApp
+                imageUrl={card.poster?.url ?? null}
+                title={card.title}
+                details={posterShareDetails(card.countryName, card.trades.map((t) => t.trade))}
+                url={absoluteUrl(card.href)}
+                label="Share"
+                ariaLabel="Share this requirement with a friend"
+              />
             </div>
 
             {card.trades.length ? (

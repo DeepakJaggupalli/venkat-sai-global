@@ -1,11 +1,12 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, ImagePlus, Loader2, MessageCircle, RotateCcw } from "lucide-react";
+import { CheckCircle2, ExternalLink, ImagePlus, Loader2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState, type ChangeEvent } from "react";
 
 import { startUpload } from "@/components/files/upload-client";
+import { ShareToWhatsApp } from "@/components/public/requirements/share-to-whatsapp";
 import { FormErrorAlert, FormField, fieldErrorsFor } from "@/components/shared/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,7 +89,6 @@ function PosterForm({ countries, defaultTitle, canPublish, draft, sharedTitle, s
   if (state?.ok && state.data) {
     const result = state.data;
     const live = result.outcome?.outcome === "published";
-    const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/requirements/${result.slug}` : `/requirements/${result.slug}`;
     return (
       <div role="status" aria-live="polite" className="space-y-4 rounded-2xl border border-success/40 bg-success-soft p-5" data-testid="poster-published">
         <CheckCircle2 className="size-9 text-success-strong" aria-hidden="true" />
@@ -100,15 +100,7 @@ function PosterForm({ countries, defaultTitle, canPublish, draft, sharedTitle, s
                 <ExternalLink className="size-5" aria-hidden="true" />
                 View on the website
               </Link>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`New requirement: ${publicUrl}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 text-base font-semibold text-navy-deep hover:bg-[#1fbd5a]"
-              >
-                <MessageCircle className="size-5" aria-hidden="true" />
-                Share the link on WhatsApp
-              </a>
+              <ShareToWhatsApp imageUrl={result.imageUrl} title={result.title} details={result.details} url={result.publicUrl} label="Share to WhatsApp channel" />
             </>
           ) : null}
           <Link href={`/admin/content/requirement_posts/${result.entryId}`} className="inline-flex min-h-12 items-center justify-center rounded-lg border border-navy/20 bg-white px-5 text-base font-semibold text-navy hover:bg-surface-subtle">

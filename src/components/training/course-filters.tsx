@@ -39,8 +39,8 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
         param="show"
         label={t("filters.batches")}
         showLabel
-        allLabel={t("filters.openBatchesOnly")}
-        options={[{ value: "all", label: t("filters.includeWithoutBatches") }]}
+        allLabel={t("filters.allCourses")}
+        options={[{ value: "open", label: t("filters.openBatchesOnly") }]}
       />
     </FilterBar>
   );

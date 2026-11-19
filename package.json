@@ -22,6 +22,7 @@
     "db:migrate": "tsx --conditions=react-server scripts/migrate.ts",
     "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "db:seed:e2e": "tsx --conditions=react-server scripts/seed-e2e.ts",
+    "db:seed:training": "tsx --conditions=react-server scripts/seed-training-programs.ts",
     "content:refresh": "tsx --conditions=react-server scripts/content-refresh.ts",
     "worker": "tsx --conditions=react-server scripts/worker.ts"
   },

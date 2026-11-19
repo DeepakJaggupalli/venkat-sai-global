@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ActionButton } from "@/components/admin/action-button";
 import { DataTable } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ShareToWhatsApp } from "@/components/public/requirements/share-to-whatsapp";
 import { LinkTabs } from "@/components/shared/link-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -14,9 +15,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import type { Tone } from "@/components/shared/tones";
 import { Button } from "@/components/ui/button";
 import type { CmsEntryStatus } from "@/db/schema";
+import { absoluteUrl } from "@/lib/env";
 import { parsePage, type SearchParams } from "@/lib/http";
 import { CMS_ENTRY_STATUS_LABELS } from "@/modules/content/constants";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
+import { posterShareDetails } from "@/modules/recruitment-posters/share";
 import { listPosters, POSTER_PERMISSIONS } from "@/modules/recruitment-posters/service";
 
 import { archivePosterAction, deletePosterAction, restorePosterAction } from "./actions";
@@ -103,6 +106,16 @@ export default async function PostersPage({ searchParams }: { searchParams: Prom
                       View
                     </Link>
                   </Button>
+                ) : null}
+                {p.status === "published" ? (
+                  <ShareToWhatsApp
+                    size="sm"
+                    imageUrl={p.imageUrl}
+                    title={p.title}
+                    details={posterShareDetails(p.countryName, p.trades)}
+                    url={absoluteUrl(p.publicPath)}
+                    label="Share to WhatsApp channel"
+                  />
                 ) : null}
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/content/requirement_posts/${p.id}`}>Edit</Link>

@@ -26,7 +26,9 @@ function field<T>(schema: { safeParse(value: unknown): { success: true; data: T 
 
 /**
  * Validate catalogue search params field by field (one bad value never disables the other filters).
- * Courses with open batches are shown by default; `show=all` includes courses without one.
+ * Every published course is shown by default (courses with an open batch are listed first, see listPublicCourses),
+ * so programmes that run all year without dated batches are never hidden; `show=open` keeps only courses with an
+ * open batch (`show=all`, the old explicit form, still means every course).
  */
 export function parseCatalogueParams(params: SearchParams): CatalogueQuery {
   const s = catalogueFiltersSchema.shape;
@@ -38,7 +40,7 @@ export function parseCatalogueParams(params: SearchParams): CatalogueQuery {
     certificationType: field(s.certificationType, sp(params, "certificationType")),
     countryCode: field(s.countryCode, sp(params, "countryCode")),
     city: field(s.city, sp(params, "city")),
-    openBatchesOnly: sp(params, "show") !== "all",
+    openBatchesOnly: sp(params, "show") === "open",
   };
   const durationParam = sp(params, "duration");
   const duration = isDurationFilter(durationParam) ? durationParam : undefined;

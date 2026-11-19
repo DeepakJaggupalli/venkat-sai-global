@@ -90,6 +90,7 @@
   "filters.city": "बैच का शहर",
   "filters.cityPlaceholder": "जैसे विशाखापत्तनम",
   "filters.batches": "बैच",
+  "filters.allCourses": "सभी पाठ्यक्रम",
   "filters.openBatchesOnly": "खुले बैच वाले पाठ्यक्रम",
   "filters.includeWithoutBatches": "बिना खुले बैच वाले पाठ्यक्रम भी दिखाएँ",
 
@@ -121,6 +122,10 @@
   "detail.batchesDescription": "हर बैच की तारीखें, स्थान और सीटें। आवेदन के लिए एक बैच चुनें।",
   "detail.noBatchesTitle": "अभी कोई बैच खुला नहीं है",
   "detail.noBatchesDescription": "प्रदाता के नए बैच खोलते ही वे यहाँ दिखेंगे।",
+  "detail.nextBatchTitle": "अगले बैच के बारे में हमसे पूछें",
+  "detail.nextBatchDescription": "नए बैच साल भर शुरू होते हैं। हमें WhatsApp पर संदेश भेजें, हम अगली शुरुआत की तारीख, समय और फीस बताएँगे।",
+  "detail.nextBatchWhatsApp": "WhatsApp पर पूछें",
+  "detail.nextBatchMessage": "नमस्ते Venkat Sai, मैं {course} के अगले बैच में शामिल होना चाहता/चाहती हूँ।",
   "detail.factsLabel": "पाठ्यक्रम की जानकारी",
   "detail.providedBy": "प्रदाता",
   "detail.durationNotStated": "अवधि नहीं बताई गई",

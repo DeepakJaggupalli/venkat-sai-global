@@ -1,5 +1,6 @@
 import { CheckCircle2, Clock, Info, Languages, MonitorSmartphone, Wallet } from "lucide-react";
 
+import { WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { OrgAvatar } from "@/components/shared/avatars";
 import { EmptyState } from "@/components/shared/empty-state";
 import { KeyValueList } from "@/components/shared/key-value-list";
@@ -114,7 +115,16 @@ export async function CourseDetail({ course, today, batchHref, ctaMode, enrolled
               ))}
             </div>
           ) : (
-            <EmptyState size="sm" variant="plain" title={t("detail.noBatchesTitle")} description={t("detail.noBatchesDescription")} />
+            course.provider.kind === "institution" ? (
+              <EmptyState size="sm" variant="plain" title={t("detail.noBatchesTitle")} description={t("detail.noBatchesDescription")} />
+            ) : (
+              // Venkat Sai courses run all year; staff add batch dates later, so point people to WhatsApp instead of a dead end.
+              <div className="space-y-3" data-testid="course-next-batch">
+                <p className="font-medium text-foreground">{t("detail.nextBatchTitle")}</p>
+                <p className="text-sm text-muted-foreground">{t("detail.nextBatchDescription")}</p>
+                <WhatsAppButton label={t("detail.nextBatchWhatsApp")} message={t("detail.nextBatchMessage", { course: course.title })} />
+              </div>
+            )
           )}
         </SectionCard>
       </div>

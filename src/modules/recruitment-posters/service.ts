@@ -5,7 +5,7 @@ import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cmsEntries, countries, files, mediaAssets, type CmsEntryStatus } from "@/db/schema";
 import { ActionError } from "@/lib/actions";
-import { env } from "@/lib/env";
+import { absoluteUrl, env } from "@/lib/env";
 import { formatDate } from "@/lib/format";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { logger } from "@/lib/logger";
@@ -15,6 +15,7 @@ import { fileUrl, getFile, requireUploadedFile, storeFile, type FileRow } from "
 import { staffCan, type StaffContext } from "@/modules/identity/authz";
 
 import { parseLines, parseTradeLines, type QuickPosterInput } from "./schemas";
+import { posterShareDetails } from "./share";
 
 /**
  * Requirement posters: one-step publishing from a phone (upload → media library → CMS entry → publish) and the
@@ -76,7 +77,17 @@ export async function getDraftPosterUpload(ctx: StaffContext, fileId: string): P
   };
 }
 
-export type QuickPosterResult = { entryId: string; slug: string; outcome: PublishOutcome | null; publishError: string | null };
+export type QuickPosterResult = {
+  entryId: string;
+  slug: string;
+  outcome: PublishOutcome | null;
+  publishError: string | null;
+  /** For "Share to WhatsApp": title, short details, absolute public page and the poster image URL (same origin). */
+  title: string;
+  details: string;
+  publicUrl: string;
+  imageUrl: string | null;
+};
 
 /** The media item already created for this file (a retried "Publish now"), so the upload is never duplicated. */
 async function existingAssetFor(fileId: string): Promise<{ id: string; visibility: "public" | "internal" } | null> {
@@ -146,13 +157,15 @@ export async function quickPublishPoster(ctx: StaffContext, input: QuickPosterIn
     note: "Posted from the phone page",
   });
 
+  const [file] = await db.select().from(files).where(eq(files.id, input.fileId)).limit(1);
+  const share = { title, details: posterShareDetails(countryName, trades.map((t) => t.trade)), publicUrl: absoluteUrl(`/requirements/${entry.slug}`), imageUrl: file && !file.deletedAt ? fileUrl(file) : null };
   try {
     const outcome = staffCan(ctx, "content.publish") ? await publishEntry(ctx, { id: entry.id }) : await requestPublication(ctx, { id: entry.id });
-    return { entryId: entry.id, slug: entry.slug, outcome, publishError: null };
+    return { entryId: entry.id, slug: entry.slug, outcome, publishError: null, ...share };
   } catch (error) {
-    if (error instanceof ActionError) return { entryId: entry.id, slug: entry.slug, outcome: null, publishError: error.message };
+    if (error instanceof ActionError) return { entryId: entry.id, slug: entry.slug, outcome: null, publishError: error.message, ...share };
     logger.error("Poster publication failed", { error, entryId: entry.id });
-    return { entryId: entry.id, slug: entry.slug, outcome: null, publishError: "The poster was saved as a draft but could not be published. Open it in the content editor." };
+    return { entryId: entry.id, slug: entry.slug, outcome: null, publishError: "The poster was saved as a draft but could not be published. Open it in the content editor.", ...share };
   }
 }
 
@@ -183,6 +196,10 @@ export type PosterListItem = {
   publishedAt: Date | null;
   createdAt: Date;
   thumbnailUrl: string | null;
+  /** Full poster image (same origin), for "Share to WhatsApp". */
+  imageUrl: string | null;
+  /** Trade names from the poster details. */
+  trades: string[];
   publicPath: string;
 };
 
@@ -201,6 +218,7 @@ export async function listPosters(ctx: StaffContext, opts: { status?: CmsEntrySt
         createdAt: cmsEntries.createdAt,
         countryCode: sql<string | null>`${cmsEntries.data}->>'countryCode'`,
         posterAssetId: sql<string | null>`${cmsEntries.data}->>'posterAssetId'`,
+        trades: sql<unknown>`${cmsEntries.data}->'trades'`,
       })
       .from(cmsEntries)
       .where(where)
@@ -219,7 +237,12 @@ export async function listPosters(ctx: StaffContext, opts: { status?: CmsEntrySt
     codes.length ? db.select({ code: countries.code, name: countries.name }).from(countries).where(inArray(countries.code, codes)) : Promise.resolve([]),
   ]);
   const thumbs = new Map(assets.map((a) => [a.id, a.file.deletedAt ? null : fileUrl(a.file, a.file.variants?.thumb ? { variant: "thumb" } : {})]));
+  const images = new Map(assets.map((a) => [a.id, a.file.deletedAt ? null : fileUrl(a.file)]));
   const names = new Map(countryRows.map((c) => [c.code, c.name]));
+  const tradeNames = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value.flatMap((t: unknown) => (t && typeof t === "object" && typeof (t as { trade?: unknown }).trade === "string" && (t as { trade: string }).trade.trim() ? [(t as { trade: string }).trade.trim()] : []))
+      : [];
 
   return paginated(
     rows.map((r) => ({
@@ -232,6 +255,8 @@ export async function listPosters(ctx: StaffContext, opts: { status?: CmsEntrySt
       publishedAt: r.publishedAt,
       createdAt: r.createdAt,
       thumbnailUrl: r.posterAssetId ? (thumbs.get(r.posterAssetId) ?? null) : null,
+      imageUrl: r.posterAssetId ? (images.get(r.posterAssetId) ?? null) : null,
+      trades: tradeNames(r.trades),
       publicPath: `/requirements/${r.slug}`,
     })),
     totals[0]?.value ?? 0,

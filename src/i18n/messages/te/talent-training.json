@@ -90,6 +90,7 @@
   "filters.city": "బ్యాచ్ నగరం",
   "filters.cityPlaceholder": "ఉదాహరణకు విశాఖపట్నం",
   "filters.batches": "బ్యాచ్‌లు",
+  "filters.allCourses": "అన్ని కోర్సులు",
   "filters.openBatchesOnly": "తెరిచి ఉన్న బ్యాచ్‌లు గల కోర్సులు",
   "filters.includeWithoutBatches": "తెరిచిన బ్యాచ్ లేని కోర్సులనూ చూపించండి",
 
@@ -121,6 +122,10 @@
   "detail.batchesDescription": "ప్రతి బ్యాచ్ తేదీలు, వేదిక మరియు సీట్లు. దరఖాస్తు చేయడానికి ఒక బ్యాచ్ ఎంచుకోండి.",
   "detail.noBatchesTitle": "ప్రస్తుతం ఏ బ్యాచ్ తెరిచి లేదు",
   "detail.noBatchesDescription": "ప్రదాత కొత్త బ్యాచ్‌లు తెరిచిన వెంటనే అవి ఇక్కడ కనిపిస్తాయి.",
+  "detail.nextBatchTitle": "తదుపరి బ్యాచ్ గురించి మమ్మల్ని అడగండి",
+  "detail.nextBatchDescription": "కొత్త బ్యాచ్‌లు ఏడాది పొడవునా ప్రారంభమవుతాయి. WhatsAppలో మాకు సందేశం పంపండి, తదుపరి ప్రారంభ తేదీ, సమయాలు మరియు ఫీజు చెబుతాము.",
+  "detail.nextBatchWhatsApp": "WhatsAppలో అడగండి",
+  "detail.nextBatchMessage": "నమస్తే Venkat Sai, నేను {course} తదుపరి బ్యాచ్‌లో చేరాలనుకుంటున్నాను.",
   "detail.factsLabel": "కోర్సు వివరాలు",
   "detail.providedBy": "అందించేవారు",
   "detail.durationNotStated": "వ్యవధి పేర్కొనలేదు",

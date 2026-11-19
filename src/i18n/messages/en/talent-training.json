@@ -90,6 +90,7 @@
   "filters.city": "Batch city",
   "filters.cityPlaceholder": "For example Visakhapatnam",
   "filters.batches": "Batches",
+  "filters.allCourses": "All courses",
   "filters.openBatchesOnly": "Courses with open batches",
   "filters.includeWithoutBatches": "Include courses without an open batch",
 
@@ -121,6 +122,10 @@
   "detail.batchesDescription": "Dates, venue and seats for each batch. Choose one to apply.",
   "detail.noBatchesTitle": "No batch is open right now",
   "detail.noBatchesDescription": "New batches are listed here as soon as the provider opens them.",
+  "detail.nextBatchTitle": "Ask us about the next batch",
+  "detail.nextBatchDescription": "New batches start through the year. Message us on WhatsApp and we will tell you the next start date, timings and fee.",
+  "detail.nextBatchWhatsApp": "Ask on WhatsApp",
+  "detail.nextBatchMessage": "Hello Venkat Sai, I would like to join the next batch of {course}.",
   "detail.factsLabel": "Course facts",
   "detail.providedBy": "Provided by",
   "detail.durationNotStated": "Duration not stated",
