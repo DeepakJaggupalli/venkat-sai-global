@@ -85,6 +85,10 @@ export const SETTINGS = {
   /** ISO country code of Venkat Sai's home market; jobs outside it are flagged as overseas. */
   "platform.home_country": { default: "IN", label: "Home country (jobs elsewhere are overseas)", group: "Platform" },
 
+  // Careers (/careers)
+  /** Venkat Sai's own employer organisation: its published jobs are the openings on /careers (set by npm run db:seed:careers). */
+  "careers.organization_id": { default: "", label: "Organisation ID whose published jobs are listed on /careers (Venkat Sai's own)", group: "Careers" },
+
   // Notifications
   /** Business inbox that receives a copy of every new CV, contact enquiry and workforce requirement (blank = off). */
   "notifications.business_inbox_email": { default: "vsweld@gmail.com", label: "Business inbox for new CVs, enquiries and requirements (blank = none)", group: "Notifications" },

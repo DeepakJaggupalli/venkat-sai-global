@@ -144,6 +144,7 @@ export const DEFAULT_FOOTER_COLUMNS: readonly FooterColumn[] = [
     title: "Company",
     links: [
       { title: "About us", href: "/about" },
+      { title: "Careers", href: "/careers" },
       { title: "Contact", href: "/contact" },
       { title: "For employers", href: "/employers" },
       { title: "Request workers", href: PUBLIC_CTA.postRequirement },

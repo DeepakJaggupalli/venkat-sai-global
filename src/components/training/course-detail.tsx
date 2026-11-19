@@ -11,6 +11,7 @@ import type { PublicCourseDetail } from "@/modules/training/types";
 
 import { BatchCard, type BatchCtaMode } from "./batch-card";
 import { CertificationNote } from "./certification-note";
+import { CourseCover } from "./course-cover";
 import { durationText, FeeText } from "./course-text";
 import { intlLocale, languageName } from "./training-rules";
 
@@ -39,6 +40,9 @@ export async function CourseDetail({ course, today, batchHref, ctaMode, enrolled
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <div className="min-w-0 space-y-6">
+        <div className="relative aspect-[16/7] w-full overflow-hidden rounded-xl border border-border bg-teal-soft" data-testid="course-cover">
+          <CourseCover course={course} priority sizes="(min-width: 1024px) 60vw, 100vw" />
+        </div>
         <SectionCard title={t("detail.overview")}>
           {course.descriptionHtml ? (
             <SafeHtml html={course.descriptionHtml} />

@@ -78,6 +78,7 @@ const SERVICES_LINKS = [
 
 const COMPANY_LINKS = [
   { title: "About us", href: "/about" },
+  { title: "Careers", href: "/careers" },
   { title: "Contact", href: "/contact" },
   { title: "For employers", href: "/employers" },
   { title: "Request workers", href: "/employers/request" },

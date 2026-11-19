@@ -150,7 +150,7 @@ export default async function HomePage({ searchParams }: Props) {
     blocks.push({
       key: "opportunities",
       render: (tone) => (
-        <OpportunitiesSection key="opportunities" tone={tone} jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} intro={opportunitiesSection.intro} t={t} />
+        <OpportunitiesSection key="opportunities" tone={tone} jobs={jobs} internships={internships?.items ?? []} courses={courses?.items ?? []} heading={opportunitiesSection.heading} t={t} />
       ),
     });
   if (employersSection) blocks.push({ key: "employers", render: (tone) => <EmployerBand key="employers" tone={tone} heading={employersSection.heading} intro={employersSection.intro} whatsappE164={contactDetails.whatsapp.e164} t={t} /> });

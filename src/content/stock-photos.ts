@@ -127,3 +127,44 @@ export function stockPhotoFor({ slug, iconName }: { slug?: string | null; iconNa
   const list = pool.length ? pool : IMAGE_CREDITS;
   return list[hash(slug ?? iconName ?? "") % list.length]!;
 }
+
+/** Photographs for Venkat Sai's own seeded courses (scripts/seed-training-programs.ts), distinct where they appear together. */
+const COURSE_BY_SLUG: Readonly<Record<string, string>> = {
+  "arc-welding-smaw-3g-4g-plate": "welding-2",
+  "tig-welding-gtaw-6g-pipe-carbon-and-stainless-steel": "welding-3",
+  "mig-mag-gmaw-and-fcaw-welding": "welding-1",
+  "pipe-welding-6g-combination-tig-root-arc-fill-and-cap": "pipe-2",
+  "industrial-electrician-wiring-panels-and-motor-control": "electrical-1",
+  "pipe-fitter-isometric-drawings-fit-up-and-alignment": "pipe-1",
+  "structural-fitter-and-fabricator": "fabrication-2",
+  "rigging-and-scaffolding-basics": "rigging-1",
+  "mechanical-helper-fitter-basics": "mechanical-1",
+};
+
+/** Trade keywords in a course's title or category, checked in order (structural before pipe, so "structural fitter" is fabrication). */
+const COURSE_KEYWORDS: readonly (readonly [RegExp, StockTopic])[] = [
+  [/\bweld|\b(tig|mig|mag|arc|smaw|gtaw|gmaw|fcaw)\b/, "welding"],
+  [/electric|wiring/, "electrical"],
+  [/structural|fabricat/, "fabrication"],
+  [/rigg|scaffold/, "rigging"],
+  [/mechanical|helper/, "mechanical"],
+  [/pipe|piping|fitter/, "pipe"],
+  [/\bndt\b|inspection|testing/, "inspection"],
+  [/safety|\bhse\b/, "safety"],
+];
+
+/**
+ * The stock photograph for a course without a cover of its own: its slug first (Venkat Sai's own courses), then
+ * a photo of the trade named in its title or category (stable per slug), then a training or workshop photo.
+ * A cover uploaded for the course always wins; callers only use this when there is none.
+ */
+export function stockPhotoForCourse({ slug, title, category }: { slug?: string | null; title?: string | null; category?: string | null }): ImageCredit {
+  const named = slug ? (COURSE_BY_SLUG[slug] ?? BY_SLUG[slug]) : undefined;
+  const bySlug = named ? photo(named) : undefined;
+  if (bySlug) return bySlug;
+  const text = `${title ?? ""} ${category ?? ""}`.toLowerCase();
+  const topic = COURSE_KEYWORDS.find(([pattern]) => pattern.test(text))?.[1] ?? "training";
+  const pool = photosForTopic(topic);
+  const list = pool.length ? pool : photosForTopic("training");
+  return list[hash(slug ?? title ?? "") % list.length] ?? stockPhoto("classroom");
+}

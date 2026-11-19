@@ -8,7 +8,7 @@ import { htmlToText } from "./text";
 import { Flag, flagSrc } from "./flag";
 import { StockImage } from "./stock-image";
 import { IMAGE_CREDITS } from "@/content/image-credits";
-import { stockPhoto, stockPhotoFor } from "@/content/stock-photos";
+import { stockPhoto, stockPhotoFor, stockPhotoForCourse } from "@/content/stock-photos";
 
 describe("flags and stock photos", () => {
   it("renders real SVG flags (never emoji) and falls back to an icon for unknown codes", () => {
@@ -38,6 +38,10 @@ describe("flags and stock photos", () => {
     expect(stockPhotoFor({ slug: "overseas-employment" }).src).toBe("/images/stock/gulf-1.webp");
     expect(stockPhotoFor({ slug: "unknown-service", iconName: "zap" }).topic).toBe("electrical");
     expect(stockPhotoFor({ slug: "x", iconName: "nope" })).toBeDefined();
+    expect(stockPhotoForCourse({ slug: "tig-welding-gtaw-6g-pipe-carbon-and-stainless-steel" }).src).toBe("/images/stock/welding-3.webp");
+    expect(stockPhotoForCourse({ slug: "new-course", title: "Structural Fitter (advanced)", category: "industrial" }).topic).toBe("fabrication");
+    expect(stockPhotoForCourse({ slug: "x", title: "MIG welding refresher", category: "other" }).topic).toBe("welding");
+    expect(stockPhotoForCourse({ slug: "y", title: "Spoken English", category: "language" }).topic).toBe("training");
     expect(stockPhoto("training").src).toMatch(/\.webp$/);
     const html = renderToStaticMarkup(<StockImage photo={stockPhoto("overseas")} decorative />);
     expect(html).toContain('alt=""');

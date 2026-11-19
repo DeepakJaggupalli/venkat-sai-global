@@ -1,5 +1,4 @@
-import { Award, CalendarDays, Clock, GraduationCap, MapPin, MonitorSmartphone } from "lucide-react";
-import Image from "next/image";
+import { Award, CalendarDays, Clock, MapPin, MonitorSmartphone } from "lucide-react";
 import Link from "next/link";
 
 import { OrgAvatar } from "@/components/shared/avatars";
@@ -8,6 +7,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { getLocale, getT } from "@/i18n/server";
 import type { CatalogueCourse } from "@/modules/training/types";
 
+import { CourseCover } from "./course-cover";
 import { certificationLabel, durationText, FeeText } from "./course-text";
 import { intlLocale, joinPlace, regionName } from "./training-rules";
 
@@ -26,13 +26,7 @@ export async function CourseCard({ course, href, headingLevel = "h3" }: { course
   return (
     <article data-testid="course-card" className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-shadow focus-within:shadow-md hover:shadow-md">
       <div className="relative aspect-[16/7] w-full overflow-hidden bg-teal-soft">
-        {course.cover ? (
-          <Image src={course.cover.url} alt="" fill unoptimized sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
-        ) : (
-          <div aria-hidden="true" className="flex h-full items-center justify-center bg-[linear-gradient(135deg,var(--color-teal-soft),var(--color-surface-subtle))]">
-            <GraduationCap className="size-10 text-teal-strong/70" />
-          </div>
-        )}
+        <CourseCover course={course} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
         {course.isFeatured ? (
           <span className="absolute top-3 left-3">
             <StatusBadge tone="gold" size="sm">
