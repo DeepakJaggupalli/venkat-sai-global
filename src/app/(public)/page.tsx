@@ -18,7 +18,6 @@ import { MetricsSection } from "@/components/public/home/metrics";
 import { OpportunitiesSection } from "@/components/public/home/opportunities";
 import { resolveHomepageSections, type ResolvedSection } from "@/components/public/home/sections";
 import { JsonLd } from "@/components/public/json-ld";
-import { LanguageSwitch } from "@/components/public/language-switch";
 import { getMarketingT } from "@/components/public/marketing-locale";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { publicLocaleProps } from "@/components/public/public-locale";
@@ -214,7 +213,6 @@ export default async function HomePage({ searchParams }: Props) {
           poster={latestPoster}
           openRequirements={posters.total}
           t={t}
-          languageSwitch={<LanguageSwitch path="/" locale={t.locale} label={t("language.label")} />}
         />
         {banners.length ? (
           <div className="border-y border-border bg-teal-soft/60" data-testid="homepage-banners">

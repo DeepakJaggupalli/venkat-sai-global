@@ -11,7 +11,7 @@ import { CourseMiniCard, JobMiniCard } from "../opportunity-cards";
 import { Section, SectionHeading, type SectionTone } from "../section";
 
 /** Most cards shown per column; the "See more" pill leads to the full list. */
-export const OPPORTUNITIES_PER_COLUMN = 3;
+export const OPPORTUNITIES_PER_COLUMN = 2;
 
 function Column({ id, icon, title, more, children }: { id: string; icon: ReactNode; title: string; more: { href: string; label: string; cta: string }; children: ReactNode }) {
   return (
@@ -22,7 +22,7 @@ function Column({ id, icon, title, more, children }: { id: string; icon: ReactNo
         </span>
         {title}
       </h3>
-      <div className="grid gap-3">{children}</div>
+      <div className="grid min-w-0 grid-cols-1 gap-3">{children}</div>
       <CtaLink href={more.href} cta={more.cta} location="home_opportunities" variant="outline" arrow className="mt-4 self-start" data-testid={`${id}-more`}>
         {more.label}
         <span className="sr-only">: {title}</span>
@@ -32,7 +32,7 @@ function Column({ id, icon, title, more, children }: { id: string; icon: ReactNo
 }
 
 /**
- * Latest and featured opportunities: jobs, internships and training programmes, at most three per column, each
+ * Latest and featured opportunities: jobs, internships and training programmes, at most two per column, each
  * column ending in a "See more" pill. Columns without items are left out (the page hides the section when all are empty).
  */
 export function OpportunitiesSection({
@@ -64,18 +64,18 @@ export function OpportunitiesSection({
           </CtaLink>
         }
       />
-      <div className={cn("mt-8 grid gap-8", columns === 3 ? "lg:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "max-w-xl")}>
+      <div className={cn("mt-8 grid grid-cols-1 gap-8", columns === 3 ? "lg:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "max-w-xl")}>
         {jobs.length ? (
           <Column id="home-opp-jobs" icon={<Briefcase />} title={t("opportunities.jobs")} more={{ href: "/jobs", label: t("opportunities.seeMore"), cta: "view_all_jobs" }}>
             {jobs.slice(0, max).map((job) => (
-              <JobMiniCard key={job.id} job={job} headingLevel="h4" />
+              <JobMiniCard key={job.id} job={job} headingLevel="h4" showDeadline={false} />
             ))}
           </Column>
         ) : null}
         {internships.length ? (
           <Column id="home-opp-internships" icon={<GraduationCap />} title={t("opportunities.internships")} more={{ href: "/jobs?type=internship", label: t("opportunities.seeMore"), cta: "view_all_internships" }}>
             {internships.slice(0, max).map((job) => (
-              <JobMiniCard key={job.id} job={job} headingLevel="h4" />
+              <JobMiniCard key={job.id} job={job} headingLevel="h4" showDeadline={false} />
             ))}
           </Column>
         ) : null}

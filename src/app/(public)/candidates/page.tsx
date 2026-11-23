@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LandingPage, type LandingCopy } from "@/components/public/landing";
-import { LanguageSwitch } from "@/components/public/language-switch";
 import type { MarketingT } from "@/components/public/marketing-i18n";
 import { getMarketingT } from "@/components/public/marketing-locale";
 import { publicLocaleProps } from "@/components/public/public-locale";
@@ -68,7 +67,6 @@ export default async function CandidatesPage({ searchParams }: Props) {
     <div {...publicLocaleProps(t.locale)}>
       <LandingPage
         copy={candidatesCopy(t)}
-        heroAfter={<LanguageSwitch path="/candidates" locale={t.locale} label={t("language.label")} />}
         afterSteps={<p className="mt-10 max-w-3xl text-sm leading-relaxed text-white/75">{t("candidates.age")}</p>}
       >
         <Section labelledBy="candidates-safety-title" className="py-12 sm:py-14 lg:py-16">

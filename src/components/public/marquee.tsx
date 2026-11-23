@@ -2,21 +2,14 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Infinite horizontal rail (CSS only, server component). The list is rendered twice; the second copy is
- * hidden from assistive technology and, for reduced-motion visitors, not shown at all (the first copy wraps
- * into a static, centred row instead). Hovering or focusing inside pauses the motion, and a surrounding
- * `PausableRails` adds a pause button (WCAG 2.2.2). Edges fade out (mask).
- *
- * `speed` maps to a few fixed durations so no inline style is needed.
- * The rail always runs left-to-right (`dir="ltr"`), also on the Arabic page.
- */
-const SPEED = {
-  slow: "[--marquee-duration:90s]",
-  normal: "[--marquee-duration:60s]",
-  fast: "[--marquee-duration:40s]",
-} as const;
+import { ScrollRail, type RAIL_SPEED } from "./scroll-rail";
 
+/**
+ * Infinite horizontal rail (server wrapper around the client `ScrollRail`): the items are rendered here and handed
+ * over as <li> children, so callers can keep passing render functions. The rail scrolls on its own, slowly, and
+ * visitors can swipe, drag or scroll it; the duplicate copy is hidden from assistive technology. A surrounding
+ * `PausableRails` adds a pause button (WCAG 2.2.2).
+ */
 export function Marquee<T>({
   items,
   render,
@@ -30,32 +23,21 @@ export function Marquee<T>({
   items: readonly T[];
   render: (item: T) => ReactNode;
   itemKey: (item: T) => string;
-  /** Accessible name for the list. */
+  /** Accessible name for the rail. */
   label: string;
   reverse?: boolean;
-  speed?: keyof typeof SPEED;
+  speed?: keyof typeof RAIL_SPEED;
   className?: string;
   itemClassName?: string;
 }) {
   if (!items.length) return null;
   return (
-    <div dir="ltr" className={cn("marquee-mask overflow-hidden", SPEED[speed], className)}>
-      <div className="marquee-track" data-reverse={reverse ? "true" : undefined}>
-        <ul aria-label={label} className="flex shrink-0 items-center motion-reduce:shrink motion-reduce:flex-wrap motion-reduce:justify-center">
-          {items.map((item) => (
-            <li key={itemKey(item)} className={cn("shrink-0", itemClassName)}>
-              {render(item)}
-            </li>
-          ))}
-        </ul>
-        <ul aria-hidden="true" data-marquee-copy className="flex shrink-0 items-center">
-          {items.map((item) => (
-            <li key={`copy-${itemKey(item)}`} className={cn("shrink-0", itemClassName)}>
-              {render(item)}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    <ScrollRail label={label} reverse={reverse} speed={speed} className={className}>
+      {items.map((item) => (
+        <li key={itemKey(item)} className={cn("shrink-0", itemClassName)}>
+          {render(item)}
+        </li>
+      ))}
+    </ScrollRail>
   );
 }

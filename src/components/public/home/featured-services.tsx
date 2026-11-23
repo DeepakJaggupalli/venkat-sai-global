@@ -101,6 +101,9 @@ export function FeaturedServicesSection({
                   )}
                 </div>
                 <div className="flex flex-1 flex-col p-6 sm:p-7">
+                  <p className="mb-4 inline-flex self-start rounded-full bg-teal-soft px-3 py-1 text-xs font-semibold text-teal-strong" data-testid={`service-audience-${service.key}`}>
+                    {t(`services.${service.key}.audience`)}
+                  </p>
                   <h3 className="font-display text-2xl text-foreground sm:text-[1.75rem]">
                     <Link href={href} className="rounded-sm after:absolute after:inset-0 after:content-['']">
                       {t(`services.${service.key}.title`)}

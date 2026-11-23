@@ -38,6 +38,35 @@ export function isPublicLocale(value: string | null | undefined): value is Publi
   return !!value && (PUBLIC_LOCALES as readonly string[]).includes(value);
 }
 
+/**
+ * Public language saved from the "Language & region" dialog when it is a public-only language (Odia, Arabic), which
+ * LOCALE_COOKIE cannot hold. English, Hindi and Telugu are saved in LOCALE_COOKIE (and the user profile) instead.
+ */
+export const PUBLIC_LOCALE_COOKIE = "vsg_public_locale";
+/** Visitor's region from the "Language & region" dialog (one of PUBLIC_REGIONS). */
+export const REGION_COOKIE = "vsg_region";
+/** Set once the first-visit "Language & region" prompt has been answered or dismissed. */
+export const PREFS_SEEN_COOKIE = "vsg_prefs_seen";
+
+export const PUBLIC_REGIONS = [
+  { code: "IN", label: "India" },
+  { code: "AE", label: "UAE" },
+  { code: "SA", label: "Saudi Arabia" },
+  { code: "QA", label: "Qatar" },
+  { code: "KW", label: "Kuwait" },
+  { code: "OM", label: "Oman" },
+  { code: "BH", label: "Bahrain" },
+  { code: "SG", label: "Singapore" },
+  { code: "MY", label: "Malaysia" },
+  { code: "EU", label: "Europe" },
+  { code: "OTHER", label: "Other" },
+] as const;
+export type PublicRegion = (typeof PUBLIC_REGIONS)[number]["code"];
+
+export function isPublicRegion(value: string | null | undefined): value is PublicRegion {
+  return !!value && PUBLIC_REGIONS.some((r) => r.code === value);
+}
+
 /** Writing direction of a page language (Arabic is right-to-left). */
 export function localeDir(locale: PublicLocale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";

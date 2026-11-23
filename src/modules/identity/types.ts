@@ -2,7 +2,7 @@
  * Identity constants and types shared by server code, forms and client components.
  * Client-safe: this file must never import server-only code.
  */
-import type { EmployerKind } from "@/db/schema/_constants";
+import type { EmployerKind, OrgType } from "@/db/schema/_constants";
 
 /**
  * Why someone is creating an account (the "I am a…" account types, in display order); drives the post-sign-up
@@ -20,6 +20,21 @@ export function employerKindForIntent(intent: SignupIntent | null | undefined): 
   if (intent === "travel_agency") return "travel_agency";
   if (intent === "employer") return "direct_company";
   return null;
+}
+
+/** Account types that register an organisation: their sign-up asks for the organisation details first. */
+export const ORGANIZATION_SIGNUP_INTENTS = ["travel_agency", "employer", "partner", "institution"] as const;
+export type OrganizationSignupIntent = (typeof ORGANIZATION_SIGNUP_INTENTS)[number];
+
+export function isOrganizationSignupIntent(value: unknown): value is OrganizationSignupIntent {
+  return typeof value === "string" && (ORGANIZATION_SIGNUP_INTENTS as readonly string[]).includes(value);
+}
+
+/** Organisation type created for an organisation sign-up intent. */
+export function orgTypeForIntent(intent: OrganizationSignupIntent): OrgType {
+  if (intent === "partner") return "recruitment_partner";
+  if (intent === "institution") return "institution";
+  return "employer";
 }
 
 /** Mirrors VERIFICATION_PURPOSES in src/db/schema/identity.ts (checked at compile time in otp.ts). */

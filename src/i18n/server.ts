@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
-import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE, translate, type Locale, type Messages, type Namespace } from "./config";
+import { DEFAULT_LOCALE, isLocale, isPublicLocale, LOCALE_COOKIE, PUBLIC_LOCALE_COOKIE, translate, type Locale, type Messages, type Namespace, type PublicLocale } from "./config";
 import { MESSAGES } from "./messages";
 
 /** Current locale: cookie (set by the language switcher / on sign-in from users.locale) → default. */
@@ -11,6 +11,12 @@ export const getLocale = cache(async (): Promise<Locale> => {
   const jar = await cookies();
   const value = jar.get(LOCALE_COOKIE)?.value;
   return isLocale(value) ? value : DEFAULT_LOCALE;
+});
+
+/** Saved language for the translated public pages: a public-only choice (Odia / Arabic) → getLocale(). */
+export const getPublicLocale = cache(async (): Promise<PublicLocale> => {
+  const value = (await cookies()).get(PUBLIC_LOCALE_COOKIE)?.value;
+  return isPublicLocale(value) ? value : getLocale();
 });
 
 export type TFunction = (key: string, vars?: Record<string, string | number>) => string;

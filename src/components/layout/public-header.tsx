@@ -15,6 +15,7 @@ import { AnnouncementBar } from "./announcement-bar";
 import { PUBLIC_CTA } from "./portal-config";
 import { PublicDesktopNav } from "./public-desktop-nav";
 import { PublicMobileNav } from "./public-mobile-nav";
+import { PublicPreferences } from "./public-preferences";
 import { DEFAULT_PUBLIC_NAV, sanitizeNavItems } from "./public-nav";
 import type { Announcement, HeaderAccount, PublicNavItem } from "./types";
 
@@ -47,7 +48,7 @@ const PILL = "inline-flex h-10 items-center justify-center gap-1.5 rounded-full 
 
 /**
  * Public website header: white and sticky, with a hairline bottom border once the page scrolls. Logo left, the
- * main links in the centre (xl+), "Sign in" (outline pill) and "Send your CV" (black pill) on the right.
+ * main links in the centre (xl+), a globe "Language & region" button, "Sign in" (outline pill) and "Send your CV" (black pill) on the right.
  * Below xl the links move into a sheet. The logo is the way home, so a "Home" item is not repeated in the bar.
  */
 export function PublicHeader({ navItems, announcement = null, account = null }: PublicHeaderProps) {
@@ -76,6 +77,7 @@ export function PublicHeader({ navItems, announcement = null, account = null }: 
           <PublicDesktopNav items={barItems} pathname={pathname} signedIn={!!account} className="hidden min-w-0 flex-1 justify-center xl:flex" />
 
           <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
+            <PublicPreferences />
             {account ? (
               <>
                 <Link

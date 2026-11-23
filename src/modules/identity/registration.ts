@@ -5,6 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, type DbOrTx } from "@/db";
 import { sessions, users } from "@/db/schema";
 import { getLocale } from "@/i18n/server";
+import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { getRequestMeta } from "@/lib/request";
 import { audit, logSecurityEvent } from "@/modules/audit";
@@ -23,6 +24,7 @@ import {
   postAuthDestination,
   sendSecurityAlert,
   sendWelcome,
+  toSessionUser,
   trackRegistrationCompleted,
   type UserRow,
 } from "./login";
@@ -30,7 +32,7 @@ import { issueOtp, targetRateKey, verifyOtp } from "./otp";
 import { hashPassword } from "./password";
 import { sanitizeReturnTo } from "./redirects";
 import type { SignUpInput } from "./schemas";
-import { OTP_RESEND_COOLDOWN_SECONDS, type SignupIntent } from "./types";
+import { isSignupIntent, OTP_RESEND_COOLDOWN_SECONDS, type SignupIntent } from "./types";
 
 /**
  * Registration: the account is created as `pending_verification`, consent is recorded in the
@@ -41,6 +43,10 @@ import { OTP_RESEND_COOLDOWN_SECONDS, type SignupIntent } from "./types";
  * (including any password), so nobody can pre-claim someone else's address. Registering an address
  * that already belongs to an active account reveals nothing: the visitor sees the same next step
  * and the real owner is told about the attempt.
+ *
+ * Organisation account types (company, travel agency, recruitment partner, institution) enter their organisation on
+ * the sign-up form: it is kept with the pending account (preferences.pendingOrganization) and created with the person
+ * as owner when the code is verified, so they land in their portal instead of the onboarding page.
  */
 
 export type ConsentVersions = { terms: string; privacy: string };
@@ -73,7 +79,7 @@ export async function recordSignupConsents(
 
 export function signupIntentOf(user: Pick<UserRow, "preferences">): SignupIntent | null {
   const value = (user.preferences as Record<string, unknown> | null)?.signupIntent;
-  return value === "candidate" || value === "employer" || value === "partner" || value === "institution" ? value : null;
+  return isSignupIntent(value) ? value : null;
 }
 
 /** Create (or restart) a pending account, send the code and store the /verify flow. */
@@ -97,6 +103,7 @@ export async function registerAccount(input: SignUpInput): Promise<void> {
   const locale = await getLocale();
   const versions = await currentPolicyVersions();
   const now = new Date();
+  const signupPreferences = { signupIntent: input.intent, ...(input.organization ? { pendingOrganization: input.organization } : {}) };
 
   const outcome = await db.transaction(async (tx) => {
     // Serialise registrations for the same address.
@@ -117,7 +124,7 @@ export async function registerAccount(input: SignUpInput): Promise<void> {
     if (existing) {
       [user] = await tx
         .update(users)
-        .set({ ...details, preferences: sql`${users.preferences} || ${JSON.stringify({ signupIntent: input.intent })}::jsonb` })
+        .set({ ...details, preferences: sql`(coalesce(${users.preferences}, '{}'::jsonb) - 'pendingOrganization') || ${JSON.stringify(signupPreferences)}::jsonb` })
         .where(eq(users.id, existing.id))
         .returning();
       await tx.delete(sessions).where(eq(sessions.userId, existing.id));
@@ -129,7 +136,7 @@ export async function registerAccount(input: SignUpInput): Promise<void> {
           email: contact.kind === "email" ? contact.value : null,
           phone: contact.kind === "phone" ? contact.value : null,
           status: "pending_verification",
-          preferences: { signupIntent: input.intent },
+          preferences: signupPreferences,
         })
         .returning();
     }
@@ -146,7 +153,7 @@ export async function registerAccount(input: SignUpInput): Promise<void> {
       entityId: user.id,
       actorUserId: user.id,
       actorType: "user",
-      metadata: { intent: input.intent, channel, withPassword: Boolean(passwordHash) },
+      metadata: { intent: input.intent, channel, withPassword: Boolean(passwordHash), withOrganization: Boolean(input.organization) },
       tx,
     });
     return { kind: existing ? ("restarted" as const) : ("created" as const), user };
@@ -233,6 +240,7 @@ export async function completeSignupVerification(code: string): Promise<string> 
   });
 
   await logSecurityEvent({ userId: flowUserId, type: flow.channel === "email" ? "email_verified" : "phone_verified", metadata: { purpose: "signup_otp" } });
+  if (activated.wasPending) await createPendingOrganization(activated.user);
   if (activated.wasPending) {
     await logSecurityEvent({ userId: flowUserId, type: "signup_completed", metadata: { channel: flow.channel, intent: flow.intent } });
     const destination = await postAuthDestination(activated.user, { returnTo: flow.returnTo, intent: flow.intent, isNewUser: true });
@@ -241,4 +249,21 @@ export async function completeSignupVerification(code: string): Promise<string> 
   const next = await establishSession(activated.user, { method: "signup_otp", returnTo: flow.returnTo, intent: flow.intent, isNewUser: activated.wasPending });
   if (activated.wasPending) await trackRegistrationCompleted(flow.intent ?? signupIntentOf(activated.user));
   return next;
+}
+
+/** Create the organisation entered on the sign-up form (organisation account types), then forget the stored details. */
+async function createPendingOrganization(user: UserRow): Promise<void> {
+  const stored = (user.preferences as Record<string, unknown> | null)?.pendingOrganization;
+  if (stored === undefined) return;
+  // Loaded on demand: the organisations services import identity types and helpers.
+  const { createSignupOrganization, parseSignupOrganization } = await import("@/modules/organizations/signup");
+  const organization = parseSignupOrganization(stored);
+  try {
+    if (organization) await createSignupOrganization(toSessionUser(user, false), organization);
+    else logger.warn("Stored sign-up organisation is no longer valid", { userId: user.id });
+  } catch (error) {
+    // The account is active either way; without an organisation the person continues on the onboarding page.
+    logger.warn("Could not create the organisation entered at sign-up", { error, userId: user.id });
+  }
+  await db.update(users).set({ preferences: sql`${users.preferences} - 'pendingOrganization'` }).where(eq(users.id, user.id));
 }

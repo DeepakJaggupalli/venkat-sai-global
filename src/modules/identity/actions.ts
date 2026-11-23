@@ -17,6 +17,7 @@ import {
   confirmContactVerificationSchema,
   confirmTwoFactorSetupSchema,
   forgotPasswordSchema,
+  organizationSignUpSchema,
   requestContactChangeSchema,
   requestContactVerificationSchema,
   requestLoginOtpSchema,
@@ -86,6 +87,12 @@ export const requestLoginOtpAction = authFormAction(requestLoginOtpSchema, async
 });
 
 export const signUpAction = authFormAction(signUpSchema, async (input) => {
+  await registerAccount(input);
+  redirect("/verify");
+});
+
+/** Company / travel agency / recruitment partner / institution: organisation details + the contact person's login. */
+export const organizationSignUpAction = authFormAction(organizationSignUpSchema, async (input) => {
   await registerAccount(input);
   redirect("/verify");
 });

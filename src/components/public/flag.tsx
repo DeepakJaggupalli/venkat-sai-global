@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /** ISO alpha-2 codes with a file in public/flags. */
 export const FLAG_CODES: ReadonlySet<string> = new Set(
-  "ae at au bd be bg bh bn br ca ch cn cy cz de dk ee eg es fi fr gb gr hk hr hu id ie il in iq it jo jp ke kr kw lb lk lt lu lv mt mu mv mx my ng nl no np nz om ph pl pt qa ro rs ru sa se sg si sk th tr tw tz ua us vn za".split(" "),
+  "ae am at au az bd be bg bh bn br ca ch cn cy cz de dk ee eg es fi fr gb ge gr hk hr hu id ie il in iq it jo jp ke kr kw kz lb lk lt lu lv mt mu mv mx my ng nl no np nz om ph pl pt qa ro rs ru sa sc se sg si sk th tr tw tz ua us uz vn za".split(" "),
 );
 
 export function flagSrc(countryCode: string | null | undefined): string | null {

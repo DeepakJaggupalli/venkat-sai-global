@@ -6,12 +6,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useT } from "@/i18n/client";
+import type { ActionState } from "@/lib/actions";
 import { signUpAction } from "@/modules/identity/actions";
 
 import { FieldMessage, fieldErrors, FormAlert, PasswordField, SubmitButton, TextField, useFormAction } from "./form-kit";
 import { GoogleButton, OrSeparator } from "./google-button";
 
-type Consents = { terms: boolean; privacy: boolean; email: boolean; sms: boolean; whatsapp: boolean };
+export type Consents = { terms: boolean; privacy: boolean; email: boolean; sms: boolean; whatsapp: boolean };
+
+/** Consent checkboxes state, shared by the sign-up forms (the Google button needs the required ones). */
+export function useConsents() {
+  const [consents, setConsents] = useState<Consents>({ terms: false, privacy: false, email: false, sms: false, whatsapp: false });
+  const toggle = (key: keyof Consents) => (checked: boolean) => setConsents((current) => ({ ...current, [key]: checked }));
+  return { consents, toggle };
+}
 
 function ConsentCheckbox({
   id,
@@ -89,19 +97,7 @@ export function SignUpForm({
   const t = useT("auth");
   const { state, formAction, pending, onSubmit, formRef } = useFormAction(signUpAction);
   const [method, setMethod] = useState<"email" | "phone">("email");
-  const [consents, setConsents] = useState<Consents>({ terms: false, privacy: false, email: false, sms: false, whatsapp: false });
-  const toggle = (key: keyof Consents) => (checked: boolean) => setConsents((current) => ({ ...current, [key]: checked }));
-
-  let googleHref: string | null = null;
-  if (consents.terms && consents.privacy) {
-    const params = new URLSearchParams({ consent: "checkbox" });
-    if (intent) params.set("intent", intent);
-    if (returnTo) params.set("returnTo", returnTo);
-    if (consents.email) params.set("me", "1");
-    if (consents.sms) params.set("ms", "1");
-    if (consents.whatsapp) params.set("mw", "1");
-    googleHref = `/auth/google?${params.toString()}`;
-  }
+  const { consents, toggle } = useConsents();
 
   return (
     <div className="space-y-6">
@@ -175,51 +171,85 @@ export function SignUpForm({
           errors={fieldErrors(state, "password")}
         />
 
-        <fieldset className="space-y-3">
-          <legend className="mb-2 text-sm font-medium">{t("signUp.agreements")}</legend>
-          <ConsentCheckbox id="signup-terms" name="acceptTerms" checked={consents.terms} onCheckedChange={toggle("terms")} required errors={fieldErrors(state, "acceptTerms")}>
-            {t("consent.termsPrefix")} <PolicyLink href="/legal/terms">{t("consent.termsLink")}</PolicyLink>
-            {t("consent.termsSuffix")}
-          </ConsentCheckbox>
-          <ConsentCheckbox
-            id="signup-privacy"
-            name="acceptPrivacy"
-            checked={consents.privacy}
-            onCheckedChange={toggle("privacy")}
-            required
-            errors={fieldErrors(state, "acceptPrivacy")}
-          >
-            {t("consent.privacyPrefix")} <PolicyLink href="/legal/privacy-policy">{t("consent.privacyLink")}</PolicyLink>
-            {t("consent.privacySuffix")}
-          </ConsentCheckbox>
-        </fieldset>
-
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-medium">{t("signUp.updates")}</legend>
-          <p className="text-xs text-muted-foreground">{t("signUp.updatesHint")}</p>
-          <ConsentCheckbox id="signup-mkt-email" name="marketingEmail" checked={consents.email} onCheckedChange={toggle("email")}>
-            {t("consent.marketingEmail")}
-          </ConsentCheckbox>
-          <ConsentCheckbox id="signup-mkt-sms" name="marketingSms" checked={consents.sms} onCheckedChange={toggle("sms")}>
-            {t("consent.marketingSms")}
-          </ConsentCheckbox>
-          <ConsentCheckbox id="signup-mkt-whatsapp" name="whatsappUpdates" checked={consents.whatsapp} onCheckedChange={toggle("whatsapp")}>
-            {t("consent.whatsapp")}
-          </ConsentCheckbox>
-        </fieldset>
+        <ConsentFields consents={consents} toggle={toggle} state={state} />
 
         <SubmitButton pending={pending}>{t("signUp.submit")}</SubmitButton>
       </form>
 
-      {googleEnabled ? (
-        <div className="space-y-3">
-          <OrSeparator label={t("common.or")} />
-          <GoogleButton href={googleHref} label={t("google.signUp")} describedById="signup-google-hint" />
-          <p id="signup-google-hint" className="text-xs text-muted-foreground" aria-live="polite">
-            {googleHref ? t("google.signUpReady") : t("google.signUpNeedsConsent")}
-          </p>
-        </div>
-      ) : null}
+      {googleEnabled ? <GoogleSignUp consents={consents} intent={intent} returnTo={returnTo} /> : null}
+    </div>
+  );
+}
+
+/** Required agreements and optional updates of the sign-up forms (names match the sign-up schemas). */
+export function ConsentFields({
+  consents,
+  toggle,
+  state,
+}: {
+  consents: Consents;
+  toggle: (key: keyof Consents) => (checked: boolean) => void;
+  state: ActionState<unknown>;
+}) {
+  const t = useT("auth");
+  return (
+    <>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 text-sm font-medium">{t("signUp.agreements")}</legend>
+        <ConsentCheckbox id="signup-terms" name="acceptTerms" checked={consents.terms} onCheckedChange={toggle("terms")} required errors={fieldErrors(state, "acceptTerms")}>
+          {t("consent.termsPrefix")} <PolicyLink href="/legal/terms">{t("consent.termsLink")}</PolicyLink>
+          {t("consent.termsSuffix")}
+        </ConsentCheckbox>
+        <ConsentCheckbox
+          id="signup-privacy"
+          name="acceptPrivacy"
+          checked={consents.privacy}
+          onCheckedChange={toggle("privacy")}
+          required
+          errors={fieldErrors(state, "acceptPrivacy")}
+        >
+          {t("consent.privacyPrefix")} <PolicyLink href="/legal/privacy-policy">{t("consent.privacyLink")}</PolicyLink>
+          {t("consent.privacySuffix")}
+        </ConsentCheckbox>
+      </fieldset>
+
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">{t("signUp.updates")}</legend>
+        <p className="text-xs text-muted-foreground">{t("signUp.updatesHint")}</p>
+        <ConsentCheckbox id="signup-mkt-email" name="marketingEmail" checked={consents.email} onCheckedChange={toggle("email")}>
+          {t("consent.marketingEmail")}
+        </ConsentCheckbox>
+        <ConsentCheckbox id="signup-mkt-sms" name="marketingSms" checked={consents.sms} onCheckedChange={toggle("sms")}>
+          {t("consent.marketingSms")}
+        </ConsentCheckbox>
+        <ConsentCheckbox id="signup-mkt-whatsapp" name="whatsappUpdates" checked={consents.whatsapp} onCheckedChange={toggle("whatsapp")}>
+          {t("consent.whatsapp")}
+        </ConsentCheckbox>
+      </fieldset>
+    </>
+  );
+}
+
+/** "Sign up with Google" (enabled once the required agreements are ticked; the choices travel with it). */
+export function GoogleSignUp({ consents, intent, returnTo }: { consents: Consents; intent: string | null; returnTo: string | null }) {
+  const t = useT("auth");
+  let googleHref: string | null = null;
+  if (consents.terms && consents.privacy) {
+    const params = new URLSearchParams({ consent: "checkbox" });
+    if (intent) params.set("intent", intent);
+    if (returnTo) params.set("returnTo", returnTo);
+    if (consents.email) params.set("me", "1");
+    if (consents.sms) params.set("ms", "1");
+    if (consents.whatsapp) params.set("mw", "1");
+    googleHref = `/auth/google?${params.toString()}`;
+  }
+  return (
+    <div className="space-y-3">
+      <OrSeparator label={t("common.or")} />
+      <GoogleButton href={googleHref} label={t("google.signUp")} describedById="signup-google-hint" />
+      <p id="signup-google-hint" className="text-xs text-muted-foreground" aria-live="polite">
+        {googleHref ? t("google.signUpReady") : t("google.signUpNeedsConsent")}
+      </p>
     </div>
   );
 }

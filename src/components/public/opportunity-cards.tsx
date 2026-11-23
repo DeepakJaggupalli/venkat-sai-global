@@ -40,10 +40,19 @@ function Chip({ children, tone = "neutral" }: { children: ReactNode; tone?: "neu
   );
 }
 
-export function JobMiniCard({ job, headingLevel: Heading = "h3" }: { job: JobCard; headingLevel?: "h3" | "h4" }) {
-  const closes = shortDate(job.closesAt);
+export function JobMiniCard({
+  job,
+  headingLevel: Heading = "h3",
+  showDeadline = true,
+}: {
+  job: JobCard;
+  headingLevel?: "h3" | "h4";
+  /** "Apply by <date>" line (left out on the homepage strip). */
+  showDeadline?: boolean;
+}) {
+  const closes = showDeadline ? shortDate(job.closesAt) : null;
   return (
-    <article className="card-surface lift group relative flex h-full flex-col rounded-2xl p-5" data-testid="job-mini-card">
+    <article className="card-surface lift group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl p-5" data-testid="job-mini-card">
       <div className="flex flex-wrap gap-1.5">
         {job.isFeatured ? <Chip tone="gold">Featured</Chip> : null}
         {job.isOverseas ? (
@@ -53,13 +62,13 @@ export function JobMiniCard({ job, headingLevel: Heading = "h3" }: { job: JobCar
         ) : null}
         <Chip>{humanize(job.employmentType)}</Chip>
       </div>
-      <Heading className="mt-3 font-heading text-base font-bold tracking-tight text-foreground">
+      <Heading className="mt-3 line-clamp-2 font-heading text-base font-bold tracking-tight break-words text-foreground">
         <Link href={`/jobs/${job.slug}`} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
           {job.title}
         </Link>
       </Heading>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <span className="truncate">{job.employer.name}</span>
+      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="min-w-0 truncate">{job.employer.name}</span>
         {job.employer.verified || job.verifiedEmployer ? (
           <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-success-strong">
             <ShieldCheck aria-hidden="true" className="size-3.5" />
@@ -68,14 +77,16 @@ export function JobMiniCard({ job, headingLevel: Heading = "h3" }: { job: JobCar
         ) : null}
       </p>
       <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-        <li className="flex items-center gap-1.5">
+        <li className="flex min-w-0 items-center gap-1.5">
           <MapPin aria-hidden="true" className="size-4 shrink-0" />
-          <span className="truncate">{placeOf(job)}</span>
+          <span className="min-w-0 truncate">{placeOf(job)}</span>
         </li>
         {job.salary ? (
-          <li className="flex items-center gap-1.5">
+          <li className="flex min-w-0 items-center gap-1.5">
             <Briefcase aria-hidden="true" className="size-4 shrink-0" />
-            <SalaryRangeText minMinor={job.salary.minMinor} maxMinor={job.salary.maxMinor} currency={job.salary.currency} period={job.salary.period} />
+            <span className="min-w-0 truncate">
+              <SalaryRangeText minMinor={job.salary.minMinor} maxMinor={job.salary.maxMinor} currency={job.salary.currency} period={job.salary.period} />
+            </span>
           </li>
         ) : null}
         {closes ? (
@@ -93,7 +104,7 @@ export function CourseMiniCard({ course, headingLevel: Heading = "h3" }: { cours
   const starts = course.nextBatch?.startsOn ? shortDate(new Date(`${course.nextBatch.startsOn}T00:00:00Z`)) : null;
   const duration = course.durationWeeks ? `${course.durationWeeks} week${course.durationWeeks === 1 ? "" : "s"}` : course.durationHours ? `${course.durationHours} hours` : null;
   return (
-    <article className="card-surface lift group relative flex h-full gap-4 rounded-2xl p-4 sm:p-5" data-testid="course-mini-card">
+    <article className="card-surface lift group relative flex h-full min-w-0 gap-4 overflow-hidden rounded-2xl p-4 sm:p-5" data-testid="course-mini-card">
       <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-teal-soft sm:size-24">
         <CourseCover course={course} sizes="96px" />
       </div>
@@ -103,12 +114,12 @@ export function CourseMiniCard({ course, headingLevel: Heading = "h3" }: { cours
           <Chip>{humanize(course.mode)}</Chip>
           {course.feeType === "free" ? <Chip tone="teal">Free</Chip> : null}
         </div>
-        <Heading className="mt-3 font-heading text-base font-bold tracking-tight text-foreground">
+        <Heading className="mt-3 line-clamp-2 font-heading text-base font-bold tracking-tight break-words text-foreground">
           <Link href={`/training/${course.slug}`} className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2">
             {course.title}
           </Link>
         </Heading>
-        <p className="mt-1 text-sm text-muted-foreground">{course.provider.name}</p>
+        <p className="mt-1 truncate text-sm text-muted-foreground">{course.provider.name}</p>
         <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
           {duration ? (
             <li className="flex items-center gap-1.5">

@@ -8,6 +8,7 @@ import { CmsImage } from "../cms-media";
 import { Flag } from "../flag";
 import { EN_MARKETING, intlLocale, splitAround, type MarketingT } from "../marketing-i18n";
 import type { PosterCard } from "../requirements/data";
+import { RouteRotator } from "./route-rotator";
 
 /**
  * The "product card" on the right of the homepage hero: the latest published requirement poster as a clean,
@@ -121,17 +122,46 @@ export function NowHiringCard({ poster, t = EN_MARKETING }: { poster: PosterCard
   );
 }
 
-const ROUTE_ITEMS = ["route.visa", "route.medical", "route.documents", "route.ticket"] as const;
+const ROUTE_ITEMS = ["route.visa", "route.food", "route.medical", "route.documents", "route.transport", "route.ticket"] as const;
 
-/** Static card used when no requirement poster is published: the route from Visakhapatnam and what we handle. */
+/** Destinations the route card rotates through (copy: route.dest.<id>.city / .country). The origin stays Vizag. */
+export const ROUTE_DESTINATIONS = [
+  { id: "dubai", code: "AE" },
+  { id: "riyadh", code: "SA" },
+  { id: "manama", code: "BH" },
+  { id: "singapore", code: "SG" },
+  { id: "kualaLumpur", code: "MY" },
+  { id: "warsaw", code: "PL" },
+  { id: "doha", code: "QA" },
+  { id: "muscat", code: "OM" },
+] as const;
+
+/**
+ * Card used when no requirement poster is published: the route from Visakhapatnam to a destination that changes
+ * every few seconds (RouteRotator), what we help with, and a note that benefits depend on the employer.
+ */
 export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
+  const destinations = ROUTE_DESTINATIONS.map((d) => ({
+    id: d.id,
+    city: t(`route.dest.${d.id}.city`),
+    country: t(`route.dest.${d.id}.country`),
+    flag: <Flag code={d.code} />,
+  }));
+  const cities = new Intl.ListFormat(intlLocale(t.locale), { type: "conjunction" }).format(destinations.map((d) => d.city));
   return (
-    <article className={CARD} aria-labelledby="hero-card-title" data-testid="hero-route-card">
-      <p className="label-dot">{t("route.eyebrow")}</p>
-      <h2 id="hero-card-title" className="sr-only">
-        {t("route.title")}
-      </h2>
-      <div className="mt-8 grid grid-cols-[auto_1fr_auto] items-center gap-4">
+    <RouteRotator
+      className={CARD}
+      destinations={destinations}
+      srText={`${t("route.destinationsLabel")}: ${cities}`}
+      header={
+        <>
+          <p className="label-dot">{t("route.eyebrow")}</p>
+          <h2 id="hero-card-title" className="sr-only">
+            {t("route.title")}
+          </h2>
+        </>
+      }
+      origin={
         <div>
           <p className="flex items-center gap-2 font-display text-xl text-foreground">
             <Flag code="IN" />
@@ -139,35 +169,36 @@ export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{t("route.fromDetail")}</p>
         </div>
+      }
+      connector={
         <div aria-hidden="true" className="relative flex items-center">
           <span className="h-px w-full border-t border-dashed border-[#c9cdd5]" />
           <span className="absolute left-1/2 flex size-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-white text-teal-strong">
             <Plane className="size-4" />
           </span>
         </div>
-        <div className="text-end">
-          <p className="flex items-center justify-end gap-2 font-display text-xl text-foreground">
-            {t("route.to")}
-            <Flag code="AE" />
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("route.toDetail")}</p>
-        </div>
-      </div>
-      <ul aria-label={t("route.helpLabel")} className="mt-8 flex flex-wrap gap-2">
-        {ROUTE_ITEMS.map((key) => (
-          <li key={key} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground">
-            <Check aria-hidden="true" className="size-3.5 text-teal-strong" strokeWidth={3} />
-            {t(key)}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-8 flex items-center justify-between gap-4 border-t border-border pt-5">
-        <p className="text-sm text-muted-foreground">{t("route.noFee")}</p>
-        <Link href="/requirements" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
-          {t("route.requirements")}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
-      </div>
-    </article>
+      }
+      footer={
+        <>
+          <ul aria-label={t("route.helpLabel")} className="mt-8 flex flex-wrap gap-2">
+            {ROUTE_ITEMS.map((key) => (
+              <li key={key} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground">
+                <Check aria-hidden="true" className="size-3.5 text-teal-strong" strokeWidth={3} />
+                {t(key)}
+              </li>
+            ))}
+            <li className="inline-flex items-center rounded-full px-1.5 py-1.5 text-sm font-medium text-muted-foreground">{t("route.more")}</li>
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">{t("route.benefitsNote")}</p>
+          <div className="mt-8 flex items-center justify-between gap-4 border-t border-border pt-5">
+            <p className="text-sm text-muted-foreground">{t("route.noFee")}</p>
+            <Link href="/requirements" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 hover:underline">
+              {t("route.requirements")}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+          </div>
+        </>
+      }
+    />
   );
 }

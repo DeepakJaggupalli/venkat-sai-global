@@ -1,7 +1,5 @@
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
-
 import type { HomepageData } from "@/modules/content/collections";
 import type { PublicMediaAsset } from "@/modules/content/types";
 
@@ -22,6 +20,12 @@ const LEGACY_CTA_LABELS = new Set(["explore opportunities", "hire through venkat
 
 const SEND_CV_HREF = "/send-cv";
 const JOBS_HREF = "/jobs";
+
+/** "Get your job *abroad*." → lead, accent (highlighted word between asterisks), rest. No asterisks: all lead. */
+export function splitAccent(title: string): [string, string, string] {
+  const match = /^(.*?)\*(.+?)\*(.*)$/.exec(title);
+  return match ? [match[1]!, match[2]!, match[3]!] : [title, "", ""];
+}
 
 const TRUST = ["hero.trust.noFees", "hero.trust.paperwork", "hero.trust.tested"] as const;
 
@@ -49,7 +53,6 @@ export function HomeHero({
   poster,
   openRequirements = 0,
   t = EN_MARKETING,
-  languageSwitch,
 }: {
   hero: HomepageData["hero"] | null | undefined;
   media: PublicMediaAsset | null;
@@ -58,8 +61,6 @@ export function HomeHero({
   openRequirements?: number;
   whatsappE164?: string;
   t?: MarketingT;
-  /** Small language switch shown under the trust row. */
-  languageSwitch?: ReactNode;
 }) {
   const cmsHeading = hero?.heading?.trim();
   const heading = cmsHeading && !LEGACY_HEADINGS.has(cmsHeading) ? cmsHeading : null;
@@ -73,6 +74,7 @@ export function HomeHero({
   const image = media?.kind === "image" ? media : null;
   const video = media && (media.kind === "video" || media.kind === "embed") ? media : null;
   const more = openRequirements - 1;
+  const [titleLead, titleAccent, titleRest] = splitAccent(t("hero.title"));
 
   return (
     <section aria-labelledby="home-hero-title" className="relative overflow-hidden bg-white" data-testid="home-hero">
@@ -85,9 +87,9 @@ export function HomeHero({
           >
             {heading ?? (
               <>
-                {t("hero.titleLead")}
-                <br />
-                <span className="bg-gradient-to-r from-[#0284c7] to-[#0891b2] bg-clip-text text-transparent">{t("hero.titleAccent")}</span> {t("hero.titleRest")}
+                {titleLead}
+                {titleAccent ? <span className="bg-gradient-to-r from-[#0284c7] to-[#0891b2] bg-clip-text text-transparent">{titleAccent}</span> : null}
+                {titleRest}
               </>
             )}
           </h1>
@@ -121,7 +123,6 @@ export function HomeHero({
               {t("hero.forCompany")}
             </Link>
           </div>
-          {languageSwitch ? <div className="mt-6">{languageSwitch}</div> : null}
         </div>
 
         <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:ps-4">

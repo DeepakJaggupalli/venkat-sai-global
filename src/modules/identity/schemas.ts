@@ -2,7 +2,20 @@ import { z } from "zod";
 
 import { f, normalizePhone, parseIdentifier } from "@/lib/validation";
 
-import { isSignupIntent, OTP_LENGTH, PASSWORD_MAX_LENGTH, SIGNUP_INTENTS, type Contact } from "./types";
+import { COMPANY_SIZE_BANDS, INSTITUTION_KINDS, PARTNER_BUSINESS_TYPES } from "@/modules/organizations/constants";
+import { signupOrganizationSchema, type SignupOrganizationInput } from "@/modules/organizations/schemas";
+
+import {
+  employerKindForIntent,
+  isSignupIntent,
+  ORGANIZATION_SIGNUP_INTENTS,
+  orgTypeForIntent,
+  OTP_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  SIGNUP_INTENTS,
+  type Contact,
+  type SignupIntent,
+} from "./types";
 
 /**
  * Zod schemas for every identity form (client-safe).
@@ -156,7 +169,120 @@ export const signUpSchema = z
       returnTo: v.returnTo ?? null,
     };
   });
-export type SignUpInput = z.output<typeof signUpSchema>;
+export type SignUpInput = z.output<typeof signUpSchema> & { organization?: SignupOrganizationInput | null };
+
+const optionalTextField = (max: number) => z.string().trim().max(max, "validation.too_long").optional();
+
+/** "example.com" → "https://example.com" (the canonical organisation schema wants a full link). */
+const websiteField = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() && !/^[a-z][a-z0-9+.-]*:/i.test(v.trim()) ? `https://${v.trim()}` : v),
+  z.string().trim().max(500, "validation.too_long").optional(),
+);
+
+/** Fields of step 1 ("Organisation details"); the form returns to that step when one of them is invalid. */
+export const ORGANIZATION_SIGNUP_STEP1_FIELDS = [
+  "orgName",
+  "businessType",
+  "countryCode",
+  "stateRegion",
+  "city",
+  "addressLine1",
+  "websiteUrl",
+  "registrationNumber",
+  "licenceNumber",
+  "companySize",
+  "displayName",
+  "designation",
+] as const;
+
+/** Canonical organisation fields (organizations/schemas) → sign-up form field names. */
+const ORGANIZATION_FIELD_FOR: Record<string, string> = { name: "orgName", representativeTitle: "designation", partnerBusinessType: "businessType", institutionKind: "businessType" };
+
+/**
+ * Sign-up of a company / HR team, travel agency, recruitment partner or training institute: the organisation
+ * details (step 1), then the contact person's login — email, mobile number and password (step 2). The email is
+ * verified with a code like any sign-up; the organisation is validated with the organisations module's own schema.
+ */
+export const organizationSignUpSchema = z
+  .object({
+    intent: z.enum(ORGANIZATION_SIGNUP_INTENTS, { error: "validation.account_type_required" }),
+    orgName: z.string({ error: "validation.org_name_required" }).trim().min(2, "validation.org_name_required").max(200, "validation.too_long"),
+    businessType: z.string().trim().optional(),
+    countryCode: z.string({ error: "validation.country_required" }).trim().length(2, "validation.country_required").toUpperCase(),
+    stateRegion: optionalTextField(120),
+    city: z.string({ error: "validation.city_required" }).trim().min(1, "validation.city_required").max(120, "validation.too_long"),
+    addressLine1: optionalTextField(200),
+    websiteUrl: websiteField,
+    registrationNumber: optionalTextField(100),
+    licenceNumber: optionalTextField(100),
+    companySize: z.string().trim().optional(),
+    displayName: displayNameField,
+    designation: z.string({ error: "validation.designation_required" }).trim().min(2, "validation.designation_required").max(120, "validation.too_long"),
+    email: z.string({ error: "validation.email_required" }).trim().min(1, "validation.email_required").max(254, "validation.email_invalid"),
+    phone: z.string({ error: "validation.phone_required" }).trim().min(1, "validation.phone_required").max(32, "validation.phone_invalid"),
+    password: passwordField,
+    acceptTerms: f.bool().refine((v) => v === true, "validation.terms_required"),
+    acceptPrivacy: f.bool().refine((v) => v === true, "validation.privacy_required"),
+    marketingEmail: f.bool(),
+    marketingSms: f.bool(),
+    whatsappUpdates: f.bool(),
+    returnTo: returnToField,
+  })
+  .superRefine(
+    (v, ctx) => {
+      if (v.email && !z.email().safeParse(v.email.toLowerCase()).success) ctx.addIssue({ code: "custom", path: ["email"], message: "validation.email_invalid" });
+      if (v.phone && !normalizePhone(v.phone)) ctx.addIssue({ code: "custom", path: ["phone"], message: "validation.phone_invalid" });
+      if (v.websiteUrl && !z.url({ protocol: /^https?$/ }).safeParse(v.websiteUrl).success) {
+        ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "validation.website_invalid" });
+      }
+      const kinds: readonly string[] | null = v.intent === "partner" ? PARTNER_BUSINESS_TYPES : v.intent === "institution" ? INSTITUTION_KINDS : null;
+      if (kinds && !(v.businessType && kinds.includes(v.businessType))) ctx.addIssue({ code: "custom", path: ["businessType"], message: "validation.business_type_required" });
+      if (v.companySize && !(COMPANY_SIZE_BANDS as readonly string[]).includes(v.companySize)) {
+        ctx.addIssue({ code: "custom", path: ["companySize"], message: "validation.option_invalid" });
+      }
+    },
+    { when: () => true },
+  )
+  .transform((v, ctx) => {
+    const isEmployer = v.intent === "employer" || v.intent === "travel_agency";
+    const organization = signupOrganizationSchema.safeParse({
+      type: orgTypeForIntent(v.intent),
+      employerKind: employerKindForIntent(v.intent),
+      details: {
+        name: v.orgName,
+        countryCode: v.countryCode,
+        stateRegion: v.stateRegion,
+        city: v.city,
+        addressLine1: v.addressLine1,
+        websiteUrl: v.websiteUrl,
+        registrationNumber: v.registrationNumber,
+        email: v.email.toLowerCase(),
+        phone: v.phone,
+      },
+      representativeTitle: v.designation,
+      partnerBusinessType: v.intent === "partner" ? (v.businessType ?? null) : null,
+      institutionKind: v.intent === "institution" ? (v.businessType ?? null) : null,
+      companySize: isEmployer && v.companySize ? v.companySize : null,
+      licenceNumber: v.intent === "partner" && v.licenceNumber ? v.licenceNumber : null,
+    });
+    if (!organization.success) {
+      for (const issue of organization.error.issues) {
+        const key = String(issue.path[0] === "details" ? (issue.path[1] ?? "orgName") : (issue.path[0] ?? "orgName"));
+        ctx.addIssue({ code: "custom", path: [ORGANIZATION_FIELD_FOR[key] ?? key], message: issue.message });
+      }
+      return z.NEVER;
+    }
+    return {
+      intent: v.intent as SignupIntent,
+      displayName: v.displayName,
+      contact: { kind: "email" as const, value: v.email.toLowerCase() },
+      password: v.password,
+      marketing: { email: v.marketingEmail, sms: v.marketingSms, whatsapp: v.whatsappUpdates },
+      returnTo: v.returnTo ?? null,
+      organization: organization.data,
+    };
+  });
+export type OrganizationSignUpInput = z.output<typeof organizationSignUpSchema>;
 
 // ---------------------------------------------------------------------------
 // Password reset

@@ -8,11 +8,13 @@ import { getPortalAccess, portalHomePath } from "@/modules/identity/authz";
 import { isGoogleSignInEnabled } from "@/modules/identity/google";
 import { intentForPath, resolvePostAuthRedirect, sanitizeReturnTo } from "@/modules/identity/redirects";
 import { getCurrentSession } from "@/modules/identity/session";
-import { isSignupIntent, type SignupIntent } from "@/modules/identity/types";
+import { isOrganizationSignupIntent, isSignupIntent, type SignupIntent } from "@/modules/identity/types";
 import { getSetting, isFeatureEnabled } from "@/modules/settings";
+import { countryOptions } from "@/modules/taxonomy/queries";
 
 import { AccountTypeChoice, accountTypeItems } from "../_components/account-type-cards";
 import { AuthHeading, AuthLinks } from "../_components/auth-heading";
+import { OrganizationSignUpForm } from "../_components/organization-sign-up-form";
 import { SignUpForm } from "../_components/sign-up-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,6 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * Sign-up. Step 1 is the "I am a…" choice (Job seeker, Travel agency, Company / HR, Recruitment partner, Training
  * institute); step 2 is the form for that account type (?intent=…, also inferred from a portal returnTo such as
  * /talent). Deep links with ?intent= go straight to step 2. Signed-in visitors go to the chosen portal (or its onboarding).
+ * Organisation account types get a two-part form (organisation details, then the contact person's login) and land in
+ * their portal after verifying; job seekers keep the short form.
  */
 export default async function SignUpPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
@@ -82,7 +86,18 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
     <div className="space-y-6">
       <AuthHeading eyebrow={t(`signUp.intent.${intent}.eyebrow`)} title={t(`signUp.intent.${intent}.title`)} description={t(`signUp.intent.${intent}.description`)} />
       <AccountTypeChoice label={t("accountType.label")} items={items} selected={intent} variant="tabs" />
-      <SignUpForm key={intent} intent={intent} returnTo={returnTo} phoneAllowed={phoneAllowed} minPasswordLength={minPasswordLength} googleEnabled={googleEnabled} />
+      {isOrganizationSignupIntent(intent) ? (
+        <OrganizationSignUpForm
+          key={intent}
+          intent={intent}
+          returnTo={returnTo}
+          minPasswordLength={minPasswordLength}
+          googleEnabled={googleEnabled}
+          countries={await countryOptions()}
+        />
+      ) : (
+        <SignUpForm key={intent} intent={intent} returnTo={returnTo} phoneAllowed={phoneAllowed} minPasswordLength={minPasswordLength} googleEnabled={googleEnabled} />
+      )}
       {signInLink}
     </div>
   );

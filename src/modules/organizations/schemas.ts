@@ -4,7 +4,7 @@
  */
 import { z } from "zod";
 
-import { ORG_TYPES } from "@/db/schema/_constants";
+import { EMPLOYER_KINDS, ORG_TYPES } from "@/db/schema/_constants";
 import { f } from "@/lib/validation";
 
 import {
@@ -119,6 +119,24 @@ export type OrganizationDetailsInput = FormOutput<typeof organizationDetailsSche
 /** Onboarding: create an organisation of `type` owned by the signed-in user. */
 export const createOrganizationSchema = organizationDetailsSchema.extend({ type: orgTypeField });
 export type CreateOrganizationInput = FormOutput<typeof createOrganizationSchema>;
+
+/**
+ * Organisation captured by the one-step sign-up of a company, travel agency, recruitment partner or institution.
+ * It is kept with the pending account and created (exactly as onboarding creates it) when the contact is verified.
+ */
+export const signupOrganizationSchema = z.object({
+  type: orgTypeField,
+  employerKind: z.enum(EMPLOYER_KINDS).nullable(),
+  details: organizationDetailsSchema,
+  /** The registering person's designation (saved on their owner membership). */
+  representativeTitle: f.text({ max: 120, label: "Your designation" }),
+  partnerBusinessType: f.enumOf(PARTNER_BUSINESS_TYPES).nullable(),
+  institutionKind: f.enumOf(INSTITUTION_KINDS).nullable(),
+  companySize: f.enumOf(COMPANY_SIZE_BANDS).nullable(),
+  /** Recruitment partners: declared licence number (recorded as a pending licence; the document is uploaded in the portal). */
+  licenceNumber: z.string().trim().max(100, "Too long").nullable(),
+});
+export type SignupOrganizationInput = z.output<typeof signupOrganizationSchema>;
 
 /** Portal form (member): the portal type identifies the active organisation. */
 export const updateOrganizationSchema = organizationDetailsSchema.extend({ orgType: orgTypeField });
