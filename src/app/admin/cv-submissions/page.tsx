@@ -30,6 +30,7 @@ import { setCvSubmissionStatusAction } from "./actions";
 export const metadata: Metadata = { title: "CV submissions" };
 
 const statusOptions = CV_SUBMISSION_STATUS_VALUES.map((value) => ({ value, label: CV_SUBMISSION_STATUS_LABELS[value] }));
+const expiringOptions = [{ value: "1", label: "Passport expiring (6 months)" }];
 
 function str(value: string | string[] | undefined): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -44,7 +45,7 @@ function candidateWhatsApp(item: CvSubmissionListItem): string | null {
 export default async function CvSubmissionsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const ctx = await requireStaff("candidates.view");
   const sp = await searchParams;
-  const filters = cvSubmissionFiltersSchema.parse({ status: str(sp.status), trade: str(sp.trade), country: str(sp.country), q: str(sp.q) });
+  const filters = cvSubmissionFiltersSchema.parse({ status: str(sp.status), trade: str(sp.trade), country: str(sp.country), q: str(sp.q), expiring: str(sp.expiring) });
   const page = parsePage(sp, { defaultSize: 25 });
   const [result, counts, trades, countries] = await Promise.all([listCvSubmissions(ctx, filters, page), cvSubmissionCounts(ctx), listCvSubmissionTrades(ctx), countryOptions()]);
   const canManage = staffCan(ctx, "candidates.manage");
@@ -55,7 +56,7 @@ export default async function CvSubmissionsPage({ searchParams }: { searchParams
       <PageHeader
         title="CV submissions"
         description="CVs sent through the website's Send your CV form. Call or WhatsApp the candidate, then update the status."
-        actions={<DownloadExcelButton href="/admin/cv-submissions/export" searchParams={sp} keys={["q", "status", "trade", "country"]} />}
+        actions={<DownloadExcelButton href="/admin/cv-submissions/export" searchParams={sp} keys={["q", "status", "trade", "country", "expiring"]} />}
       />
       {!canContact ? <p className="text-sm text-muted-foreground">Phone numbers are hidden: they need the permission to view candidate contact details.</p> : null}
 
@@ -77,16 +78,18 @@ export default async function CvSubmissionsPage({ searchParams }: { searchParams
       </nav>
 
       <FilterScope>
-        <FilterBar paramKeys={["q", "status", "trade", "country"]} search={<SearchInput label="Search by name, phone, trade, requirement or reference" />}>
+        <FilterBar paramKeys={["q", "status", "trade", "country", "expiring"]} search={<SearchInput label="Search by name, phone, trade, requirement or reference" />}>
           <FilterSelect param="status" label="Status" allLabel="Any status" options={statusOptions} />
           <FilterSelect param="trade" label="Trade" allLabel="All trades" options={trades} />
           <FilterSelect param="country" label="Preferred country" allLabel="Any country" options={countries} />
+          <FilterSelect param="expiring" label="Expiring soon" allLabel="Any passport expiry" options={expiringOptions} />
         </FilterBar>
         <FilterChips
           filters={[
             { param: "status", label: "Status", options: statusOptions },
             { param: "trade", label: "Trade", options: trades },
             { param: "country", label: "Country", options: countries },
+            { param: "expiring", label: "Expiring soon", options: expiringOptions },
           ]}
         />
         <FilterPendingRegion>
@@ -109,6 +112,11 @@ export default async function CvSubmissionsPage({ searchParams }: { searchParams
                       {s.experienceYears !== null ? ` · ${s.experienceYears} yrs` : ""}
                       {s.passportLast4 ? ` · Passport …${s.passportLast4}` : s.hasPassport === true ? " · Passport" : s.hasPassport === false ? " · No passport" : ""}
                     </p>
+                    {s.passportExpiringSoon ? (
+                      <StatusBadge tone="warning" size="sm" className="mt-1">
+                        Passport expires {s.passportExpiry}
+                      </StatusBadge>
+                    ) : null}
                   </div>
                 ),
               },

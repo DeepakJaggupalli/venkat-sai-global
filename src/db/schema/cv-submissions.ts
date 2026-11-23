@@ -8,15 +8,20 @@
  * `ipHash` only (never the raw IP).
  */
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgTable, smallint, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, pgTable, smallint, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { countryCode, createdAtOnly, pk, timestamps, tstz } from "./_shared";
 import { cmsEntries } from "./content";
 import { files, users } from "./core";
 import { countries, jobCategories } from "./taxonomy";
 
-export const CV_SUBMISSION_STATUSES = ["new", "contacted", "shortlisted", "not_suitable"] as const;
+/**
+ * The placement journey staff move a candidate through (in order), plus two side states. Migration 0006 rewrote the
+ * values used before it: new → received, shortlisted → trade_test (LEGACY_CV_SUBMISSION_STATUSES keeps old links working).
+ */
+export const CV_SUBMISSION_STATUSES = ["received", "contacted", "trade_test", "selected", "medical", "visa", "ticket", "departed", "not_suitable", "on_hold"] as const;
 export type CvSubmissionStatus = (typeof CV_SUBMISSION_STATUSES)[number];
+export const LEGACY_CV_SUBMISSION_STATUSES = { new: "received", shortlisted: "trade_test" } as const satisfies Record<string, CvSubmissionStatus>;
 
 export const cvSubmissions = pgTable(
   "cv_submissions",
@@ -45,6 +50,8 @@ export const cvSubmissions = pgTable(
     passportNumberLast4: text(),
     /** hmacToken(number, "passport") — blind index for matching with candidate profiles; never displayed. */
     passportNumberHash: text(),
+    /** Passport expiry date as the candidate gave it (optional; drives the documents.expiry_alerts task). */
+    passportExpiry: date({ mode: "string" }),
     /** The candidate's own remarks from the form ("Notes for us"). */
     candidateNotes: text(),
     /**
@@ -58,7 +65,13 @@ export const cvSubmissions = pgTable(
     requirementEntryId: uuid().references(() => cmsEntries.id, { onDelete: "set null" }),
     /** Poster title at submission time (kept if the poster is later deleted). */
     requirementTitle: text(),
-    status: text({ enum: CV_SUBMISSION_STATUSES }).notNull().default("new"),
+    status: text({ enum: CV_SUBMISSION_STATUSES }).notNull().default("received"),
+    /**
+     * Short note shown to the candidate on the public /status page (e.g. "Trade test on 5 December at our office").
+     * Separate from staffRemarks; changes are audited without the text.
+     */
+    candidateNote: text(),
+    candidateNoteUpdatedAt: tstz(),
     /** Staff-only remarks (editable on the admin view, audited; never shown to the candidate). */
     staffRemarks: text(),
     remarksUpdatedAt: tstz(),
@@ -91,7 +104,54 @@ export const cvSubmissions = pgTable(
     check("cv_submissions_consent_chk", sql`${t.consentToContact} = true`),
     check("cv_submissions_name_chk", sql`btrim(${t.name}) <> ''`),
     check("cv_submissions_trade_chk", sql`btrim(${t.tradeLabel}) <> ''`),
+    check("cv_submissions_candidate_note_chk", sql`${t.candidateNote} is null or char_length(${t.candidateNote}) <= 500`),
+    index("cv_submissions_passport_expiry_idx").on(t.passportExpiry).where(sql`${t.passportExpiry} is not null`),
     check("cv_submissions_experience_chk", sql`${t.experienceYears} is null or ${t.experienceYears} between 0 and 60`),
+  ],
+);
+
+/**
+ * Stage history of a CV submission (one row per change, newest last): the public /status tracker shows the date each
+ * stage was reached. `candidateNote` is the note shown to the candidate when the change was made (never staff remarks).
+ */
+export const cvSubmissionStageEvents = pgTable(
+  "cv_submission_stage_events",
+  {
+    id: pk(),
+    submissionId: uuid()
+      .notNull()
+      .references(() => cvSubmissions.id, { onDelete: "cascade" }),
+    fromStatus: text({ enum: CV_SUBMISSION_STATUSES }),
+    toStatus: text({ enum: CV_SUBMISSION_STATUSES }).notNull(),
+    candidateNote: text(),
+    /** null = system (submission received, migration backfill). */
+    changedByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    ...createdAtOnly,
+  },
+  (t) => [index("cv_submission_stage_events_submission_idx").on(t.submissionId, t.createdAt), index("cv_submission_stage_events_changed_by_idx").on(t.changedByUserId)],
+);
+
+/**
+ * Expiry alerts already sent by the daily documents.expiry_alerts task: one row per item, expiry date and threshold
+ * (6, 3 or 1 month), so each item alerts once per threshold (a renewed document has a new date and alerts again).
+ */
+export const DOCUMENT_EXPIRY_ITEM_TYPES = ["cv_submission_passport", "candidate_passport", "candidate_document", "candidate_credential"] as const;
+export type DocumentExpiryItemType = (typeof DOCUMENT_EXPIRY_ITEM_TYPES)[number];
+
+export const documentExpiryAlerts = pgTable(
+  "document_expiry_alerts",
+  {
+    id: pk(),
+    itemType: text({ enum: DOCUMENT_EXPIRY_ITEM_TYPES }).notNull(),
+    itemId: uuid().notNull(),
+    expiresOn: date({ mode: "string" }).notNull(),
+    /** Months before expiry: 6, 3 or 1. */
+    thresholdMonths: smallint().notNull(),
+    ...createdAtOnly,
+  },
+  (t) => [
+    uniqueIndex("document_expiry_alerts_item_uq").on(t.itemType, t.itemId, t.expiresOn, t.thresholdMonths),
+    check("document_expiry_alerts_threshold_chk", sql`${t.thresholdMonths} in (1, 3, 6)`),
   ],
 );
 

@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
-import { applications, candidatePrivacySettings, candidateProfiles, countries, jobs, profileUnlocks, users } from "@/db/schema";
+import { applications, candidateCredentials, candidateDocuments, candidatePrivacySettings, candidateProfiles, countries, jobs, profileUnlocks, users } from "@/db/schema";
 import { ActionError } from "@/lib/actions";
 import { toMinorUnits } from "@/lib/format";
 import { paginated } from "@/lib/http";
@@ -83,6 +83,16 @@ async function authorise(viewer: CandidateViewer, filters: CandidateSearchFilter
   throw new ActionError("Candidate search is available to employers and Venkat Sai staff only.", { code: "forbidden" });
 }
 
+/**
+ * Staff "Expiring soon": passport expires within 6 months, or a document / credential within 30 days (not yet expired
+ * for documents; an already expired passport still counts). Same windows as the documents.expiry_alerts task.
+ */
+const expiringSoonSql = sql<boolean>`(
+  (${candidateProfiles.passportExpiry} is not null and ${candidateProfiles.passportExpiry} <= current_date + interval '6 months')
+  or exists (select 1 from ${candidateDocuments} d where d.candidate_id = ${candidateProfiles.id} and d.deleted_at is null and d.expires_at between current_date and current_date + 30)
+  or exists (select 1 from ${candidateCredentials} cr where cr.candidate_id = ${candidateProfiles.id} and cr.deleted_at is null and cr.expires_at between current_date and current_date + 30)
+)`;
+
 function buildConditions(filters: CandidateSearchFilters, ctx: SearchContext, tsQuery: string | null): SQL[] {
   const c: SQL[] = [isNull(candidateProfiles.deletedAt), eq(users.status, "active")];
   const cp = candidateProfiles;
@@ -156,6 +166,7 @@ function buildConditions(filters: CandidateSearchFilters, ctx: SearchContext, ts
   if (filters.employmentTypes.length) c.push(sql`${cp.desiredEmploymentTypes} && ${toTextArray(filters.employmentTypes)}`);
   if (filters.workModes.length) c.push(sql`${cp.preferredWorkModes} && ${toTextArray(filters.workModes)}`);
   if (filters.openToOverseas) c.push(eq(cp.openToOverseas, true));
+  if (filters.expiringSoon && ctx.kind === "staff") c.push(expiringSoonSql);
   if (filters.passportValid) {
     c.push(eq(cp.passportStatus, "valid"));
     c.push(or(isNull(cp.passportExpiry), sql`${cp.passportExpiry} > current_date`)!);
@@ -234,6 +245,7 @@ export async function searchCandidates(filters: CandidateSearchFilters, viewer: 
         openToOverseas: cp.openToOverseas,
         isMinor: sql<boolean>`${candidateIsMinorSql}`,
         passportStatus: cp.passportStatus,
+        expiringSoon: ctx.kind === "staff" ? expiringSoonSql : sql<boolean>`false`,
         verificationLevel: cp.verificationLevel,
         expectedSalaryMinor: cp.expectedSalaryMinor,
         expectedSalaryCurrency: cp.expectedSalaryCurrency,
@@ -292,6 +304,7 @@ export async function searchCandidates(filters: CandidateSearchFilters, viewer: 
       profileCompleteness: r.profileCompleteness,
       relationship: { applied: relationships?.applied.has(r.id) ?? false, unlocked: relationships?.unlocked.has(r.id) ?? false },
       visibility: ctx.kind === "staff" ? r.visibility : null,
+      ...(ctx.kind === "staff" ? { expiringSoon: Boolean(r.expiringSoon) } : {}),
       rank: tsQuery ? Number(r.rank) : null,
     };
   });

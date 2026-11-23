@@ -18,6 +18,7 @@ import { MetricsSection } from "@/components/public/home/metrics";
 import { OpportunitiesSection } from "@/components/public/home/opportunities";
 import { resolveHomepageSections, type ResolvedSection } from "@/components/public/home/sections";
 import { JsonLd } from "@/components/public/json-ld";
+import { buildLocalBusinessJsonLd } from "@/components/public/local-business";
 import { getMarketingT } from "@/components/public/marketing-locale";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { publicLocaleProps } from "@/components/public/public-locale";
@@ -181,26 +182,27 @@ export default async function HomePage({ searchParams }: Props) {
   const contactTone = toneAt(blocks.length + 1);
 
   const sameAs = (settings?.socialLinks ?? []).map((s) => s.url).filter((u): u is string => typeof u === "string" && /^https?:\/\//.test(u));
-  const organization: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: BRAND.name,
+  const organization = buildLocalBusinessJsonLd({
+    name: contactDetails.businessName || CONTACT.businessName,
+    alternateName: BRAND.name,
     legalName: settings?.legalEntity?.name?.trim() || BRAND.legalEntity,
     url: absoluteUrl("/"),
     logo: absoluteUrl("/icon"),
     slogan: BRAND.statement,
     description: DEFAULT_SEO.description,
     address: {
-      "@type": "PostalAddress",
       streetAddress: settings?.legalEntity?.registeredAddress?.trim() || "B-Block, Plot D-6, Autonagar, Gajuwaka",
       addressLocality: "Visakhapatnam",
       addressRegion: "Andhra Pradesh",
       postalCode: "530012",
       addressCountry: "IN",
     },
-    contactPoint: [{ "@type": "ContactPoint", contactType: "customer support", email: contactDetails.emails[0], telephone: contactDetails.phones[0]?.e164 }],
-    ...(sameAs.length ? { sameAs } : {}),
-  };
+    phones: contactDetails.phones.map((p) => p.e164),
+    email: contactDetails.emails[0] ?? null,
+    hours: contactDetails.hours,
+    mapUrl: contactDetails.mapsUrl,
+    sameAs: [...sameAs, contactDetails.whatsappGroupUrl ?? CONTACT.whatsappChannelUrl],
+  });
 
   return (
     <div {...publicLocaleProps(t.locale)}>

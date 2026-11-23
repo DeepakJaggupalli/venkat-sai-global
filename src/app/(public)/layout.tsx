@@ -4,6 +4,7 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { getHeaderAccount } from "@/components/layout/shell-data";
 import { resolveContact } from "@/components/public/contact-links";
+import { PushServiceWorker } from "@/components/public/push/job-alerts";
 import { getNavigation, getSiteSettings, getTickerAnnouncement, legalEntityName, toFooterColumns, toLegalLinks, toNavItems, toSocialLinks } from "@/components/public/site-data";
 import { WhatsAppFloat } from "@/components/public/whatsapp-float";
 
@@ -33,6 +34,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
         legalLinks={toLegalLinks(navigation)}
       />
       <WhatsAppFloat e164={contact.whatsapp.e164} />
+      <PushServiceWorker />
     </div>
   );
 }

@@ -106,6 +106,10 @@ export const NOTIFICATION_EVENTS = {
   // A CV sent through the public "Send your CV" form (staff alert + business inbox copy)
   "cv.received": e("CV received from the website", "recruitment", ["in_app", "email"]),
   "resume.requested": e("Resume service request received", "recruitment", ["in_app", "email"]),
+  // Daily digest of passports (6/3/1 months) and documents (30 days) reaching an expiry reminder (staff + business inbox).
+  "documents.expiry_digest": e("Passports and documents expiring soon (staff digest)", "recruitment", ["in_app", "email"]),
+  // The candidate's own passport, document or credential expires soon (6, 3 or 1 month before).
+  "documents.expiring": e("Your passport or document expires soon", "account", ["in_app", "email"]),
 
   // Recruitment partners
   "partner.assignment_created": e("New requirement assigned", "recruitment", ["in_app", "email"]),

@@ -11,6 +11,7 @@ import { tasks as notificationsTasks } from "@/modules/notifications/tasks";
 import { tasks as operationsTasks } from "@/modules/operations/tasks";
 import { tasks as organizationsTasks } from "@/modules/organizations/tasks";
 import { tasks as privacyTasks } from "@/modules/privacy/tasks";
+import { tasks as pushTasks } from "@/modules/push/tasks";
 import { tasks as recruitmentTasks } from "@/modules/recruitment/tasks";
 import { tasks as trainingTasks } from "@/modules/training/tasks";
 
@@ -33,4 +34,5 @@ export const taskHandlers: TaskHandlers = {
   ...analyticsTasks,
   ...privacyTasks,
   ...filesTasks,
+  ...pushTasks,
 };

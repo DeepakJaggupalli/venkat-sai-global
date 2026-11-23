@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, ExternalLink, ImageIcon, Megaphone, Plus, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, ExternalLink, ImageIcon, Megaphone, Plus, Trash2, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import { absoluteUrl } from "@/lib/env";
 import { parsePage, type SearchParams } from "@/lib/http";
 import { CMS_ENTRY_STATUS_LABELS } from "@/modules/content/constants";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
+import { countMatches, posterCriteriaFromList } from "@/modules/operations/cv-matching";
 import { posterShareDetails } from "@/modules/recruitment-posters/share";
 import { listPosters, POSTER_PERMISSIONS } from "@/modules/recruitment-posters/service";
 
@@ -39,6 +40,8 @@ export default async function PostersPage({ searchParams }: { searchParams: Prom
   const canPost = staffCan(ctx, [...POSTER_PERMISSIONS]);
   const canPublish = staffCan(ctx, "content.publish");
   const canEdit = staffCan(ctx, "content.edit");
+  const canMatch = staffCan(ctx, "candidates.view");
+  const matches = canMatch ? await countMatches(ctx, result.items.map(posterCriteriaFromList)) : null;
 
   return (
     <div className="space-y-6">
@@ -116,6 +119,14 @@ export default async function PostersPage({ searchParams }: { searchParams: Prom
                     url={absoluteUrl(p.publicPath)}
                     label="Share to WhatsApp channel"
                   />
+                ) : null}
+                {matches ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/admin/requirements/posters/${p.id}/matches`} data-testid="poster-matches">
+                      <Users aria-hidden="true" />
+                      Matching CVs ({(matches.get(p.id)?.cvs ?? 0) + (matches.get(p.id)?.profiles ?? 0)})
+                    </Link>
+                  </Button>
                 ) : null}
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/admin/content/requirement_posts/${p.id}`}>Edit</Link>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Briefcase, ExternalLink, MessageSquare } from "lucide-react";
+import { Briefcase, ExternalLink, MessageSquare, Users } from "lucide-react";
 
 import { ActionButton } from "@/components/admin/action-button";
 import { ActionDialog } from "@/components/admin/action-dialog";
@@ -40,6 +40,7 @@ import {
   REQUIREMENT_STATUS_LABELS,
   REQUIREMENT_URGENCY_LABELS,
 } from "@/modules/operations/constants";
+import { countMatches, getRequirementCriteria } from "@/modules/operations/cv-matching";
 import { getRequirement, listThreadsForContext } from "@/modules/operations/queries";
 import type { RequirementLineView } from "@/modules/operations/types";
 import { listAssignmentsForStaff } from "@/modules/recruitment/partner-queries";
@@ -92,13 +93,21 @@ export default async function RequirementDetailPage({ params }: { params: Params
   const canSeeAssignments = staffCan(ctx, ["partners.view", "partners.assign"], "any");
   const delivering = ["approved", "sourcing", "in_progress", "partially_filled"].includes(r.status);
 
-  const [staff, currencies, jobOptions, partners, assignments, threads] = await Promise.all([
+  const canMatch = staffCan(ctx, "candidates.view");
+  const [staff, currencies, jobOptions, partners, assignments, threads, matchCount] = await Promise.all([
     listStaffOptions({ permission: "requirements.manage" }),
     canManage ? currencyOptions() : Promise.resolve([]),
     canJobs ? listJobOptionsForRequirement(r.id, r.organizationId) : Promise.resolve([]),
     canAssignPartner && delivering ? listVerifiedPartnerOptions() : Promise.resolve([]),
     canSeeAssignments ? listAssignmentsForStaff(ctx, { requirementId: r.id }, { page: 1, pageSize: 20, offset: 0 }).then((p) => p.items) : Promise.resolve([]),
     listThreadsForContext({ kind: "staff", ctx }, "requirement", r.id).catch(() => []),
+    canMatch
+      ? getRequirementCriteria(ctx, r.id).then(async (c) => {
+          if (!c) return null;
+          const counts = (await countMatches(ctx, [c])).get(c.ref.id);
+          return counts ? counts.cvs + counts.profiles : 0;
+        })
+      : Promise.resolve(null),
   ]);
   const transitions = REQUIREMENT_STAFF_TRANSITIONS[r.status].map((s) => ({ value: s, label: REQUIREMENT_STATUS_LABELS[s] }));
   const filled = lines.reduce((a, l) => a + l.filledCount, 0);
@@ -332,6 +341,16 @@ export default async function RequirementDetailPage({ params }: { params: Params
         </div>
 
         <aside className="space-y-6" aria-label="Requirement actions">
+          {matchCount != null ? (
+            <SectionCard title={`Matching CVs (${matchCount})`} description="People who sent a CV or have a profile in these trades, best match first.">
+              <Button asChild size="sm" variant="outline" className="w-full">
+                <Link href={`/admin/requirements/${r.id}/matches`} data-testid="requirement-matches">
+                  <Users aria-hidden="true" />
+                  {matchCount ? "View and contact matches" : "View matches"}
+                </Link>
+              </Button>
+            </SectionCard>
+          ) : null}
           <SectionCard title="Owner and status">
             <div className="space-y-5">
               <AssignSelect action={assignRequirementOwnerAction} recordId={r.id} options={staff} current={r.assignedToUserId} label="Owner" disabled={!canManage} />

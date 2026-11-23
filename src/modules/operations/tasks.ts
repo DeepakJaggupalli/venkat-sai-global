@@ -2,6 +2,7 @@ import "server-only";
 
 import type { TaskHandlers } from "@/server/tasks/types";
 
+import { runDocumentExpiryAlerts } from "./document-expiry";
 import { runSlaWatch } from "./support";
 import { runOperationsReminders } from "./work";
 
@@ -11,6 +12,8 @@ import { runOperationsReminders } from "./work";
  *  support.sla_watch     recurring (hourly, src/server/tasks/schedule.ts): flag SLA breaches, escalate
  *                        grievances, notify assignees / the support team / grievance officers
  *  operations.reminders  task-due and lead follow-up reminders (schedule entry requested — see README)
+ *  documents.expiry_alerts  recurring (daily): passports within 6 months and documents within 30 days → one staff
+ *                        digest + candidate reminders, once per item and threshold (document-expiry.ts)
  *
  * Both are idempotent: breach stamps are set once and every notification carries a dedupe key.
  */
@@ -22,5 +25,9 @@ export const tasks: TaskHandlers = {
   "operations.reminders": async (_payload, ctx) => {
     const summary = await runOperationsReminders(new Date());
     ctx.log("Operations reminders sent", summary);
+  },
+  "documents.expiry_alerts": async (_payload, ctx) => {
+    const summary = await runDocumentExpiryAlerts(new Date());
+    ctx.log("Document expiry alerts finished", summary);
   },
 };

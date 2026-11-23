@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { JobAlertsButton } from "@/components/public/push/job-alerts-button";
 import { CallButton, EmailButton, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import type { CvSubmissionResult } from "@/modules/operations/cv-submission-schemas";
 
@@ -45,6 +46,15 @@ export function CvConfirmation({
           </>
         ) : null}
       </p>
+      {result.code ? (
+        <p className="mt-3 text-base text-foreground" data-testid="cv-status-link">
+          Keep this reference. You can{" "}
+          <Link href={`/status?ref=${encodeURIComponent(result.code)}`} prefetch={false} className="font-medium text-navy underline underline-offset-4">
+            check your CV status
+          </Link>{" "}
+          any time with your mobile number and this reference.
+        </p>
+      ) : null}
       {result.uploadToken ? (
         <div className="mt-6 rounded-xl border border-border bg-white p-4 sm:p-5" data-testid="add-documents-offer">
           <h3 className="font-heading text-lg font-semibold text-navy">Add your documents now (optional)</h3>
@@ -63,6 +73,7 @@ export function CvConfirmation({
         <EmailButton subject={result.code ? `CV ${result.code}` : "My CV"} />
       </div>
       <FollowWhatsAppLink groupUrl={whatsappGroupUrl} className="mt-4 w-full sm:w-auto" />
+      <JobAlertsButton defaultTrade={result.trade} className="mt-4" />
       <p className="mt-6 flex items-start gap-2 text-sm text-foreground">
         <FileText className="mt-0.5 size-4 shrink-0 text-navy" aria-hidden="true" />
         <span>

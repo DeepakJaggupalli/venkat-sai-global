@@ -71,6 +71,13 @@ const schema = z.object({
   RAZORPAY_WEBHOOK_SECRET: optional,
   STRIPE_SECRET_KEY: optional,
   STRIPE_WEBHOOK_SECRET: optional,
+
+  /** Web Push (phone job alerts). All three set = feature on; the public key is served to browsers. */
+  VAPID_PUBLIC_KEY: optional,
+  VAPID_PRIVATE_KEY: optional,
+  VAPID_SUBJECT: optional,
+  /** Google Search Console HTML-tag verification token (read by the root layout metadata). */
+  GOOGLE_SITE_VERIFICATION: optional,
 });
 
 export type Env = z.infer<typeof schema>;
@@ -105,4 +112,5 @@ export const integrations = {
   razorpay: () => Boolean(env().RAZORPAY_KEY_ID && env().RAZORPAY_KEY_SECRET),
   stripe: () => Boolean(env().STRIPE_SECRET_KEY),
   malwareScanning: () => Boolean(env().CLAMAV_HOST),
+  webPush: () => Boolean(env().VAPID_PUBLIC_KEY && env().VAPID_PRIVATE_KEY && env().VAPID_SUBJECT),
 };

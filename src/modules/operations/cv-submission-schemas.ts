@@ -8,20 +8,54 @@ import type { CvSubmissionDocumentKind, CvSubmissionStatus } from "@/db/schema/c
 import { f } from "@/lib/validation";
 
 export const CV_SUBMISSION_STATUS_LABELS = {
-  new: "New",
+  received: "CV received",
   contacted: "Contacted",
-  shortlisted: "Shortlisted",
+  trade_test: "Trade test / interview",
+  selected: "Selected",
+  medical: "Medical",
+  visa: "Visa",
+  ticket: "Ticket",
+  departed: "Departed",
   not_suitable: "Not suitable",
+  on_hold: "On hold",
 } as const satisfies Record<CvSubmissionStatus, string>;
 
 export const CV_SUBMISSION_STATUS_VALUES = Object.keys(CV_SUBMISSION_STATUS_LABELS) as [CvSubmissionStatus, ...CvSubmissionStatus[]];
 
 export const CV_SUBMISSION_STATUS_TONE = {
-  new: "info",
+  received: "info",
   contacted: "warning",
-  shortlisted: "success",
+  trade_test: "warning",
+  selected: "success",
+  medical: "brand",
+  visa: "brand",
+  ticket: "brand",
+  departed: "success",
   not_suitable: "neutral",
+  on_hold: "neutral",
 } as const satisfies Record<CvSubmissionStatus, string>;
+
+/** The placement journey in order (the public /status step tracker); not_suitable and on_hold sit outside it. */
+export const CV_SUBMISSION_JOURNEY = ["received", "contacted", "trade_test", "selected", "medical", "visa", "ticket", "departed"] as const satisfies readonly CvSubmissionStatus[];
+
+/** Status values before the placement journey (old links, bookmarks and filters) → current value. */
+const LEGACY_STATUS: Record<string, CvSubmissionStatus> = { new: "received", shortlisted: "trade_test" };
+const statusValue = (v: unknown) => (typeof v === "string" && v in LEGACY_STATUS ? LEGACY_STATUS[v] : v);
+
+/** Optional YYYY-MM-DD calendar date (kept as a string, like candidate_profiles.passportExpiry). */
+const optionalIsoDate = (message: string) =>
+  z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, message)
+      .refine((v) => {
+        const d = new Date(`${v}T00:00:00.000Z`);
+        return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= "2000-01-01" && v <= "2060-12-31";
+      }, message)
+      .optional(),
+  );
 
 /** Same as the `cv_submission` file policy: keeps the whole request under the 4.5 MB Vercel body limit. */
 export const CV_MAX_BYTES = 4 * 1024 * 1024;
@@ -54,6 +88,8 @@ export const cvSubmissionSchema = z
         .transform((v) => v.replace(/[\s-]/g, "").toUpperCase())
         .pipe(z.string().regex(/^[A-Z0-9]{6,12}$/, "Enter the passport number as printed: 6 to 12 letters and digits")),
     ),
+    /** Optional passport expiry date (alerts staff and the candidate before it runs out). */
+    passportExpiry: optionalIsoDate("Enter the expiry date printed on your passport"),
     /** "Notes for us": the candidate's own remarks. */
     candidateNotes: f.optionalText(1000),
     requirement: optionalBlank(z.string().trim().toLowerCase().max(200).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Invalid requirement")),
@@ -66,9 +102,22 @@ export const cvSubmissionSchema = z
   });
 export type CvSubmissionInput = z.output<typeof cvSubmissionSchema>;
 
+/** Stage change (and/or the note shown to the candidate on /status; blank clears it). Old status values are accepted. */
 export const cvSubmissionStatusSchema = z.object({
   id: f.uuid(),
-  status: f.enumOf(CV_SUBMISSION_STATUS_VALUES),
+  status: z.preprocess(statusValue, f.enumOf(CV_SUBMISSION_STATUS_VALUES)),
+  candidateNote: z.string().trim().max(500, "Keep the note under 500 characters").optional(),
+});
+
+/** Public /status lookup: mobile number + reference (VSG-CV-000123). */
+export const cvStatusLookupSchema = z.object({
+  phone: f.phone(),
+  reference: z
+    .string({ error: "Enter your reference" })
+    .trim()
+    .toUpperCase()
+    .transform((v) => v.replace(/\s+/g, ""))
+    .pipe(z.string().regex(/^VSG-CV-\d{4,10}$/, "Enter the reference exactly as we sent it, for example VSG-CV-000123")),
 });
 
 /** Staff-only remarks (replaces the whole text; blank clears it). */
@@ -78,7 +127,9 @@ export const cvSubmissionRemarksSchema = z.object({
 });
 
 export const cvSubmissionFiltersSchema = z.object({
-  status: z.enum(CV_SUBMISSION_STATUS_VALUES).optional().catch(undefined),
+  status: z.preprocess(statusValue, z.enum(CV_SUBMISSION_STATUS_VALUES).optional()).catch(undefined),
+  /** "1" = passport expiring within 6 months (or already expired). */
+  expiring: z.preprocess((v) => (v === "1" || v === true ? true : undefined), z.literal(true).optional()),
   trade: z.uuid().optional().catch(undefined),
   country: z
     .string()
@@ -101,6 +152,21 @@ export type CvSubmissionResult = {
    * CV_DOCUMENT_CANDIDATE_LINK_HOURS; staff can send a fresh 7-day link from the Command Centre.
    */
   uploadToken: string | null;
+};
+
+/** What the public /status page shows (nothing else leaves the server). */
+export type CvStatusView = {
+  /** "R. K." — initials only. */
+  initials: string;
+  trade: string;
+  status: CvSubmissionStatus;
+  /** The journey stage reached (the current status, or the last journey stage before on hold / not suitable). */
+  journeyStage: CvSubmissionStatus;
+  /** Date each journey stage was (last) reached, ISO strings; absent stages were not reached. */
+  stageDates: Partial<Record<CvSubmissionStatus, string>>;
+  /** Staff note meant for the candidate (never the staff remarks). */
+  note: string | null;
+  updatedAt: string;
 };
 
 // ---------------------------------------------------------------------------

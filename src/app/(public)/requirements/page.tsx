@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { InstallAppButton } from "@/components/public/install-app-button";
 import { PageHero } from "@/components/public/page-hero";
+import { JobAlerts } from "@/components/public/push/job-alerts";
 import { CallButton, CONTACT_BUTTON_STYLES, FollowWhatsAppLink, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { loadPosterCountries, loadPosterPage, whatsappGroupUrlFrom } from "@/components/public/requirements/data";
 import { getSiteSettings } from "@/components/public/site-data";
@@ -59,6 +60,7 @@ export default async function RequirementsPage({ searchParams }: Props) {
         }
       />
       <div className="container-page pb-12 sm:pb-16">
+        <JobAlerts countries={countries} defaultCountry={country} className="mb-8" />
         {countries.length > 1 ? (
           <LinkTabs
             label="Filter by country"

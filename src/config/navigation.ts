@@ -243,6 +243,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
   admin: [
     {
       items: [
+        { title: "Owner overview", href: "/admin/overview", icon: BarChart3, permission: "dashboard.view" },
         { title: "Executive dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard.view", matchNested: false },
         { title: "Approval centre", href: "/admin/approvals", icon: ListChecks, permission: "approvals.view" },
         { title: "My tasks", href: "/admin/tasks", icon: ClipboardCheck },

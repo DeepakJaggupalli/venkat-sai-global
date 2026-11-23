@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Native / Node-only packages must not be bundled. sanitize-html is deliberately bundled: it is
   // CommonJS but depends on the ESM-only htmlparser2 12, which the Vercel runtime refuses to require().
-  serverExternalPackages: ["@node-rs/argon2", "sharp", "pg", "nodemailer", "qrcode"],
+  serverExternalPackages: ["@node-rs/argon2", "sharp", "pg", "nodemailer", "qrcode", "web-push"],
   experimental: {
     // Enables forbidden() / unauthorized() from next/navigation.
     authInterrupts: true,

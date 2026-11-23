@@ -66,6 +66,7 @@ const FIND_WORK_LINKS = [
   { title: "Overseas jobs", href: "/jobs?overseas=1" },
   { title: "Latest requirements", href: "/requirements" },
   { title: "Send your CV", href: "/send-cv" },
+  { title: "Check your CV status", href: "/status" },
   { title: "Training courses", href: "/training" },
 ];
 

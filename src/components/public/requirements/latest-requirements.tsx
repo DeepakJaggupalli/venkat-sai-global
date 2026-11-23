@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 import { CtaLink } from "../cta-link";
+import { JobAlerts } from "../push/job-alerts";
 import { SectionHeading } from "../section";
 import { loadPosterPage } from "./data";
 import { PosterGrid } from "./poster-card";
@@ -41,6 +42,7 @@ export async function LatestRequirements({
           }
         />
         <PosterGrid posters={posters} label={heading} className="mt-12" />
+        <JobAlerts loadCountries className="mt-8" />
       </div>
     </section>
   );

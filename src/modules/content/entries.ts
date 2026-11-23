@@ -8,6 +8,7 @@ import { ActionError } from "@/lib/actions";
 import { cancelApprovalsForEntity, submitForApproval } from "@/modules/approvals/service";
 import { audit } from "@/modules/audit";
 import type { StaffContext } from "@/modules/identity/authz";
+import { queueRequirementAlert } from "@/modules/push/queue";
 
 import { fixedSlugFor, getCollection, publicPathFor } from "./collections";
 import { isSingletonCollection } from "./constants";
@@ -271,6 +272,8 @@ export async function publishVersionInTx(entry: CmsEntryRow, version: number, ac
     metadata: { collection: entry.collection, slug: content.slug, version },
     tx,
   });
+  // First publication of a requirement poster: phone alerts to subscribers (queued in a savepoint, never blocking).
+  if (entry.collection === "requirement_posts" && !entry.publishedAt) await queueRequirementAlert(entry.id, tx);
 }
 
 /** Pin `version` for publication at `publishAt` on the locked entry (callers authorise). */

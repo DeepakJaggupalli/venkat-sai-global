@@ -71,6 +71,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
     "minVerificationLevel",
     "openToOverseas",
     "passportValid",
+    "expiringSoon",
     "verifiedSkillsOnly",
     "verifiedCredentialsOnly",
     "assessedOnly",
@@ -99,6 +100,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
           <FilterSelect param="minVerificationLevel" label="Verification" allLabel="Any verification" options={levelOptions} />
           <FilterSelect param="openToOverseas" label="Open to overseas" allLabel="Any" options={YES} />
           <FilterSelect param="passportValid" label="Valid passport" allLabel="Any" options={YES} />
+          <FilterSelect param="expiringSoon" label="Expiring soon" allLabel="Any" options={YES} />
           <FilterSelect param="verifiedSkillsOnly" label="Verified skills only" allLabel="Any" options={YES} />
           <FilterSelect param="verifiedCredentialsOnly" label="Verified credentials only" allLabel="Any" options={YES} />
           <FilterSelect param="assessedOnly" label="Passed a Venkat Sai assessment" allLabel="Any" options={YES} />
@@ -116,6 +118,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
             { param: "minVerificationLevel", label: "Verification", options: levelOptions },
             { param: "openToOverseas", label: "Open to overseas", options: YES },
             { param: "passportValid", label: "Valid passport", options: YES },
+            { param: "expiringSoon", label: "Expiring soon", options: YES },
             { param: "assessedOnly", label: "Assessed", options: YES },
             { param: "activeWithinDays", label: "Active", options: activeOptions },
           ]}
@@ -151,6 +154,11 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                 cell: (c) => (
                   <div className="flex flex-wrap gap-1">
                     <StatusBadge tone={c.verificationLevel === "none" ? "neutral" : "success"} size="sm">{LEVEL_LABELS[c.verificationLevel]}</StatusBadge>
+                    {c.expiringSoon ? (
+                      <StatusBadge tone="warning" size="sm">
+                        Expiring soon
+                      </StatusBadge>
+                    ) : null}
                     {c.passedAssessmentCount ? <StatusBadge tone="brand" size="sm">{`${c.passedAssessmentCount} Venkat Sai assessment${c.passedAssessmentCount === 1 ? "" : "s"} passed`}</StatusBadge> : null}
                   </div>
                 ),

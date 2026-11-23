@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: BRAND.name, title: DEFAULT_SEO.title, description: DEFAULT_SEO.description },
   twitter: { card: "summary_large_image" },
   formatDetection: { telephone: false },
+  // Google Search Console ownership (HTML tag method); set GOOGLE_SITE_VERIFICATION to the token.
+  ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } } : {}),
 };
 
 export const viewport: Viewport = {

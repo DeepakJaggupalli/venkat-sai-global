@@ -301,6 +301,19 @@ export const DEFAULT_TEMPLATES: Partial<Record<NotificationEvent, DefaultTemplat
     cta: "Open CV submissions",
     sample: { code: "VSG-CV-000123", name: "Candidate name", trade: "Sample trade", phone: "+91 90000 00000", experienceYears: 5, countryName: "Sample country", passport: "Yes", requirementTitle: "Sample requirement" },
   },
+  "documents.expiry_digest": {
+    subject: "{{count}} passports or documents expiring soon",
+    body: "These passports and documents reached an expiry reminder today (6, 3 or 1 month before they expire):\n\n{{items}}\n\nContact the candidates so they can renew in time. Open the lists in the Command Centre (sign-in required).",
+    cta: "Open expiring passports",
+    sample: { count: 2, items: "Passport, CV VSG-CV-000123, Candidate name: expires 2027-03-01 (6 months)\nCertificate, Candidate name: expires 2026-12-20 (1 month)" },
+  },
+  "documents.expiring": {
+    subject: "Your {{document}} expires on {{expiresOn}}",
+    body: `${HELLO}\n\nYour **{{document}}** expires on **{{expiresOn}}** (in about {{period}}). Many employers and embassies need a passport that is valid for at least 6 months, so please start the renewal in good time and update your details when you have the new one.\n\nIf you have already renewed it, you can ignore this message.`,
+    cta: "Update my details",
+    sms: "Venkat Sai Global: your {{document}} expires on {{expiresOn}}. Please renew it in time.",
+    sample: { recipientName: S.recipientName, document: "passport", expiresOn: "2027-03-01", period: "6 months" },
+  },
   "resume.requested": {
     subject: "Resume request {{code}}{{#name}} - {{name}}{{/name}}",
     body: "A candidate asked us to prepare their resume{{#name}}: **{{name}}**{{/name}}.\n\n- Reference: {{code}}{{#post}}\n- Post applied for: {{post}}{{/post}}{{#phone}}\n- Mobile / WhatsApp: {{phone}}{{/phone}}\n- Price: {{price}}\n- Status: {{statusLabel}}\n\nContact the candidate to collect the payment, then mark it paid in the Command Centre (sign-in required).",

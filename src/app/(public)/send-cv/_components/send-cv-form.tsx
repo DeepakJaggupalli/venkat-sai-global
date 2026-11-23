@@ -188,6 +188,10 @@ export function SendCvForm({
         <Input autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={14} placeholder="For example: Z1234567" className={cn(INPUT, "uppercase")} />
       </FormField>
 
+      <FormField label="Passport expiry date" name="passportExpiry" optional state={state} hint="As printed on your passport. We remind you before it runs out.">
+        <Input type="date" min="2000-01-01" max="2060-12-31" className={cn(INPUT, "sm:max-w-xs")} />
+      </FormField>
+
       <FormField label="Notes for us" name="candidateNotes" optional state={state} hint="Anything we should know: certificates, Gulf experience, when you can travel.">
         <Textarea rows={3} maxLength={1000} className="text-base" />
       </FormField>

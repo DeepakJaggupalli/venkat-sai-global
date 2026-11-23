@@ -414,6 +414,8 @@ export const candidateSearchFiltersSchema = z
     workModes: enumArray(WORK_MODES, WORK_MODES.length),
     openToOverseas: f.bool(),
     passportValid: f.bool(),
+    /** Staff only: passport expiring within 6 months, or a document / credential within 30 days. */
+    expiringSoon: f.bool(),
     /** Budget: expected salary at most this (same currency and period only). */
     salaryMax: f.optionalAmount(),
     salaryCurrency: f.currencyCode().optional(),

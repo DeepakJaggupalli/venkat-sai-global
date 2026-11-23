@@ -1,9 +1,11 @@
 import "server-only";
 
-import { and, count, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
+import { createHash, timingSafeEqual } from "node:crypto";
+
+import { and, asc, count, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import { db, type DbOrTx } from "@/db";
-import { cmsEntries, countries, cvSubmissions, files, jobCategories, users } from "@/db/schema";
+import { cmsEntries, countries, cvSubmissions, cvSubmissionStageEvents, files, jobCategories, users } from "@/db/schema";
 import type { CvSubmissionStatus } from "@/db/schema/cv-submissions";
 import { ActionError } from "@/lib/actions";
 import { nextCode } from "@/lib/codes";
@@ -21,14 +23,25 @@ import { getSetting } from "@/modules/settings";
 
 import { notifyBusinessInbox } from "./business-inbox";
 import { issueCvDocumentUploadToken } from "./cv-document-tokens";
-import { CV_MAX_BYTES, OTHER_TRADE, type CvSubmissionFilters, type CvSubmissionInput, type CvSubmissionResult } from "./cv-submission-schemas";
+import {
+  CV_MAX_BYTES,
+  CV_SUBMISSION_JOURNEY,
+  CV_SUBMISSION_STATUS_VALUES,
+  OTHER_TRADE,
+  type CvStatusView,
+  type CvSubmissionFilters,
+  type CvSubmissionInput,
+  type CvSubmissionResult,
+} from "./cv-submission-schemas";
 import type { PublicSubmissionMeta } from "./enquiries";
 import { assertStaff, enforceRateLimits, likePattern } from "./internal";
 
 /**
  * "Send your CV" — the main candidate funnel. Visitors send name, phone, trade and a CV without an account;
- * staff work the list at /admin/cv-submissions (status new → contacted → shortlisted / not suitable) and call or
- * WhatsApp the candidate.
+ * staff work the list at /admin/cv-submissions through the placement journey (received → contacted → trade test →
+ * selected → medical → visa → ticket → departed, or not suitable / on hold) and call or WhatsApp the candidate. Each
+ * stage change is kept in cv_submission_stage_events; the candidate follows it on the public /status page (mobile
+ * number + reference) with an optional note written for them.
  *
  * Authorisation: list = candidates.view (phone numbers only with candidates.view_contact, logged); status and
  * notes = candidates.manage; the CV file follows the `cv_submission` file policy (candidates.view_documents or
@@ -141,6 +154,7 @@ export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpl
           passportNumberEncrypted: passportNumber ? encryptField(passportNumber) : null,
           passportNumberLast4: passportNumber ? last4(passportNumber) : null,
           passportNumberHash: passportNumber ? hmacToken(passportNumber, "passport") : null,
+          passportExpiry: input.passportExpiry ?? null,
           candidateNotes: input.candidateNotes || null,
           cvFileId: file.id,
           requirementEntryId: requirement?.id ?? null,
@@ -151,6 +165,7 @@ export async function submitCvSubmission(input: CvSubmissionInput, upload: CvUpl
           ipHash: meta.ipHash,
         })
         .returning({ id: cvSubmissions.id });
+      await tx.insert(cvSubmissionStageEvents).values({ submissionId: row!.id, fromStatus: null, toStatus: "received" });
 
       await audit({
         action: "cv_submission.received",
@@ -201,6 +216,10 @@ export type CvSubmissionListItem = {
   countryCode: string | null;
   countryName: string | null;
   hasPassport: boolean | null;
+  /** YYYY-MM-DD as the candidate gave it. */
+  passportExpiry: string | null;
+  /** The passport expires within 6 months (or has expired). */
+  passportExpiringSoon: boolean;
   requirementEntryId: string | null;
   requirementTitle: string | null;
   status: CvSubmissionStatus;
@@ -221,11 +240,21 @@ export type CvSubmissionListItem = {
 
 const CV_FILE_VIEW = ["candidates.view_documents", "recruitment.manage"] as const;
 
+/** Passports expiring within this many months are flagged ("Expiring soon") and alerted (documents.expiry_alerts). */
+export const PASSPORT_EXPIRY_WARNING_MONTHS = 6;
+
+/** YYYY-MM-DD today + n months (UTC calendar), for comparing with date columns. */
+export function isoDatePlusMonths(months: number, now: Date = new Date()): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + months, now.getUTCDate()));
+  return d.toISOString().slice(0, 10);
+}
+
 function filterConditions(filters: CvSubmissionFilters): SQL[] {
   const where: SQL[] = [];
   if (filters.status) where.push(eq(cvSubmissions.status, filters.status));
   if (filters.trade) where.push(eq(cvSubmissions.jobCategoryId, filters.trade));
   if (filters.country) where.push(eq(cvSubmissions.preferredCountryCode, filters.country));
+  if (filters.expiring) where.push(isNotNull(cvSubmissions.passportExpiry), sql`${cvSubmissions.passportExpiry} <= ${isoDatePlusMonths(PASSPORT_EXPIRY_WARNING_MONTHS)}`);
   if (filters.q) {
     const p = likePattern(filters.q);
     where.push(or(ilike(cvSubmissions.name, p), ilike(cvSubmissions.code, p), ilike(cvSubmissions.tradeLabel, p), ilike(cvSubmissions.phone, p), ilike(cvSubmissions.requirementTitle, p))!);
@@ -236,6 +265,7 @@ function filterConditions(filters: CvSubmissionFilters): SQL[] {
 async function listCvSubmissionsWhere(ctx: StaffContext, condition: SQL | undefined, page: PageQuery, opts: { log: boolean }): Promise<CvSubmissionListItem[]> {
   const canContact = staffCan(ctx, "candidates.view_contact");
   const canOpenCv = staffCan(ctx, [...CV_FILE_VIEW], "any");
+  const warnBefore = isoDatePlusMonths(PASSPORT_EXPIRY_WARNING_MONTHS);
   const rows = await db
     .select({ s: cvSubmissions, countryName: countries.name, file: files, changedBy: users.displayName })
     .from(cvSubmissions)
@@ -260,6 +290,8 @@ async function listCvSubmissionsWhere(ctx: StaffContext, condition: SQL | undefi
       countryCode: s.preferredCountryCode,
       countryName: countryName ?? null,
       hasPassport: s.hasPassport,
+      passportExpiry: s.passportExpiry,
+      passportExpiringSoon: Boolean(s.passportExpiry && s.passportExpiry <= warnBefore),
       passportLast4: s.passportNumberLast4,
       requirementEntryId: s.requirementEntryId,
       requirementTitle: s.requirementTitle,
@@ -303,7 +335,7 @@ export async function listCvSubmissions(ctx: StaffContext, filters: CvSubmission
 export async function cvSubmissionCounts(ctx: StaffContext): Promise<Record<CvSubmissionStatus, number>> {
   assertStaff(ctx, "candidates.view");
   const rows = await db.select({ status: cvSubmissions.status, value: count() }).from(cvSubmissions).groupBy(cvSubmissions.status);
-  const out: Record<CvSubmissionStatus, number> = { new: 0, contacted: 0, shortlisted: 0, not_suitable: 0 };
+  const out = Object.fromEntries(CV_SUBMISSION_STATUS_VALUES.map((v) => [v, 0])) as Record<CvSubmissionStatus, number>;
   for (const r of rows) out[r.status] = r.value;
   return out;
 }
@@ -325,30 +357,62 @@ async function lockSubmission(id: string, tx: DbOrTx) {
   return current;
 }
 
-/** Move a submission to another status (any order: staff correct mistakes). */
-export async function setCvSubmissionStatus(ctx: StaffContext, input: { id: string; status: CvSubmissionStatus }): Promise<void> {
+/**
+ * Move a submission to another stage (any order: staff correct mistakes) and/or set the note shown to the candidate on
+ * /status (`candidateNote` undefined = unchanged, blank = cleared). Every stage change is kept in the stage history;
+ * both are audited (the note without its text).
+ */
+export async function setCvSubmissionStatus(ctx: StaffContext, input: { id: string; status: CvSubmissionStatus; candidateNote?: string | null }): Promise<void> {
   assertStaff(ctx, "candidates.manage");
+  const note = input.candidateNote === undefined ? undefined : input.candidateNote?.trim() || null;
   await db.transaction(async (tx) => {
     const current = await lockSubmission(input.id, tx);
-    if (current.status === input.status) return;
+    const statusChanged = current.status !== input.status;
+    const noteChanged = note !== undefined && (current.candidateNote ?? null) !== note;
+    if (!statusChanged && !noteChanged) return;
     const stamp = new Date();
     await tx
       .update(cvSubmissions)
       .set({
-        status: input.status,
-        statusChangedAt: stamp,
-        statusChangedByUserId: ctx.user.id,
-        contactedAt: current.contactedAt ?? (input.status !== "new" ? stamp : null),
+        ...(statusChanged
+          ? {
+              status: input.status,
+              statusChangedAt: stamp,
+              statusChangedByUserId: ctx.user.id,
+              contactedAt: current.contactedAt ?? (input.status !== "received" ? stamp : null),
+            }
+          : {}),
+        ...(noteChanged ? { candidateNote: note, candidateNoteUpdatedAt: stamp } : {}),
       })
       .where(eq(cvSubmissions.id, current.id));
-    await audit({
-      action: "cv_submission.status_changed",
-      entityType: "cv_submission",
-      entityId: current.id,
-      actorUserId: ctx.user.id,
-      metadata: { from: current.status, to: input.status },
-      tx,
-    });
+    if (statusChanged) {
+      await tx.insert(cvSubmissionStageEvents).values({
+        submissionId: current.id,
+        fromStatus: current.status,
+        toStatus: input.status,
+        candidateNote: note === undefined ? current.candidateNote : note,
+        changedByUserId: ctx.user.id,
+        createdAt: stamp,
+      });
+      await audit({
+        action: "cv_submission.status_changed",
+        entityType: "cv_submission",
+        entityId: current.id,
+        actorUserId: ctx.user.id,
+        metadata: { from: current.status, to: input.status },
+        tx,
+      });
+    }
+    if (noteChanged) {
+      await audit({
+        action: "cv_submission.candidate_note_updated",
+        entityType: "cv_submission",
+        entityId: current.id,
+        actorUserId: ctx.user.id,
+        metadata: { cleared: note === null, length: note?.length ?? 0 },
+        tx,
+      });
+    }
   });
 }
 
@@ -374,7 +438,14 @@ export async function setCvSubmissionRemarks(ctx: StaffContext, input: { id: str
   });
 }
 
+export type CvSubmissionStageEvent = { status: CvSubmissionStatus; from: CvSubmissionStatus | null; at: Date; byName: string | null; candidateNote: string | null };
+
 export type CvSubmissionDetail = CvSubmissionListItem & {
+  /** Note shown to the candidate on /status (separate from staffRemarks). */
+  candidateNote: string | null;
+  candidateNoteUpdatedAt: Date | null;
+  /** Stage history, oldest first. */
+  stageHistory: CvSubmissionStageEvent[];
   tradeOther: string | null;
   jobCategoryId: string | null;
   requirementSlug: string | null;
@@ -411,6 +482,12 @@ export async function getCvSubmission(ctx: StaffContext, id: string, opts: { rev
   const canRevealPassport = staffCan(ctx, "candidates.view_documents");
   const reveal = Boolean(opts.revealPassport && canRevealPassport && s.passportNumberEncrypted);
   const passportNumber = reveal ? tryDecryptField(s.passportNumberEncrypted) : null;
+  const history = await db
+    .select({ e: cvSubmissionStageEvents, byName: users.displayName })
+    .from(cvSubmissionStageEvents)
+    .leftJoin(users, eq(users.id, cvSubmissionStageEvents.changedByUserId))
+    .where(eq(cvSubmissionStageEvents.submissionId, s.id))
+    .orderBy(asc(cvSubmissionStageEvents.createdAt));
   const base = { actorUserId: ctx.user.id, subjectType: "cv_submission", subjectId: s.id } as const;
   if (item.phone) await logDataAccess({ ...base, dataCategory: "contact", accessType: "view", reason: "CV submission detail" });
   if (reveal) await logDataAccess({ ...base, dataCategory: "identity", accessType: "reveal", reason: "Passport number on a CV submission", metadata: { field: "passportNumber" } });
@@ -426,6 +503,9 @@ export async function getCvSubmission(ctx: StaffContext, id: string, opts: { rev
     remarksUpdatedByName: row!.remarksBy ?? null,
     canRevealPassport,
     passportNumber,
+    candidateNote: s.candidateNote,
+    candidateNoteUpdatedAt: s.candidateNoteUpdatedAt,
+    stageHistory: history.map(({ e, byName }) => ({ status: e.toStatus, from: e.fromStatus, at: e.createdAt, byName: byName ?? null, candidateNote: e.candidateNote })),
   };
 }
 
@@ -441,6 +521,7 @@ export type CvSubmissionExportRow = {
   passportEncrypted: string | null;
   passportLast4: string | null;
   hasPassport: boolean | null;
+  passportExpiry: string | null;
   candidateNotes: string | null;
   staffRemarks: string | null;
   createdAt: Date;
@@ -478,9 +559,80 @@ export async function listCvSubmissionsForExport(ctx: StaffContext, filters: CvS
       passportEncrypted: s.passportNumberEncrypted,
       passportLast4: s.passportNumberLast4,
       hasPassport: s.hasPassport,
+      passportExpiry: s.passportExpiry,
       candidateNotes: s.candidateNotes,
       staffRemarks: s.staffRemarks,
       createdAt: s.createdAt,
     })),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Public status check (/status)
+// ---------------------------------------------------------------------------
+
+function digest(value: string): Buffer {
+  return createHash("sha256").update(value, "utf8").digest();
+}
+
+/** "Ravi Kumar" → "R. K." (at most three initials). */
+function initialsOf(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((w) => `${w[0]!.toUpperCase()}.`)
+    .join(" ");
+}
+
+export const CV_STATUS_LOOKUP_ERROR = "We could not find a CV with this mobile number and reference. Check both and try again, or call or WhatsApp us.";
+
+/**
+ * Public status check: the candidate gives their mobile number (E.164) and reference. Rate limited per network and
+ * per reference; the phone is compared in constant time (also when the reference does not exist) and every mismatch
+ * gets the same generic error. Returns only initials, trade, stage, stage dates and the note written for the
+ * candidate: never the phone, passport, staff remarks or files.
+ */
+export async function lookupCvStatus(input: { phone: string; reference: string }, meta: { ipHash: string | null }): Promise<CvStatusView> {
+  const reference = input.reference.trim().toUpperCase();
+  await enforceRateLimits(
+    [
+      ...(meta.ipHash
+        ? [
+            { key: `cv-status:ip:${meta.ipHash}`, limit: 10, windowSeconds: 10 * 60 },
+            { key: `cv-status:ip-day:${meta.ipHash}`, limit: 50, windowSeconds: 24 * 60 * 60 },
+          ]
+        : []),
+      { key: `cv-status:ref:${reference}`, limit: 5, windowSeconds: 60 * 60 },
+    ],
+    "Too many checks in a short time. Please wait a little and try again, or call or WhatsApp us.",
+  );
+  const [row] = await db
+    .select({ id: cvSubmissions.id, phone: cvSubmissions.phone, name: cvSubmissions.name, trade: cvSubmissions.tradeLabel, status: cvSubmissions.status, note: cvSubmissions.candidateNote, updatedAt: cvSubmissions.updatedAt })
+    .from(cvSubmissions)
+    .where(eq(cvSubmissions.code, reference))
+    .limit(1);
+  // Compare even when the reference is unknown, so both failures take the same time.
+  const matches = timingSafeEqual(digest(row?.phone ?? "\u0000no-such-reference"), digest(input.phone));
+  if (!row || !matches) {
+    await logSecurityEvent({ type: "cv_status_lookup_failed", severity: "info", metadata: { ipHash: meta.ipHash } });
+    throw new ActionError(CV_STATUS_LOOKUP_ERROR, { code: "not_found" });
+  }
+  const events = await db
+    .select({ status: cvSubmissionStageEvents.toStatus, at: cvSubmissionStageEvents.createdAt })
+    .from(cvSubmissionStageEvents)
+    .where(eq(cvSubmissionStageEvents.submissionId, row.id))
+    .orderBy(asc(cvSubmissionStageEvents.createdAt));
+  const journey: readonly CvSubmissionStatus[] = CV_SUBMISSION_JOURNEY;
+  // The journey stage the candidate is at: the current status, or (on hold / not suitable) the last one reached.
+  const lastJourney = [...events].reverse().find((e) => journey.includes(e.status))?.status ?? "received";
+  const journeyStage = journey.includes(row.status) ? row.status : lastJourney;
+  const reachedIndex = journey.indexOf(journeyStage);
+  const stageDates: CvStatusView["stageDates"] = {};
+  for (const e of events) {
+    const i = journey.indexOf(e.status);
+    if (i >= 0 && i <= reachedIndex) stageDates[e.status] = e.at.toISOString();
+  }
+  return { initials: initialsOf(row.name), trade: row.trade, status: row.status, journeyStage, stageDates, note: row.note, updatedAt: row.updatedAt.toISOString() };
 }

@@ -10,7 +10,7 @@ import { countryOptions } from "@/modules/taxonomy/queries";
 /** GET /admin/cv-submissions/export?<list filters> — Excel download of the CV submissions list (candidates.view). */
 export async function GET(request: NextRequest): Promise<Response> {
   const p = request.nextUrl.searchParams;
-  const filters = cvSubmissionFiltersSchema.parse({ status: p.get("status") ?? undefined, trade: p.get("trade") ?? undefined, country: p.get("country") ?? undefined, q: p.get("q") ?? undefined });
+  const filters = cvSubmissionFiltersSchema.parse({ status: p.get("status") ?? undefined, trade: p.get("trade") ?? undefined, country: p.get("country") ?? undefined, q: p.get("q") ?? undefined, expiring: p.get("expiring") ?? undefined });
   return staffExport<CvSubmissionExportRow>({
     permission: "candidates.view",
     list: "cv_submissions",
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         filters.trade ? `Trade: ${trades.find((t) => t.value === filters.trade)?.label ?? "selected trade"}` : null,
         filters.country ? `Country: ${countries.find((c) => c.value === filters.country)?.label ?? filters.country}` : null,
         filters.q ? `Search: "${filters.q}"` : null,
+        filters.expiring ? "Passport expiring within 6 months" : null,
       ].filter((v): v is string => Boolean(v));
       return {
         title: "CV submissions",
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest): Promise<Response> {
           { header: "Name", value: (r) => r.name },
           { header: "Trade", value: (r) => r.tradeLabel },
           { header: "Passport No", value: (r) => formatPassport(visibility, r.passportEncrypted, r.passportLast4) || (r.hasPassport === true ? "Has passport" : r.hasPassport === false ? "No passport" : "") },
+          { header: "Passport expiry", value: (r) => r.passportExpiry ?? "" },
           { header: "Phone number(s)", value: (r) => formatPhone(visibility, r.phone) },
           { header: "Candidate notes", value: (r) => r.candidateNotes, wrap: true },
           { header: "Staff remarks", value: (r) => r.staffRemarks, wrap: true },

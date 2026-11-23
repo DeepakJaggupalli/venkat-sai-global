@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { CmsImage } from "@/components/public/cms-media";
 import { Flag } from "@/components/public/flag";
+import { JsonLd } from "@/components/public/json-ld";
 import { Breadcrumbs } from "@/components/public/page-hero";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { CallButton, CONTACT_BUTTON_STYLES, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
@@ -13,9 +14,11 @@ import { LatestRequirements } from "@/components/public/requirements/latest-requ
 import { ShareToWhatsApp } from "@/components/public/requirements/share-to-whatsapp";
 import { buildPageMetadata, previewTokenFrom } from "@/components/public/server";
 import { DateText } from "@/components/shared/date-text";
+import { CONTACT } from "@/config/contact";
 import { absoluteUrl } from "@/lib/env";
 import type { SearchParams } from "@/lib/http";
 import { cn } from "@/lib/utils";
+import { buildRequirementJobPosting } from "@/modules/recruitment-posters/job-posting";
 import { posterShareDetails } from "@/modules/recruitment-posters/share";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<SearchParams> };
@@ -50,9 +53,17 @@ export default async function RequirementPage({ params, searchParams }: Props) {
   const where = card.countryName ? ` (${card.countryName})` : "";
   const whatsappMessage = `Hello Venkat Sai, I am interested in the requirement "${card.title}"${where}. Please call me.`;
   const applyHref = `/send-cv?requirement=${encodeURIComponent(card.slug)}`;
+  // Google job listing: not for previews; null once the poster's apply-by date (or 30 days) has passed.
+  const jobPosting = poster.preview
+    ? null
+    : buildRequirementJobPosting(
+        { ...card, imageUrl: card.poster ? (/^https?:\/\//.test(card.poster.url) ? card.poster.url : absoluteUrl(card.poster.url)) : null },
+        { url: absoluteUrl(card.href), site: { name: CONTACT.businessName, url: absoluteUrl("/"), logo: absoluteUrl("/icon") } },
+      );
 
   return (
     <>
+      {jobPosting ? <JsonLd data={jobPosting} /> : null}
       <PreviewRibbon show={poster.preview} />
       <div className="container-page pt-10 pb-16 sm:pt-12 sm:pb-24">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Requirements", href: "/requirements" }, { label: card.title }]} className="mb-8" />

@@ -149,7 +149,7 @@ describe.skipIf(!enabled)("CV submissions and requirement posters (PostgreSQL)",
     expect(result.requirementTitle).toBe("Dubai - Mechanical helper");
 
     const [row] = await db.select().from(s.cvSubmissions).where(eq(s.cvSubmissions.code, result.code!));
-    expect(row).toMatchObject({ status: "new", experienceYears: 5, preferredCountryCode: "AE", hasPassport: true, consentToContact: true });
+    expect(row).toMatchObject({ status: "received", experienceYears: 5, preferredCountryCode: "AE", hasPassport: true, consentToContact: true });
     expect(row!.requirementEntryId).not.toBeNull();
     // Passport number: encrypted at rest, last 4 for display, blind index for matching.
     expect(row).toMatchObject({ passportNumberLast4: "4567", candidateNotes: "Gulf experience, 2 years" });
@@ -205,16 +205,16 @@ describe.skipIf(!enabled)("CV submissions and requirement posters (PostgreSQL)",
     expect(full.items.every((i) => i.tradeLabel === "Mechanical helper")).toBe(true);
 
     await expect(cv.setCvSubmissionStatus(viewer, { id: item.id, status: "contacted" })).rejects.toBeInstanceOf(ActionError);
-    await cv.setCvSubmissionStatus(recruiter, { id: item.id, status: "shortlisted" });
+    await cv.setCvSubmissionStatus(recruiter, { id: item.id, status: "trade_test" });
     await expect(cv.setCvSubmissionRemarks(viewer, { id: item.id, remarks: "x" })).rejects.toBeInstanceOf(ActionError);
     await cv.setCvSubmissionRemarks(recruiter, { id: item.id, remarks: "Called, has passport" });
     const [row] = await db.select().from(s.cvSubmissions).where(eq(s.cvSubmissions.id, item.id));
-    expect(row!.status).toBe("shortlisted");
+    expect(row!.status).toBe("trade_test");
     expect(row!.contactedAt).not.toBeNull();
     expect(row!.staffRemarks).toBe("Called, has passport");
     expect(row!.remarksUpdatedByUserId).toBe(recruiter.user.id);
     const counts = await cv.cvSubmissionCounts(recruiter);
-    expect(counts.shortlisted).toBeGreaterThanOrEqual(1);
+    expect(counts.trade_test).toBeGreaterThanOrEqual(1);
   });
 
   it("reveals the full passport number only with candidates.view_documents and logs the reveal", async () => {

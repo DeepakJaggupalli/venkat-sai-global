@@ -308,6 +308,8 @@ export type CandidateCard = {
   relationship: { applied: boolean; unlocked: boolean };
   /** Staff only. */
   visibility: CandidateVisibility | null;
+  /** Staff only: passport expires within 6 months, or a document / credential within 30 days. */
+  expiringSoon?: boolean;
   rank: number | null;
 };
 

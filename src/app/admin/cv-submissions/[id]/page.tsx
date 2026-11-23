@@ -117,6 +117,21 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
               { label: "Preferred country", value: s.countryName ?? "Any" },
               { label: "Passport", value: passport },
               {
+                label: "Passport expiry",
+                value: s.passportExpiry ? (
+                  <span className="inline-flex flex-wrap items-center gap-2">
+                    <DateText value={s.passportExpiry} />
+                    {s.passportExpiringSoon ? (
+                      <StatusBadge tone="warning" size="sm">
+                        Expiring soon
+                      </StatusBadge>
+                    ) : null}
+                  </span>
+                ) : (
+                  "Not given"
+                ),
+              },
+              {
                 label: "Requirement",
                 value: s.requirementTitle ? (
                   s.requirementSlug ? (
@@ -152,11 +167,41 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
           />
         </SectionCard>
         <div className="space-y-6">
-          {canManage ? (
-            <SectionCard title="Status">
-              <ActionForm action={setCvSubmissionStatusAction} hidden={{ id: s.id }} submitLabel="Save status" fields={[{ name: "status", label: "Status", kind: "select", required: true, options: statusOptions, defaultValue: s.status }]} />
-            </SectionCard>
-          ) : null}
+          <SectionCard title="Placement stage" description="The stage and the note for the candidate are shown on the public status page (mobile number + reference).">
+            {canManage ? (
+              <ActionForm
+                action={setCvSubmissionStatusAction}
+                hidden={{ id: s.id }}
+                submitLabel="Save stage"
+                fields={[
+                  { name: "status", label: "Stage", kind: "select", required: true, options: statusOptions, defaultValue: s.status },
+                  {
+                    name: "candidateNote",
+                    label: "Note for the candidate",
+                    kind: "textarea",
+                    optional: true,
+                    rows: 3,
+                    defaultValue: s.candidateNote ?? "",
+                    placeholder: "Trade test on 5 December at our Hyderabad office. Bring your original certificates.",
+                    hint: "The candidate sees this note. Do not write anything private; use the staff remarks for that.",
+                  },
+                ]}
+              />
+            ) : s.candidateNote ? (
+              <p className="whitespace-pre-line text-sm text-foreground">{s.candidateNote}</p>
+            ) : null}
+            <ol className="mt-4 space-y-2 border-t border-border pt-4 text-sm" aria-label="Stage history" data-testid="stage-history">
+              {[...s.stageHistory].reverse().map((e, i) => (
+                <li key={`${e.at.toISOString()}-${i}`} className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-medium text-foreground">{CV_SUBMISSION_STATUS_LABELS[e.status]}</span>
+                  <span className="text-muted-foreground">
+                    <DateText value={e.at} mode="datetime" />
+                    {e.byName ? ` · ${e.byName}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </SectionCard>
           <SectionCard title="Remarks (staff only)" description="Never shown to the candidate. Changes are recorded in the audit log.">
             {canManage ? (
               <ActionForm

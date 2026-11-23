@@ -22,5 +22,6 @@ export const RECURRING_TASKS: RecurringTask[] = [
   { type: "privacy.sla_watch", everyMinutes: 1440, description: "Alert on data-subject requests approaching their deadline" },
   { type: "support.sla_watch", everyMinutes: 60, description: "Flag tickets breaching SLA and escalate grievances" },
   { type: "organizations.verification_expiry", everyMinutes: 1440, description: "Expire lapsed verifications/licences and warn before expiry" },
+  { type: "documents.expiry_alerts", everyMinutes: 1440, description: "Daily digest of passports and documents expiring soon; remind the candidates" },
   { type: "training.batch_reminders", everyMinutes: 1440, description: "Remind enrolled candidates about upcoming batches and assessments" },
 ];

@@ -52,6 +52,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         filters.minVerificationLevel ? `Verification: ${LEVEL_LABELS[filters.minVerificationLevel]}` : null,
         filters.openToOverseas ? "Open to overseas" : null,
         filters.passportValid ? "Valid passport" : null,
+        filters.expiringSoon ? "Passport or documents expiring soon" : null,
         filters.verifiedSkillsOnly ? "Verified skills only" : null,
         filters.verifiedCredentialsOnly ? "Verified credentials only" : null,
         filters.assessedOnly ? "Passed a Venkat Sai assessment" : null,
