@@ -4,8 +4,8 @@
  *   npm run content:refresh            (same environment as `npm run db:seed`: DATABASE_URL, SEED_ADMIN_EMAIL)
  *
  * The production seed is insert-only, so an existing database never picks up improved seed copy. This script
- * covers the entries listed in REFRESH_SPECS (site settings, the About page and every service, including the
- * training course families):
+ * covers the entries listed in `specs` below (site settings, the homepage, the navigation with its header and footer
+ * links, the About page and every service, including the training course families):
  *  - missing entry                → created (and published when the seed publishes it) through the content
  *                                   module's own services (createEntry / publishEntry);
  *  - entry still at seeded content → a new version with the current seed content is saved and published
@@ -71,6 +71,25 @@ function redactUrl(url: string): string {
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+type FooterLinkLike = { title: string; href: string };
+
+function footerLinksOf(data: unknown): FooterLinkLike[] {
+  const columns = (data as { footerColumns?: unknown } | null)?.footerColumns;
+  if (!Array.isArray(columns)) return [];
+  return columns.flatMap((column) => {
+    const links = (column as { links?: unknown } | null)?.links;
+    return Array.isArray(links)
+      ? links.filter((l): l is FooterLinkLike => typeof (l as FooterLinkLike)?.href === "string" && typeof (l as FooterLinkLike)?.title === "string")
+      : [];
+  });
+}
+
+/** Footer links of the seed whose page an edited navigation does not link to yet (reported, never added). */
+function missingFooterLinks(current: unknown, seed: unknown): FooterLinkLike[] {
+  const have = new Set(footerLinksOf(current).map((l) => l.href.trim()));
+  return footerLinksOf(seed).filter((l) => !have.has(l.href.trim()));
 }
 
 async function main(): Promise<number> {
@@ -178,6 +197,10 @@ async function main(): Promise<number> {
 
         if (reason) {
           log("skipped", label, reason);
+          // Staff edits win; new footer links (e.g. /book, /refer) are only suggested for them to add.
+          if (spec.collection === "navigation") {
+            for (const link of missingFooterLinks(entry.data, spec.data)) console.log(`      footer link to add in the navigation editor if wanted: ${link.title} (${link.href})`);
+          }
           continue;
         }
 

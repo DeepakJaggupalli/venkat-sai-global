@@ -376,7 +376,12 @@ describe.skipIf(!enabled)("content module (PostgreSQL)", async () => {
     it("shows live counts only when enabled, and never an unapproved manual figure", async () => {
       expect(await queries.getPublicMetrics()).toEqual([]);
       await service.updatePublicMetric(admin, { key: "jobs_facilitated", label: "Jobs facilitated", definition: "Job listings published on the platform.", mode: "live", isVisible: true, sortOrder: 10 });
-      const [{ value: jobCount }] = await db.select({ value: count() }).from(s.jobs).where(sql`${s.jobs.publishedAt} is not null and ${s.jobs.deletedAt} is null`);
+      // Same rule as the live metric: published, not deleted, and not posted by a demo organisation.
+      const { notDemoOrganizationRefSql } = await import("@/lib/demo-accounts");
+      const [{ value: jobCount }] = await db
+        .select({ value: count() })
+        .from(s.jobs)
+        .where(sql`${s.jobs.publishedAt} is not null and ${s.jobs.deletedAt} is null and ${notDemoOrganizationRefSql(s.jobs.organizationId)}`);
       expect(await queries.getPublicMetrics()).toEqual([expect.objectContaining({ key: "jobs_facilitated", value: jobCount, mode: "live" })]);
 
       await service.createCustomMetric(admin, { key: "custom_welders_trained", label: "Welders trained", definition: "Trainees who completed a welding course." });

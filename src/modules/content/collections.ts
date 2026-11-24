@@ -325,7 +325,7 @@ const homepage = defineCollection({
         primaryCta: cta("Primary call to action"),
         secondaryCta: cta("Secondary call to action"),
         tertiaryCta: cta("Third call to action"),
-        mediaAssetId: field.asset({ label: "Hero image or video", kinds: ["image", "video", "embed"] }),
+        mediaAssetId: field.asset({ label: "Hero image or video", help: "Not shown on the homepage, which always shows the route card with the flight animation.", kinds: ["image", "video", "embed"] }),
       },
     }),
     sections: field.list({
@@ -926,7 +926,7 @@ const requirementPosts = defineCollection({
     }),
     benefits: field.textlist({ label: "Benefits", maxItems: 20, maxLength: 160, help: "For example: free accommodation, medical, transport, 8 hours + overtime." }),
     description: field.textarea({ label: "Short description", maxLength: 2_000, rows: 4 }),
-    applyBy: field.date({ label: "Apply by", help: "Optional closing date shown on the poster page." }),
+    applyBy: field.date({ label: "Apply by", help: "Optional closing date. Not shown on the website; used only as the end date of the Google job listing." }),
   },
 });
 

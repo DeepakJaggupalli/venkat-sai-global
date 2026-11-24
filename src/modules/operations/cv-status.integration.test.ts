@@ -66,8 +66,8 @@ describe.skipIf(!enabled)("CV status check and document expiry alerts (PostgreSQ
     // The visitor types a local number and a lower-case reference.
     const input = cvStatusLookupSchema.parse({ phone: row.phone.replace("+91", ""), reference: row.code.toLowerCase() });
     const view = await cv.lookupCvStatus(input, { ipHash: ip() });
-    expect(Object.keys(view).sort()).toEqual(["initials", "journeyStage", "note", "stageDates", "status", "trade", "updatedAt"]);
-    expect(view).toMatchObject({ initials: "R. K. R.", trade: "TIG welder", status: "trade_test", journeyStage: "trade_test", note: "Trade test on 5 December at our office." });
+    expect(Object.keys(view).sort()).toEqual(["hasCv", "initials", "journeyStage", "note", "reference", "stageDates", "status", "trade", "updatedAt"]);
+    expect(view).toMatchObject({ initials: "R. K. R.", trade: "TIG welder", status: "trade_test", journeyStage: "trade_test", note: "Trade test on 5 December at our office.", hasCv: true, reference: row.code });
     expect(Object.keys(view.stageDates).sort()).toEqual(["received", "trade_test"]);
     const json = JSON.stringify(view);
     for (const secret of [row.phone, "Z1234567", "4567", "Staff only", "Ravi", row.id]) expect(json).not.toContain(secret);
@@ -138,8 +138,13 @@ describe.skipIf(!enabled)("CV status check and document expiry alerts (PostgreSQ
     expect(found.items.find((c) => c.candidateId === profile!.id)?.expiringSoon).toBe(true);
     expect(found.items.every((c) => c.expiringSoon)).toBe(true);
 
+    // Other suites sharing the database may hold expiring items (and older jobs) too: count only what this run adds,
+    // and check this suite's own items exactly below.
+    const jobIdsBefore = new Set((await db.select({ id: s.backgroundJobs.id }).from(s.backgroundJobs).where(like(s.backgroundJobs.type, "notifications.dispatch%"))).map((j) => j.id));
     const first = await expiry.runDocumentExpiryAlerts(now);
-    expect(first).toMatchObject({ newAlerts: 3, staffDigest: true, candidateAlerts: 3 });
+    expect(first).toMatchObject({ staffDigest: true });
+    expect(first.newAlerts).toBeGreaterThanOrEqual(3);
+    expect(first.candidateAlerts).toBeGreaterThanOrEqual(3);
     const mine = new Set([soon.id, far.id, rejected.id, profile!.id, licence!.id, lapsed!.id]);
     const sent = (await db.select().from(s.documentExpiryAlerts)).filter((a) => mine.has(a.itemId));
     expect(sent.map((a) => [a.itemId, a.thresholdMonths]).sort()).toEqual(
@@ -149,14 +154,14 @@ describe.skipIf(!enabled)("CV status check and document expiry alerts (PostgreSQ
         [licence!.id, 1],
       ].sort(),
     );
-    const jobs = await db.select().from(s.backgroundJobs).where(like(s.backgroundJobs.type, "notifications.dispatch%"));
+    const jobs = (await db.select().from(s.backgroundJobs).where(like(s.backgroundJobs.type, "notifications.dispatch%"))).filter((j) => !jobIdsBefore.has(j.id));
     const digests = jobs.filter((j) => (j.payload as { event?: string }).event === "documents.expiry_digest");
     expect(digests.filter((j) => j.type === "notifications.dispatch_staff")).toHaveLength(1);
     const items = String((digests.find((j) => j.type === "notifications.dispatch_staff")!.payload as { data: { items: string } }).data.items);
     expect(items).toContain(soon.code);
     expect(items).not.toContain("Z1234567");
     const candidateJobs = jobs.filter((j) => (j.payload as { event?: string }).event === "documents.expiring");
-    expect(candidateJobs).toHaveLength(3);
+    expect(candidateJobs.length).toBeGreaterThanOrEqual(3);
 
     // Same day again: nothing new, no second digest.
     expect(await expiry.runDocumentExpiryAlerts(now)).toMatchObject({ newAlerts: 0, staffDigest: false, candidateAlerts: 0 });

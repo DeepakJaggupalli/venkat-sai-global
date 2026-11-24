@@ -1,4 +1,5 @@
 import { CreditCard } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Callout } from "@/components/shared/callout";
 import { DateText } from "@/components/shared/date-text";
@@ -26,7 +27,7 @@ import { PortalBillingHeader } from "./portal-header";
 const CONTACT_HREF = "/contact";
 
 /** /<portal>/billing — current plan, usage vs limits, credits, plans and credit packs. */
-export async function PortalBillingOverview({ portal, ctx }: { portal: BillingPortal; ctx: OrgContext }) {
+export async function PortalBillingOverview({ portal, ctx, intro }: { portal: BillingPortal; ctx: OrgContext; /** Portal-specific section shown under the tabs (e.g. worker invoices). */ intro?: ReactNode }) {
   const cfg = BILLING_PORTALS[portal];
   const timeZone = ctx.user.timezone ?? env().DEFAULT_TIMEZONE;
   const canManage = ctx.permissions.has(cfg.managePermission);
@@ -48,6 +49,7 @@ export async function PortalBillingOverview({ portal, ctx }: { portal: BillingPo
   return (
     <div className="space-y-8">
       <PortalBillingHeader portal={portal} title="Billing" description="Your plan, what you have used, and the plans and credits available to your organisation." />
+      {intro}
 
       {overview.outstanding.length ? (
         <Callout tone="warning" title="You have unpaid invoices" action={{ label: "View invoices", href: `${cfg.base}/invoices?status=open` }}>

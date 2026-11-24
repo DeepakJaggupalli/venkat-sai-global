@@ -23,6 +23,7 @@ export type SettingMeta = {
 export const DEDICATED_GROUPS: Record<string, { href: string; label: string }> = {
   Security: { href: "/admin/settings/security", label: "Security" },
   "Resume service": { href: "/admin/resume-requests", label: "Resume service" },
+  Backup: { href: "/admin/system/backup", label: "Backup" },
 };
 
 /** Validation bounds and hints. Anything not listed gets the defaults derived from its type. */
@@ -51,7 +52,12 @@ const OVERRIDES: Partial<Record<SettingKey, Partial<SettingMeta>>> = {
   "recruitment.job_default_duration_days": { min: 1, max: 365 },
   "recruitment.partner_attribution_days": { min: 1, max: 730 },
   "recruitment.profile_unlock_days": { min: 1, max: 730 },
+  "referrals.reward_text": {
+    maxLength: 200,
+    hint: "Shown on /refer exactly as written. Include the currency, and say when it is paid. Leave blank and the page shows no amount.",
+  },
   "platform.home_country": { kind: "country" },
+  "backup.daily_email_to": { maxLength: 254, hint: "Leave blank to send it to the business inbox." },
   "support.sla_hours_urgent": { min: 1, max: 720 },
   "support.sla_hours_high": { min: 1, max: 720 },
   "support.sla_hours_normal": { min: 1, max: 720 },

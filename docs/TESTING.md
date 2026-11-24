@@ -191,3 +191,49 @@ Projects: `chromium` (Desktop Chrome) and `mobile` (Pixel 7). Start with `e2e/sm
   the panel, not the input. Use `signIn()` / `fillPasswordSignInForm()`.
 - **Shared data:** don't close, delete or re-verify the seeded organisations, jobs or batches; create your own
   uniquely named records for destructive flows.
+
+## 5. Demo accounts (`npm run db:seed:demo`)
+
+Sign-in accounts for every portal, so the owner can try the whole platform, also on the live site. Runner
+`scripts/seed-demo.ts`, logic `src/server/seed/demo.ts`, guard and file format `src/server/seed/demo-guard.ts`.
+
+| Email (reserved domain `demo.venkatsai.test`) | Portal |
+|---|---|
+| `admin@` | Command Centre, Super Admin |
+| `staff@` | Command Centre, Venkat Sai Recruiter role |
+| `person@` | People Portal: Demo Person, adult Pipe Welder in Visakhapatnam, onboarding finished |
+| `company@` | Company Portal: owner of Demo Company (test account), verified |
+| `agency@` | Travel Agency Portal: owner of Demo Travel Agency (test account), verified |
+| `partner@` | Recruitment Partner Portal: owner of Demo Recruitment Partner (test account), verified |
+| `institution@` | Institution Portal: owner of Demo Training Institute (test account), verified |
+
+```bash
+npm run db:seed:demo                  # create or reset; passwords kept from the credentials file
+npm run db:seed:demo -- --rotate      # new password for every demo account (signs them out)
+npm run db:seed:demo -- --remove      # delete every demo account and organisation (closed if other records point at them)
+DATABASE_URL='<live database URL>' APP_URL='https://<live site>' npm run db:seed:demo -- --allow-remote
+```
+
+- **Credentials file:** `E:\VenkatSaiGlobal-work\secrets\demo-logins.txt` (outside the repository, mode 600; override
+  with `DEMO_LOGINS_FILE`): portal, sign-in link, email, password and notes. Random passwords, never printed, kept
+  across runs unless `--rotate` (a kept password under 12 characters or otherwise weak is replaced). **Never commit,
+  share or paste this file.** `--remove` deletes it, unless the file was written for another database (for example
+  the live site).
+- **Safety:** refuses to run on Vercel. A database that is not `127.0.0.1` / `localhost` (or has a `?host=`
+  override) needs `--allow-remote`; the guard runs before the database module loads. Staff two-step sign-in is never
+  switched off: on the live site the first staff sign-in asks for an authenticator app (the file says so). The seed
+  stops before changing anything when a demo address already belongs to an account it did not create (it never takes
+  one over). The demo staff accounts work on real data: what they publish or change is real (the file says so).
+- **Production-safe:** no files, approval requests or notifications. Organisations are marked verified directly
+  (verification history row + audit entry `organization.demo_verified`). No jobs, requirements, courses, reviews or
+  CVs are created.
+- **Never public:** demo users and organisations carry `demoAccount: true` (`users.preferences` /
+  `organizations.metadata`, see `src/lib/demo-accounts.ts`). Public jobs (search, job pages, sitemap, alerts,
+  recommendations), company and institution pages, courses, campus drives, internships, partner announcements, the
+  People Portal career page and the homepage counters leave them out, and real employers never find the demo person in
+  candidate search. So jobs, courses or announcements made with demo organisations never show publicly or in the
+  People Portal.
+- **Remove after checking the live site:** the demo Super Admin is a real admin login. `--remove` keeps it only when
+  it is the last active Super Admin.
+- **Tests:** `src/server/seed/demo-guard.test.ts`, `src/lib/demo-accounts.test.ts` and
+  `src/server/seed/demo.integration.test.ts` (runs against a `vsg_t_*`, `vsg_r_*` or `vsg_test_*` database).

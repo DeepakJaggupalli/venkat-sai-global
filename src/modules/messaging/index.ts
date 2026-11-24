@@ -4,9 +4,11 @@ import { db } from "@/db";
 import { devOutbox } from "@/db/schema";
 import { logger } from "@/lib/logger";
 
+import { checkAttachments, describeAttachments, type EmailAttachment } from "./attachments";
 import { sanitizeEmailHeaders } from "./headers";
 
 export { sanitizeEmailHeaders } from "./headers";
+export { MAX_EMAIL_ATTACHMENT_BYTES, type EmailAttachment } from "./attachments";
 
 /**
  * Low-level message transports — CONTRACT used by auth (OTP) and the notifications engine.
@@ -27,6 +29,11 @@ export type EmailMessage = {
   tags?: string[];
   /** Extra headers (e.g. List-Unsubscribe). Every transport sanitises them (sanitizeEmailHeaders). */
   headers?: Record<string, string>;
+  /**
+   * Files as raw bytes (never paths or URLs), checked by sendEmail (count, type, total size). The dev outbox keeps
+   * only their name, type and size.
+   */
+  attachments?: EmailAttachment[];
 };
 export type SmsMessage = { to: string; body: string; templateId?: string; variables?: Record<string, string> };
 export type WhatsAppMessage = { to: string; templateName: string; languageCode: string; variables: string[]; fallbackText?: string };
@@ -42,7 +49,15 @@ export type MessagingProviders = {
 export const devProviders: MessagingProviders = {
   async sendEmail(m) {
     const headers = sanitizeEmailHeaders(m.headers);
-    await db.insert(devOutbox).values({ channel: "email", to: m.to, subject: m.subject, bodyText: m.text, bodyHtml: m.html, metadata: { tags: m.tags ?? [], ...(headers ? { headers } : {}) } });
+    const attachments = m.attachments?.length ? describeAttachments(m.attachments) : null;
+    await db.insert(devOutbox).values({
+      channel: "email",
+      to: m.to,
+      subject: m.subject,
+      bodyText: m.text,
+      bodyHtml: m.html,
+      metadata: { tags: m.tags ?? [], ...(headers ? { headers } : {}), ...(attachments ? { attachments } : {}) },
+    });
     logger.info("[dev-outbox] email captured", { to: m.to, subject: m.subject });
     return { ok: true, provider: "dev" };
   },
@@ -70,6 +85,11 @@ async function providers(): Promise<MessagingProviders> {
 }
 
 export async function sendEmail(message: EmailMessage): Promise<SendResult> {
+  if (message.attachments?.length) {
+    const checked = checkAttachments(message.attachments);
+    if (!checked.ok) return { ok: false, provider: "email", error: checked.error };
+    return (await providers()).sendEmail({ ...message, attachments: checked.attachments });
+  }
   return (await providers()).sendEmail(message);
 }
 

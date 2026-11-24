@@ -5,6 +5,7 @@ import { and, asc, countDistinct, count, eq, gte, inArray, isNotNull, isNull, ne
 import { db, type DbOrTx } from "@/db";
 import { candidateProfiles, courses, jobs, organizations, placements, publicMetrics, users, type PublicMetricKey, type StandardPublicMetricKey } from "@/db/schema";
 import { ActionError } from "@/lib/actions";
+import { notDemoCandidateRefSql, notDemoOrganizationRefSql, notDemoSql } from "@/lib/demo-accounts";
 import { audit } from "@/modules/audit";
 import type { StaffContext } from "@/modules/identity/authz";
 
@@ -18,7 +19,8 @@ import type { AdminMetricItem, PublicMetric, PublicMetricRow } from "./types";
 /**
  * Public credibility counters (spec 7.3). Live counters are computed in code from real tables (read-only
  * queries on other modules' tables); manual figures need an approved snapshot with evidence and an as-of date.
- * `getPublicMetrics()` returns only what may be shown. All metrics are seeded hidden.
+ * `getPublicMetrics()` returns only what may be shown. All metrics are seeded hidden. Demo accounts and their
+ * organisations, jobs, courses and placements are never counted (src/lib/demo-accounts.ts).
  */
 
 type Tx = DbOrTx;
@@ -37,7 +39,12 @@ async function scalar(query: Promise<{ value: number | string | null }[]>): Prom
 }
 
 const verifiedOrgs = (tx: Tx, type: "employer" | "recruitment_partner" | "institution") =>
-  scalar(tx.select({ value: count() }).from(organizations).where(and(eq(organizations.type, type), eq(organizations.status, "verified"), isNull(organizations.deletedAt))));
+  scalar(
+    tx
+      .select({ value: count() })
+      .from(organizations)
+      .where(and(eq(organizations.type, type), eq(organizations.status, "verified"), isNull(organizations.deletedAt), notDemoSql(organizations.metadata))),
+  );
 
 /** The live counters, keyed by public_metrics.liveQueryKey. */
 export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition> = {
@@ -51,7 +58,7 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
           .select({ value: count() })
           .from(candidateProfiles)
           .innerJoin(users, eq(users.id, candidateProfiles.userId))
-          .where(and(isNull(candidateProfiles.deletedAt), eq(users.status, "active"))),
+          .where(and(isNull(candidateProfiles.deletedAt), eq(users.status, "active"), notDemoSql(users.preferences))),
       ),
   },
   verified_candidates: {
@@ -64,7 +71,7 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
           .select({ value: count() })
           .from(candidateProfiles)
           .innerJoin(users, eq(users.id, candidateProfiles.userId))
-          .where(and(isNull(candidateProfiles.deletedAt), eq(users.status, "active"), ne(candidateProfiles.verificationLevel, "none"))),
+          .where(and(isNull(candidateProfiles.deletedAt), eq(users.status, "active"), ne(candidateProfiles.verificationLevel, "none"), notDemoSql(users.preferences))),
       ),
   },
   active_employers: {
@@ -83,6 +90,7 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
               eq(organizations.type, "employer"),
               eq(organizations.status, "verified"),
               isNull(organizations.deletedAt),
+              notDemoSql(organizations.metadata),
               isNull(jobs.deletedAt),
               isNotNull(jobs.publishedAt),
               gte(jobs.publishedAt, since),
@@ -113,13 +121,19 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
     key: "jobs_facilitated",
     label: STANDARD_PUBLIC_METRIC_LABELS.jobs_facilitated,
     definition: "Job listings that have been published on Venkat Sai Global since the platform launched (removed listings excluded).",
-    compute: (tx) => scalar(tx.select({ value: count() }).from(jobs).where(and(isNotNull(jobs.publishedAt), isNull(jobs.deletedAt)))),
+    compute: (tx) => scalar(tx.select({ value: count() }).from(jobs).where(and(isNotNull(jobs.publishedAt), isNull(jobs.deletedAt), notDemoOrganizationRefSql(jobs.organizationId)))),
   },
   successful_placements: {
     key: "successful_placements",
     label: STANDARD_PUBLIC_METRIC_LABELS.successful_placements,
     definition: "Placements recorded on Venkat Sai Global in which the candidate joined the employer.",
-    compute: (tx) => scalar(tx.select({ value: count() }).from(placements).where(inArray(placements.status, ["joined", "completed"]))),
+    compute: (tx) =>
+      scalar(
+        tx
+          .select({ value: count() })
+          .from(placements)
+          .where(and(inArray(placements.status, ["joined", "completed"]), notDemoOrganizationRefSql(placements.organizationId), notDemoCandidateRefSql(placements.candidateId))),
+      ),
   },
   active_countries: {
     key: "active_countries",
@@ -129,8 +143,10 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
       const result = await tx.execute<{ value: string | number }>(sql`
         select count(*) as value from (
           select country_code from jobs where status = 'published' and deleted_at is null and country_code is not null
+            and ${notDemoOrganizationRefSql(sql`jobs.organization_id`)}
           union
           select country_code from placements where status in ('joined', 'completed') and country_code is not null
+            and ${notDemoOrganizationRefSql(sql`placements.organization_id`)} and ${notDemoCandidateRefSql(sql`placements.candidate_id`)}
         ) as c`);
       return Number(result.rows[0]?.value ?? 0);
     },
@@ -139,14 +155,20 @@ export const LIVE_METRICS: Record<StandardPublicMetricKey, LiveMetricDefinition>
     key: "training_programmes",
     label: STANDARD_PUBLIC_METRIC_LABELS.training_programmes,
     definition: "Training courses currently published on Venkat Sai Global.",
-    compute: (tx) => scalar(tx.select({ value: count() }).from(courses).where(and(eq(courses.status, "published"), isNull(courses.deletedAt)))),
+    compute: (tx) =>
+      scalar(tx.select({ value: count() }).from(courses).where(and(eq(courses.status, "published"), isNull(courses.deletedAt), notDemoOrganizationRefSql(courses.organizationId)))),
   },
   internship_opportunities: {
     key: "internship_opportunities",
     label: STANDARD_PUBLIC_METRIC_LABELS.internship_opportunities,
     definition: "Internship listings currently published on Venkat Sai Global.",
     compute: (tx) =>
-      scalar(tx.select({ value: count() }).from(jobs).where(and(eq(jobs.status, "published"), isNull(jobs.deletedAt), eq(jobs.employmentType, "internship")))),
+      scalar(
+        tx
+          .select({ value: count() })
+          .from(jobs)
+          .where(and(eq(jobs.status, "published"), isNull(jobs.deletedAt), eq(jobs.employmentType, "internship"), notDemoOrganizationRefSql(jobs.organizationId))),
+      ),
   },
 };
 

@@ -23,9 +23,10 @@ import { getMarketingT } from "@/components/public/marketing-locale";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
 import { publicLocaleProps } from "@/components/public/public-locale";
 import { loadPosterPage } from "@/components/public/requirements/data";
-import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
+import { RequirementsSection } from "@/components/public/requirements/latest-requirements";
 import { RevealScope } from "@/components/public/reveal";
 import type { SectionTone } from "@/components/public/section";
+import { WorkerReviewsSection } from "@/components/public/worker-reviews";
 import { buildPageMetadata, previewTokenFrom, settle } from "@/components/public/server";
 import { getHomepageBanners, getSiteSettings } from "@/components/public/site-data";
 import { sanitizeHref } from "@/components/layout/public-nav";
@@ -40,6 +41,7 @@ import { listFeaturedJobs, searchJobs } from "@/modules/jobs/queries";
 import { parseJobSearchParams } from "@/modules/jobs/schemas";
 import { listCountries } from "@/modules/taxonomy/queries";
 import { listPublicCourses } from "@/modules/training/queries";
+import { countPublicWorkerReviews } from "@/modules/worker-reviews/queries";
 
 type Props = { searchParams: Promise<SearchParams> };
 
@@ -69,6 +71,9 @@ function referenced<K extends CmsCollection>(references: ReferenceMap | undefine
 
 const EMPTY_PAGE = { items: [], assets: {} as AssetMap, references: {} as ReferenceMap, total: 0, page: 1, pageSize: 0, pageCount: 0 };
 
+/** Newest requirements listed right below the hero (two rows of three on a laptop). */
+const HOME_REQUIREMENTS = 6;
+
 export default async function HomePage({ searchParams }: Props) {
   const sp = await searchParams;
   const preview = previewTokenFrom(sp);
@@ -83,7 +88,7 @@ export default async function HomePage({ searchParams }: Props) {
   const featuredIndustries = referenced(detail?.references, home?.featuredIndustryIds, "industries");
   const featuredStories = referenced(detail?.references, home?.featuredCaseStudyIds, "case_studies");
 
-  const [banners, settings, metrics, about, services, industries, destinations, stories, news, homepageJobs, latestJobs, internships, courses, countries, faqs, posters] = await Promise.all([
+  const [banners, settings, metrics, about, services, industries, destinations, stories, news, homepageJobs, latestJobs, internships, courses, countries, faqs, posters, reviewCount] = await Promise.all([
     getHomepageBanners(),
     getSiteSettings(),
     has("metrics") ? settle("metrics", () => getPublicMetrics(), []) : Promise.resolve([]),
@@ -99,7 +104,8 @@ export default async function HomePage({ searchParams }: Props) {
     has("opportunities") ? settle("courses", () => listPublicCourses({}, { page: 1, pageSize: 3, offset: 0 }), null) : Promise.resolve(null),
     settle("countries", () => listCountries(), []),
     settle("faqs.home", () => getPublishedEntries("faqs", { limit: 6 }), EMPTY_PAGE),
-    loadPosterPage({ pageSize: 1 }),
+    loadPosterPage({ pageSize: HOME_REQUIREMENTS }),
+    settle("worker_reviews", () => countPublicWorkerReviews(), 0),
   ]);
 
   const assets: AssetMap = { ...(detail?.assets ?? {}), ...services.assets, ...stories.assets, ...news.assets };
@@ -110,7 +116,6 @@ export default async function HomePage({ searchParams }: Props) {
   // Promoted homepage jobs first, then the most relevant public jobs, without duplicates.
   const jobIds = new Set<string>();
   const jobs = [...homepageJobs, ...(latestJobs?.items ?? [])].filter((j) => (jobIds.has(j.id) ? false : (jobIds.add(j.id), true))).slice(0, 3);
-  const heroMedia = home?.hero?.mediaAssetId ? (assets[home.hero.mediaAssetId] ?? null) : null;
   const ctaBand = home?.ctaBand;
   const contactDetails = resolveContact(settings?.contact);
   const marqueeCountries = destinations.items.map((d) => ({
@@ -118,9 +123,9 @@ export default async function HomePage({ searchParams }: Props) {
     name: countryNames[d.data.countryCode] ?? d.title,
     href: d.path ?? `/global-reach/${d.slug}`,
   }));
-  const latestPoster = posters.items.find((p) => p.poster) ?? posters.items[0] ?? null;
   const section = (key: ResolvedSection["key"]) => sections.find((s) => s.key === key) ?? null;
-  // The designed core of the page renders in a fixed order (visibility and headings still come from the CMS);
+  // The page opens with the hero, then the latest requirements (the owner wants them first for everyone), then the
+  // destination rails. The designed core follows in a fixed order (visibility and headings still come from the CMS);
   // the remaining content sections follow in the CMS order. Bands alternate white / light grey.
   const CORE = new Set<ResolvedSection["key"]>(["metrics", "services", "opportunities", "employers", "candidates", "cta_band", "global_reach", "partners", "institutions"]);
   const tail = sections.filter((s) => !CORE.has(s.key));
@@ -143,9 +148,25 @@ export default async function HomePage({ searchParams }: Props) {
   const blocks: Block[] = [];
   if (servicesSection) blocks.push({ key: "services", render: (tone) => <FeaturedServicesSection key="services" tone={tone} services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} t={t} /> });
   blocks.push({ key: "manpower", render: (tone) => <ManpowerSection key="manpower" tone={tone} t={t} /> });
-  blocks.push({ key: "requirements", render: (tone) => <LatestRequirements key="requirements" limit={6} tone={tone === "subtle" ? "subtle" : "white"} /> });
   if (candidatesSection) blocks.push({ key: "candidates", render: (tone) => <HowItWorksSection key="candidates" tone={tone} heading={candidatesSection.heading} intro={candidatesSection.intro} t={t} /> });
   blocks.push({ key: "training", render: (tone) => <TrainingTeaser key="training" tone={tone} t={t} /> });
+  // Approved reviews from placed workers (with their permission); nothing renders until one is approved.
+  if (reviewCount > 0)
+    blocks.push({
+      key: "worker_reviews",
+      render: (tone) => (
+        <WorkerReviewsSection
+          key="worker_reviews"
+          tone={tone}
+          limit={6}
+          showAllLink
+          eyebrow={t("reviews.eyebrow")}
+          heading={t("reviews.title")}
+          intro={t("reviews.intro")}
+          allLabel={t("reviews.all")}
+        />
+      ),
+    });
   if (metricsSection && metrics.length) blocks.push({ key: "metrics", render: (tone) => <MetricsSection key="metrics" tone={tone} metrics={metrics} heading={metricsSection.heading} intro={metricsSection.intro} t={t} /> });
   if (opportunitiesSection && hasOpportunities)
     blocks.push({
@@ -209,11 +230,13 @@ export default async function HomePage({ searchParams }: Props) {
       {detail?.preview ? null : <JsonLd data={organization} />}
       <PreviewRibbon show={Boolean(detail?.preview)} />
       <RevealScope>
-        <HomeHero
-          hero={home?.hero}
-          media={heroMedia}
-          poster={latestPoster}
-          openRequirements={posters.total}
+        <HomeHero hero={home?.hero} openRequirements={posters.total} t={t} />
+        <RequirementsSection
+          posters={posters.items}
+          showRefer
+          gridClassName="xl:grid-cols-3"
+          sizes="(min-width: 768px) 33vw, (min-width: 480px) 50vw, 100vw"
+          priorityCount={0}
           t={t}
         />
         {banners.length ? (

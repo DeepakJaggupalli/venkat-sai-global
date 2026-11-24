@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applicationNotes, candidateProfiles, internalNotes, jobCategories, users } from "@/db/schema";
 import { tryDecryptField } from "@/lib/crypto";
-import { maskPhone } from "@/lib/format";
+import { maskEmail, maskPhone } from "@/lib/format";
 import { maskPassportNumber } from "@/lib/xlsx-export";
 import { staffCan, type StaffContext } from "@/modules/identity/authz";
 
@@ -38,6 +38,12 @@ export function formatPassport(visibility: ExportVisibility, encrypted: string |
 export function formatPhone(visibility: ExportVisibility, phone: string | null): string {
   if (!phone) return "";
   return visibility.fullPhone ? phone : maskPhone(phone);
+}
+
+/** Email follows the phone rule (contact details): full with candidates.view_contact, else r***@gmail.com. */
+export function formatEmail(visibility: ExportVisibility, email: string | null): string {
+  if (!email) return "";
+  return visibility.fullPhone ? email : maskEmail(email);
 }
 
 const MAX_NOTE = 1000;

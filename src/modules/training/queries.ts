@@ -17,6 +17,7 @@ import {
   placementOutcomes,
   users,
 } from "@/db/schema";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { getLatestApprovalForEntity } from "@/modules/approvals/service";
 import { fileUrl, thumbnailUrl } from "@/modules/files";
@@ -73,14 +74,19 @@ function image(file: typeof files.$inferSelect | null | undefined): Image | null
   return { url: fileUrl(file, { variant: "lg" }), thumbnailUrl: thumbnailUrl(file) };
 }
 
-/** Courses visible publicly: published, not deleted, and Venkat Sai's own or from a verified (not lapsed) institution. */
+/** Courses visible publicly: published, not deleted, and Venkat Sai's own or from a verified (not lapsed) institution that is not a demo account. */
 function listableCourse(now: Date): SQL {
   return and(
     eq(courses.status, "published"),
     isNull(courses.deletedAt),
     or(
       isNull(courses.organizationId),
-      and(eq(organizations.status, "verified"), isNull(organizations.deletedAt), or(isNull(organizations.verificationExpiresAt), gt(organizations.verificationExpiresAt, now))),
+      and(
+        eq(organizations.status, "verified"),
+        isNull(organizations.deletedAt),
+        or(isNull(organizations.verificationExpiresAt), gt(organizations.verificationExpiresAt, now)),
+        notDemoSql(organizations.metadata),
+      ),
     ),
   )!;
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { z } from "zod";
 
 import { DataTable } from "@/components/shared/data-table";
@@ -32,7 +33,7 @@ const invoiceFilters = z.object({
 });
 
 /** /<portal>/billing/invoices — invoices and credit notes, billing queries. */
-export async function PortalBillingInvoices({ portal, ctx, searchParams }: PageArgs) {
+export async function PortalBillingInvoices({ portal, ctx, searchParams, intro }: PageArgs & { /** Portal-specific section shown under the tabs (e.g. worker invoices). */ intro?: ReactNode }) {
   const cfg = BILLING_PORTALS[portal];
   const timeZone = ctx.user.timezone ?? env().DEFAULT_TIMEZONE;
   const filters = invoiceFilters.parse({ status: searchParams.status, documentType: searchParams.documentType });
@@ -47,6 +48,7 @@ export async function PortalBillingInvoices({ portal, ctx, searchParams }: PageA
   return (
     <div className="space-y-8">
       <PortalBillingHeader portal={portal} title="Invoices" description="Invoices and credit notes issued to your organisation. Open one to print it, save it as PDF or pay it." />
+      {intro}
       <SectionCard title="Invoices and credit notes" flush>
         <div className="p-4 sm:p-5">
           <FilterBar paramKeys={["status", "documentType"]}>

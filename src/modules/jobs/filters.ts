@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql, type SQL } from
 
 import { jobs } from "@/db/schema";
 import type { EmploymentType } from "@/db/schema/_constants";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { toMinorUnits } from "@/lib/format";
 import { escapeLike, toPrefixTsQuery } from "@/modules/candidates/profile-rules";
 import { isFeatureEnabled } from "@/modules/settings";
@@ -14,7 +15,8 @@ import type { JobSearchFilters } from "./schemas";
  * SQL building blocks for job queries. The public visibility rule lives here ONLY, so search, the
  * job page, alerts, recommendations and saved jobs can never disagree about what is public:
  *   published · not deleted · went live (publishedAt ≤ now) · not past its listing end or deadline ·
- *   organisation (if any) not deleted, suspended or rejected · service switched on (feature flags).
+ *   organisation (if any) not deleted, suspended, rejected or a demo account (src/lib/demo-accounts.ts) ·
+ *   service switched on (feature flags).
  */
 
 export type JobVisibilityFlags = { overseas: boolean; internships: boolean; freelance: boolean };
@@ -42,7 +44,7 @@ export function publicJobConditions(flags: JobVisibilityFlags): SQL[] {
     or(isNull(jobs.applicationDeadline), sql`${jobs.applicationDeadline} > now()`)!,
     sql`(${jobs.organizationId} is null or exists (
       select 1 from organizations o
-      where o.id = ${jobs.organizationId} and o.deleted_at is null and o.status not in ('suspended', 'rejected')))`,
+      where o.id = ${jobs.organizationId} and o.deleted_at is null and o.status not in ('suspended', 'rejected') and ${notDemoSql(sql`o.metadata`)}))`,
   ];
   if (!flags.overseas) conditions.push(eq(jobs.isOverseas, false));
   const hiddenTypes: EmploymentType[] = [...(flags.internships ? [] : (["internship"] as EmploymentType[])), ...(flags.freelance ? [] : FREELANCE_TYPES)];

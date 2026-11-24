@@ -13,6 +13,7 @@ export function DownloadExcelButton({
   keys,
   label = "Download Excel",
   variant = "outline",
+  className,
 }: {
   /** Export route, e.g. "/admin/cv-submissions/export". */
   href: string;
@@ -21,6 +22,8 @@ export function DownloadExcelButton({
   keys?: readonly string[];
   label?: string;
   variant?: "outline" | "default";
+  /** Extra classes, e.g. "min-h-11 md:min-h-7" for a 44px tap target on phones. */
+  className?: string;
 }) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(searchParams ?? {})) {
@@ -30,7 +33,7 @@ export function DownloadExcelButton({
   }
   const qs = query.toString();
   return (
-    <Button asChild variant={variant} size="sm">
+    <Button asChild variant={variant} size="sm" className={className}>
       <a href={qs ? `${href}?${qs}` : href} data-testid="download-excel" rel="nofollow">
         <FileSpreadsheet aria-hidden="true" />
         {label}

@@ -24,6 +24,8 @@ export type MatchRow = {
   countryName: string | null;
   prefersTargetCountry: boolean;
   status: CvSubmissionStatus | null;
+  /** CVs: a CV file is attached; null for candidate profiles. */
+  hasCv: boolean | null;
   phoneMasked: string;
   hasPhone: boolean;
   createdAt: string;
@@ -164,6 +166,7 @@ export function MatchList({ target, rows, canContact, canManage }: Props) {
                     )}
                     <p className="text-xs text-muted-foreground">
                       {r.kind === "cv" ? `CV ${r.code ?? ""}` : "Candidate profile"} · <RelativeTime value={r.createdAt} />
+                      {r.hasCv === false ? " · No CV file yet" : ""}
                     </p>
                   </td>
                   <td className="p-3">{r.trade}</td>

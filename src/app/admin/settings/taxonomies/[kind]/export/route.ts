@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { logger } from "@/lib/logger";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 
 import { isTaxonomyKind } from "../../_lib/config";
 import { exportTaxonomyCsv } from "../../_lib/queries";
@@ -11,6 +12,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const ctx = await getStaffContext();
   if (!ctx) return new NextResponse("Sign in as staff to export.", { status: 401 });
   if (!staffCan(ctx, "settings.view")) return new NextResponse("You do not have permission to export settings.", { status: 403 });
+  if (await staffTwoFactorMissing(ctx)) return new NextResponse(STAFF_TWO_FACTOR_MESSAGE, { status: 403 });
   const { kind } = await params;
   if (!isTaxonomyKind(kind)) return new NextResponse("Not found", { status: 404 });
   try {

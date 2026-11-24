@@ -17,6 +17,7 @@ import {
   users,
 } from "@/db/schema";
 import { nextCode } from "@/lib/codes";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { audit } from "@/modules/audit";
 import { recordConsent } from "@/modules/identity/consent";
@@ -331,14 +332,14 @@ export async function listDriveRegistrations(actor: TrainingActor, driveId: stri
   return rows.map((r) => ({ ...r.r, candidateName: r.candidateName, email: r.email, phone: r.phone }));
 }
 
-/** Public events page: open or planned public drives of verified organisers, upcoming first. */
+/** Public events page: open or planned public drives of verified organisers (never demo accounts), upcoming first. */
 export async function listPublicCampusDrives(page: PageQuery, now: Date = new Date()): Promise<Paginated<PublicCampusDrive>> {
   const today = toIsoDate(now);
   const condition = and(
     eq(campusDrives.isPublic, true),
     inArray(campusDrives.status, ["planned", "open"]),
     or(isNull(campusDrives.driveDate), gte(campusDrives.driveDate, today)),
-    or(isNull(campusDrives.organizationId), and(eq(organizations.status, "verified"), isNull(organizations.deletedAt))),
+    or(isNull(campusDrives.organizationId), and(eq(organizations.status, "verified"), isNull(organizations.deletedAt), notDemoSql(organizations.metadata))),
   );
   const registrations = db
     .select({ driveId: campusDriveRegistrations.driveId, value: count().as("value") })

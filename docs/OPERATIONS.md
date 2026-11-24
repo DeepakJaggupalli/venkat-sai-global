@@ -171,6 +171,7 @@ processor. Recurring tasks are listed in `src/server/tasks/schedule.ts`:
 | `operations.reminders` | 30 min | Remind staff of due tasks and lead follow-ups |
 | `identity.cleanup`, `jobs.close_expired`, `recruitment.expire_offers`, `recruitment.expire_unlocks`, `analytics.aggregate`, `support.sla_watch` | 1 h | Session cleanup, close jobs past deadline, expire offers and employer unlocks, roll up analytics, flag tickets breaching SLA and escalate grievances |
 | `system.cleanup`, `jobs.alerts_digest`, `recruitment.expire_attributions`, `commercial.renewals`, `analytics.retention`, `privacy.sla_watch`, `organizations.verification_expiry`, `training.batch_reminders` | daily | Housekeeping, job-alert digests, partner attribution expiry, subscription renewals and invoices, analytics retention, data-request deadline alerts, verification/licence expiry, batch reminders |
+| `backup.daily_email` | daily (first tick after 00:00 UTC = 05:30 IST) | Email the Excel backup of the business data to the business inbox (§8.1) |
 
 Plus one-off tasks queued by the app (`notifications.dispatch`, `files.process`, `privacy.export`, …). A failed
 task retries with increasing delay up to 5 attempts (3 for recurring ones), then becomes **dead**.
@@ -237,7 +238,8 @@ transactional provider and publish **SPF**, **DKIM** and **DMARC** DNS records f
 Gmail and Outlook will put the platform's mail in spam. Each provider shows the exact records to add.
 
 The setting `notifications.business_inbox_email` (`/admin/settings`, default `vsweld@gmail.com`) receives a
-copy of every new CV, contact enquiry and workforce requirement; blank switches it off.
+copy of every new CV, contact enquiry and workforce requirement; blank switches it off. It also receives the daily
+Excel backup (§8.1) unless the Super Admin sets another address on `/admin/system/backup`.
 
 ### 5.2 WhatsApp
 
@@ -325,6 +327,34 @@ original `DATA_ENCRYPTION_KEY` has unreadable passport numbers and two-factor se
 
 **Test the restore** once before launch and once a quarter: restore the dump into a scratch Neon branch or the
 local PostgreSQL and open a few records.
+
+### 8.1 Daily Excel backup email and "Download full backup" (`/admin/system/backup`)
+
+A business-readable copy of the data, for the owner, on top of (not instead of) the database backups above. One
+Excel file with a sheet per area: CV submissions and applicants (the agreed columns: S.No, Name, Trade, Passport No,
+Exp Abroad, Exp India, Email, Phone, Applied for, Status, Source, Applied on, Preferred country, Passport expiry,
+Candidate notes, Staff remarks, Code), requirement posters with applicant counts, job applications, manpower
+requests, booking dates and bookings, referrers and referral payouts, worker reviews, leads, enquiries, organisations
+and resume requests. Newest rows first, at most 20,000 rows per sheet (the sheet's second line says when it was cut
+short). No files (CVs, photos) and no audit logs: use `pg_dump` and the Blob copy for a full restore.
+
+- **Daily email** — task `backup.daily_email` (daily, registered like `documents.expiry_alerts`). On by default
+  (setting `backup.daily_email_enabled`); goes to `backup.daily_email_to`, or to the business inbox
+  (`notifications.business_inbox_email`) when that is blank. Passport numbers in the email show only the last 4
+  digits. The file is **attached** (a link would be useless on the day the site is down, which is when a backup is
+  needed); a workbook over 10 MB is not attached and the email points at the download page instead. It is sent at
+  most once per scheduled day (a retry or **Run now** later the same day sends nothing). It needs real email
+  (§5.1): with `EMAIL_TRANSPORT=dev` it lands in the dev outbox (name and size of the file only, never its bytes).
+- **Failures** — a refused send (for example a wrong Gmail app password) is written to the audit log as
+  `backup.email_failed`, shown in red on the backup page and retried by the task queue (3 attempts). Fix the SMTP
+  settings, then use **Email a backup now** on the backup page to check.
+- **Download full backup** — Super Admin only (permission `settings.security`); full passport numbers only with
+  `candidates.view_documents`, full phone numbers and emails only with `candidates.view_contact`. Rate limited (6
+  an hour). Every download is written to `/admin/audit/data-access` and the audit log (`export.downloaded`, list
+  `full_backup`) before the file is handed out.
+- **Gmail limits** — one message a day with a file of a few MB is far inside Gmail's limits (25 MB per message). The
+  owner should keep the emails in a private label or move the files to a private Drive folder, and delete old ones
+  under the business's retention rules.
 
 ## 9. Monitoring
 

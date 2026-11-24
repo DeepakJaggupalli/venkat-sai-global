@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { audit } from "@/modules/audit";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 
 import { AUDIT_EXPORT_LIMIT } from "../_components/audit-ui";
 import {
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
   const ctx = await getStaffContext();
   if (!ctx) return new NextResponse("Sign in as staff to export.", { status: 401 });
   if (!staffCan(ctx, "audit.view")) return new NextResponse("You do not have permission to export logs.", { status: 403 });
+  if (await staffTwoFactorMissing(ctx)) return new NextResponse(STAFF_TWO_FACTOR_MESSAGE, { status: 403 });
   const limit = await rateLimit(`admin:audit-export:${ctx.user.id}`, 20, 3600);
   if (!limit.allowed) return new NextResponse("Too many exports. Try again later.", { status: 429 });
 

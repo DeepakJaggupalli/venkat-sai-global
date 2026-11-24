@@ -1,6 +1,7 @@
 import "server-only";
 
 import { tasks as analyticsTasks } from "@/modules/analytics/tasks";
+import { tasks as backupTasks } from "@/modules/backup/tasks";
 import { tasks as candidatesTasks } from "@/modules/candidates/tasks";
 import { tasks as commercialTasks } from "@/modules/commercial/tasks";
 import { tasks as contentTasks } from "@/modules/content/tasks";
@@ -35,4 +36,5 @@ export const taskHandlers: TaskHandlers = {
   ...privacyTasks,
   ...filesTasks,
   ...pushTasks,
+  ...backupTasks,
 };

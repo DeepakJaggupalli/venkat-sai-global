@@ -1,8 +1,11 @@
+import { CalendarCheck2 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/public/json-ld";
 import { Breadcrumbs } from "@/components/public/page-hero";
+import { settle } from "@/components/public/server";
 import { TrackEvent } from "@/components/public/track-event";
 import { CourseDetail } from "@/components/training/course-detail";
 import { TrainingI18n } from "@/components/training/training-i18n";
@@ -10,6 +13,7 @@ import { courseApplyPath, OPEN_ENROLMENT_STATUSES } from "@/components/training/
 import { BRAND } from "@/config/site";
 import { getT } from "@/i18n/server";
 import { absoluteUrl } from "@/lib/env";
+import { countBookableSlotsForCourse } from "@/modules/bookings/queries";
 import { getCandidateByUserId } from "@/modules/candidates/guard";
 import { getCurrentUser } from "@/modules/identity/session";
 import { getPublicCourse, listCandidateEnrolments } from "@/modules/training/queries";
@@ -30,7 +34,11 @@ export default async function PublicCoursePage({ params }: PageProps) {
   const [t, course, user] = await Promise.all([getT("talent-training"), getPublicCourse(slug), getCurrentUser()]);
   if (!course) notFound();
 
-  const candidate = user ? await getCandidateByUserId(user.id) : null;
+  const [candidate, bookableSlots] = await Promise.all([
+    user ? getCandidateByUserId(user.id) : Promise.resolve(null),
+    // Open training dates of this course on /book (0 while the bookings tables are not migrated yet).
+    settle("course_booking_slots", () => countBookableSlotsForCourse(course.id), 0),
+  ]);
   const enrolments = user && candidate ? await listCandidateEnrolments({ userId: user.id, candidateId: candidate.id, displayName: user.displayName }) : [];
   const enrolledBatchIds = enrolments.filter((e) => OPEN_ENROLMENT_STATUSES.includes(e.status)).map((e) => e.batchId);
   const providerName = course.provider.kind === "institution" ? course.provider.name : t("provider.venkatSai");
@@ -55,10 +63,28 @@ export default async function PublicCoursePage({ params }: PageProps) {
           <h1 className="mt-4 font-display text-[2.25rem] text-balance text-foreground sm:text-5xl">{course.title}</h1>
           <p className="mt-3 text-sm text-muted-foreground">{t("detail.byProvider", { provider: providerName })}</p>
           {course.summary ? <p className="mt-4 max-w-3xl text-base text-muted-foreground sm:text-lg">{course.summary}</p> : null}
-          {course.batches.length ? (
-            <a href="#batches" className="mt-7 inline-flex min-h-11 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b] focus-visible:outline-2 focus-visible:outline-offset-2">
-              {t("detail.seeBatches")}
-            </a>
+          {course.batches.length || bookableSlots ? (
+            <div className="mt-7 flex flex-wrap gap-3">
+              {course.batches.length ? (
+                <a href="#batches" className="inline-flex min-h-11 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b] focus-visible:outline-2 focus-visible:outline-offset-2">
+                  {t("detail.seeBatches")}
+                </a>
+              ) : null}
+              {bookableSlots ? (
+                <Link
+                  href={`/book?kind=training&course=${encodeURIComponent(course.slug)}`}
+                  className={
+                    course.batches.length
+                      ? "inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2"
+                      : "inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-[#26262b] focus-visible:outline-2 focus-visible:outline-offset-2"
+                  }
+                  data-testid="book-training-seat"
+                >
+                  <CalendarCheck2 className="size-4" aria-hidden="true" />
+                  Book a training seat
+                </Link>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </section>

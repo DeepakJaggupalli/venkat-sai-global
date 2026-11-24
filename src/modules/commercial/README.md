@@ -25,6 +25,7 @@ with signed webhooks; refunds, disputes; recruitment-partner settlements; revenu
 | `entitlement-error.ts` | `EntitlementError` (re-exported by the contract; avoids an import cycle) |
 | `plans.ts`, `coupons.ts`, `billing-profiles.ts`, `tax-rates.ts` | Admin / reference services |
 | `invoices.ts` | Drafts, issue (GST number + snapshots), void, overdue, credit notes, payment application |
+| `worker-invoices.ts` (+ `-rules`, `-schemas`, `-pdf`) | Per-worker invoices to travel agencies / companies (one line per CV submission), worker picker, readiness, lists; invoice PDF renderer (pdf-lib) |
 | `payments.ts`, `checkout.ts`, `webhooks.ts`, `gateways/*` | Offline payments, Razorpay / Stripe checkout, webhook inbox, REST clients, HMAC checks |
 | `subscriptions.ts`, `allowances.ts`, `purchases.ts`, `fulfilment.ts` | Lifecycle, renewals, allowance grants, credit packs, what happens when an invoice is paid |
 | `credits.ts`, `lots.ts` | Ledger primitives (locking, grants, expiry, adjustments), lot replay |
@@ -107,6 +108,29 @@ voidInvoice(staff, invoiceId, reason): Promise<InvoiceRow>               // issu
 markOverdueInvoices(now?): Promise<number>
 deriveInvoiceStatus(invoice, now?), outstandingMinor(invoice)
 ```
+
+`saveDraftInvoiceTx(tx, actorUserId, DraftInvoiceInput)` is the same draft save inside the caller's transaction (the
+caller authorises); its lines may carry `referenceType` / `referenceId`, which issuing keeps. The manual editor
+(`saveDraftInvoice`) refuses to replace lines that carry a reference.
+
+### Worker invoices (`worker-invoices.ts`; `commercial.invoices` to write, `commercial.view` to list)
+
+```ts
+saveWorkerInvoice(staff, { id?, organizationId, currency, lines: [{ submissionId, amount }], notes?, intent: "draft" | "issue" })
+  // → { invoice, issued, issueProblem }; employer organisations only; workers at selected/medical/visa/ticket/departed;
+  //   line "Recruitment service charge - <Name> (<Trade>)", qty 1, referenceType "cv_submission", referenceId = submission id;
+  //   refuses a worker on a non-void invoice (drafts included) of the same organisation (rows locked: no race);
+  //   sets cv_submissions.placedOrganizationId; issue runs in a savepoint: no billing details / tax rate → draft kept + reason
+listInvoiceableWorkers(staff, { organizationId?, filters: { q?, requirement?, placed? }, includeIds?, excludeInvoiceId?, limit? })
+getWorkerInvoiceReadiness(staff, organizationId), listWorkerInvoiceOrganizations(staff), listInvoiceableRequirementOptions(staff)
+listWorkerInvoices(staff, { q?, status?: "draft" | "open" | "paid" | "void", organizationId? }, page), getWorkerInvoice(staff, id)
+listOrgWorkerInvoices(orgCtx, page)                                     // portal, issued only
+deleteWorkerInvoiceDraft(staff, invoiceId)
+renderInvoicePdf(InvoiceDocumentView, { timeZone, footerNote?, paymentInstructions? })   // worker-invoices-pdf.ts, any invoice / credit note
+```
+
+PDF routes: `/admin/commercial/worker-invoices/[id]/pdf` (staff, `commercial.view`) and
+`/employer/billing/invoices/[id]/pdf` (also `/agency/…`; same access as the printable page, never drafts).
 
 Statuses: `draft → issued → partially_paid → paid → refunded`, `overdue` (past due, unpaid), `void`. Issued
 documents are never edited. **Numbering**: `nextGstDocumentNumber("invoice" | "credit_note")` (CGST Rule 46,
@@ -364,5 +388,6 @@ dispute and partner scoping.
 - Gateway-managed recurring billing (Razorpay Subscriptions / Stripe Billing) is not used: renewals are invoices,
   payable online or offline. Chargeback webhooks (`charge.dispute.*`) are not processed; record them as disputes.
 - Stripe zero-decimal / three-decimal currencies are handled; HUF/TWD special cases are not.
-- Invoice PDFs are produced by the browser (print to PDF); `invoices.pdfFileId` is not filled.
+- The printable page is printed to PDF by the browser; `renderInvoicePdf` makes a PDF file on demand (standard
+  Helvetica, WinAnsi only: names in other scripts print as "?"). Nothing is stored; `invoices.pdfFileId` is not filled.
 - Webhook payloads may contain payer contact details; purge them with the privacy retention jobs.

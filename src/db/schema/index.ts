@@ -22,3 +22,6 @@ export * from "./analytics"; // 16
 export * from "./cv-submissions"; // 17
 export * from "./resume-requests"; // 18
 export * from "./push"; // 19
+export * from "./referrals"; // 20 (refer-a-friend rewards)
+export * from "./bookings"; // 21 (trade test and training seat bookings)
+export * from "./worker-reviews"; // 22 (reviews from placed workers)

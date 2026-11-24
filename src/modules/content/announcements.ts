@@ -7,6 +7,7 @@ import { db, type DbOrTx } from "@/db";
 import { announcements, organizations, type AnnouncementAudience, type AnnouncementPlacement, type AnnouncementStatus } from "@/db/schema";
 import type { OrgType } from "@/db/schema/_constants";
 import { ActionError } from "@/lib/actions";
+import { notDemoOrganizationRefSql } from "@/lib/demo-accounts";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { cancelApprovalsForEntity, submitForApproval } from "@/modules/approvals/service";
 import { audit } from "@/modules/audit";
@@ -387,6 +388,8 @@ export async function getActiveAnnouncements(opts: {
           sql`, `,
         )}]::text[]`,
         sql`${announcements.placements} @> array[${opts.placement}]::text[]`,
+        // Announcements requested by demo organisations are never shown (src/lib/demo-accounts.ts).
+        notDemoOrganizationRefSql(announcements.organizationId),
       ),
     )
     .orderBy(sql`case ${announcements.priority} when 'critical' then 0 when 'high' then 1 when 'normal' then 2 else 3 end`, desc(announcements.publishedAt))

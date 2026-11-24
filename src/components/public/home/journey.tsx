@@ -79,9 +79,15 @@ export function TrainingTeaser({ tone = "subtle", heading, intro, t = EN_MARKETI
           title={heading || t("training.title")}
           intro={intro || t("training.intro")}
           action={
-            <CtaLink href="/training" cta="training_courses" location="home_training" variant="outline" arrow>
-              {t("training.cta")}
-            </CtaLink>
+            // Beside the heading from md up: stacked (one width) until xl, so the heading keeps room on tablets.
+            <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:flex-wrap md:max-w-sm md:flex-col md:items-stretch xl:max-w-none xl:flex-row xl:items-center">
+              <CtaLink href="/book" cta="book_test_or_training" location="home_training" variant="primary" arrow className="min-h-12 px-6 text-center text-[15px] whitespace-normal" data-testid="home-training-book">
+                {t("training.book")}
+              </CtaLink>
+              <CtaLink href="/training" cta="training_courses" location="home_training" variant="outline" arrow className="min-h-12 px-6 text-[15px]">
+                {t("training.cta")}
+              </CtaLink>
+            </div>
           }
         />
       </div>

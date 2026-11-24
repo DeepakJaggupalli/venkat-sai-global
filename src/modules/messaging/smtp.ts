@@ -4,6 +4,7 @@ import nodemailer, { type Transporter } from "nodemailer";
 
 import { env } from "@/lib/env";
 
+import { safeAttachmentFilename } from "./attachments";
 import { sanitizeEmailHeaders } from "./headers";
 import { PROVIDER_TIMEOUT_MS } from "./http";
 import type { EmailMessage, SendResult } from "./index";
@@ -50,6 +51,19 @@ export function buildSmtpHeaders(message: Pick<EmailMessage, "headers" | "tags">
   });
 }
 
+/**
+ * nodemailer attachments from raw bytes only (`content` Buffers; never `path` or `href`, and the transport has file
+ * and URL access disabled anyway). Undefined when the message has none, so ordinary emails are sent exactly as before.
+ */
+export function buildSmtpAttachments(message: Pick<EmailMessage, "attachments">): { filename: string; content: Buffer; contentType: string }[] | undefined {
+  if (!message.attachments?.length) return undefined;
+  return message.attachments.map((a) => ({
+    filename: safeAttachmentFilename(a.filename),
+    content: Buffer.from(a.content.buffer, a.content.byteOffset, a.content.byteLength),
+    contentType: a.contentType,
+  }));
+}
+
 export async function sendSmtpEmail(message: EmailMessage): Promise<SendResult> {
   const t = getTransport();
   if (!t) return { ok: false, provider: "smtp", error: "SMTP is not configured (set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)" };
@@ -62,6 +76,7 @@ export async function sendSmtpEmail(message: EmailMessage): Promise<SendResult> 
       text: message.text,
       replyTo: message.replyTo,
       headers: buildSmtpHeaders(message),
+      attachments: buildSmtpAttachments(message),
     });
     return { ok: true, provider: "smtp", providerMessageId: typeof info.messageId === "string" ? info.messageId : undefined };
   } catch (error) {

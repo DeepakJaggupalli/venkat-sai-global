@@ -66,6 +66,13 @@ function StatusResult({ view }: { view: CvStatusView }) {
           <p className="mt-1 whitespace-pre-line">{view.note}</p>
         </div>
       ) : null}
+      {!view.hasCv ? (
+        <div className="mt-4 rounded-xl border border-border bg-surface-subtle p-4 text-base text-foreground" data-testid="cv-status-no-cv">
+          <p className="text-sm font-semibold text-navy">We do not have your CV yet</p>
+          <p className="mt-1">Send it to us on WhatsApp. A clear photo or a PDF is fine.</p>
+          <WhatsAppButton message={`Hello Venkat Sai, I am sending my CV for my application ${view.reference}.`} label="Send my CV on WhatsApp" className="mt-3 min-h-12 w-full sm:w-auto" />
+        </div>
+      ) : null}
       <ol className="mt-6 space-y-0" aria-label="Your placement steps">
         {CV_SUBMISSION_JOURNEY.map((stage, i) => {
           const done = i < reached || (i === reached && view.status === "departed");
@@ -95,7 +102,7 @@ function StatusResult({ view }: { view: CvStatusView }) {
         })}
       </ol>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <WhatsAppButton message="Hello Venkat Sai, I would like to ask about my CV status." className="min-h-14 text-lg" />
+        <WhatsAppButton message={`Hello Venkat Sai, I would like to ask about my application ${view.reference}.`} className="min-h-14 text-lg" />
         <CallButton label="Call us" className="min-h-14 text-lg" />
       </div>
     </section>

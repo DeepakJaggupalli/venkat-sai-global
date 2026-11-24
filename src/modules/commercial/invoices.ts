@@ -168,14 +168,26 @@ function assertPricingOk(result: PricingResult): void {
 // Drafts (staff)
 // ---------------------------------------------------------------------------
 
-function draftLinesFromInput(input: ManualInvoiceInput, minorUnits: number, defaultTaxCode: string): PricingLineInput[] {
+/** A draft line: the manual editor's fields plus, for lines built by other services, what the line bills. */
+export type DraftInvoiceLineInput = ManualInvoiceInput["lines"][number] & { referenceType?: string | null; referenceId?: string | null };
+export type DraftInvoiceInput = Omit<ManualInvoiceInput, "lines"> & { lines: DraftInvoiceLineInput[] };
+
+function draftLinesFromInput(input: DraftInvoiceInput, minorUnits: number, defaultTaxCode: string): PricingLineInput[] {
   return input.lines.map((line, index) => {
     const unit = parseDecimalToMinor(line.unitAmount, minorUnits);
     if (!unit.ok || unit.minor < 0) throw new ActionError(unit.ok ? "Amounts cannot be negative." : unit.error, { fieldErrors: { [`lines.${index}.unitAmount`]: [unit.ok ? "Negative" : unit.error] } });
     const discount = line.discount ? parseDecimalToMinor(line.discount, minorUnits) : ({ ok: true, minor: 0 } as const);
     if (!discount.ok || discount.minor < 0) throw new ActionError(discount.ok ? "Discounts cannot be negative." : discount.error, { fieldErrors: { [`lines.${index}.discount`]: ["Invalid discount"] } });
     if (discount.minor > unit.minor * line.quantity) throw new ActionError("A discount is larger than its line.", { fieldErrors: { [`lines.${index}.discount`]: ["Too large"] } });
-    return { description: line.description, quantity: line.quantity, unitAmountMinor: unit.minor, discountMinor: discount.minor, taxCode: line.taxCode ?? defaultTaxCode };
+    return {
+      description: line.description,
+      quantity: line.quantity,
+      unitAmountMinor: unit.minor,
+      discountMinor: discount.minor,
+      taxCode: line.taxCode ?? defaultTaxCode,
+      referenceType: line.referenceType ?? null,
+      referenceId: line.referenceId ?? null,
+    };
   });
 }
 
@@ -191,67 +203,80 @@ async function previewPricing(tx: DbOrTx, draft: Pick<InvoiceRow, "organizationI
 export async function saveDraftInvoice(ctx: StaffContext, input: ManualInvoiceInput): Promise<InvoiceRow> {
   assertStaff(ctx, "commercial.invoices");
   return db.transaction(async (tx) => {
-    const minorUnits = await currencyMinorUnits(tx, input.currency);
-    if (input.organizationId) {
-      const [org] = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.id, input.organizationId)).limit(1);
-      if (!org) throw notFound("Organisation");
-    } else if (input.buyerUserId) {
-      const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, input.buyerUserId)).limit(1);
-      if (!user) throw notFound("Buyer");
-    }
-    const config = await getCommercialConfig(tx);
-    const lines = draftLinesFromInput(input, minorUnits, config["commercial.default_tax_code"]);
-    const treatmentOverride = input.taxTreatment === "auto" ? null : input.taxTreatment;
-    const dueDays = input.dueDays ?? config["commercial.invoice_due_days"];
-    const now = new Date();
-    const base = {
-      currency: input.currency,
-      organizationId: input.organizationId ?? null,
-      buyerUserId: input.buyerUserId ?? null,
-      taxTreatment: treatmentOverride ?? ("standard" as const),
-      notes: input.notes ?? null,
-      internalNotes: input.internalNotes ?? null,
-      purchaseOrderReference: input.purchaseOrderReference ?? null,
-      servicePeriodStart: input.servicePeriodStart ?? null,
-      servicePeriodEnd: input.servicePeriodEnd ?? null,
-      // Provisional: the due date is re-based on the issue date (same number of days).
-      dueAt: addDays(now, dueDays),
-    };
-    let draft: InvoiceRow;
     if (input.id) {
-      const existing = await lockInvoice(tx, input.id);
-      if (existing.status !== "draft") throw invalidState("Only draft invoices can be edited. Void the invoice and issue a new one.");
-      if (existing.currency !== input.currency) {
-        const redeemed = await couponForInvoice(tx, existing.id);
-        if (redeemed?.discountType === "fixed") throw invalidState("Remove the fixed-amount coupon before changing the currency.");
-      }
-      [draft] = (await tx.update(invoices).set(base).where(eq(invoices.id, existing.id)).returning()) as [InvoiceRow];
-      await tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, draft.id));
-    } else {
-      [draft] = (await tx.insert(invoices).values({ ...base, status: "draft" }).returning()) as [InvoiceRow];
+      // The manual editor does not carry line references: replacing such lines would lose what they bill.
+      const [linked] = await tx.select({ id: invoiceLines.id }).from(invoiceLines).where(and(eq(invoiceLines.invoiceId, input.id), isNotNull(invoiceLines.referenceType))).limit(1);
+      if (linked) throw invalidState("This draft was made on another screen (for example Worker invoices) and its lines are linked to records. Edit it there.");
     }
-    const priced = await previewPricing(tx, draft, lines, treatmentOverride, null);
-    const pricedLines = priced!.lines;
-    await tx.insert(invoiceLines).values(lineRows(draft.id, draft.currency, pricedLines));
-    // Draft lines keep the manual discount only; totals are a preview without the coupon.
-    const [updated] = await tx
-      .update(invoices)
-      // taxTreatment keeps the staff's choice ("standard" = automatic): the computed treatment is decided at issue.
-      .set({ ...priced!.totals, placeOfSupply: priced!.determination.placeOfSupply })
-      .where(eq(invoices.id, draft.id))
-      .returning();
-    await audit({
-      action: input.id ? "commercial.invoice_draft_updated" : "commercial.invoice_draft_created",
-      entityType: "invoice",
-      entityId: draft.id,
-      organizationId: draft.organizationId,
-      actorUserId: ctx.user.id,
-      actorType: "staff",
-      metadata: { currency: draft.currency, lines: lines.length, totalMinor: priced!.totals.totalMinor },
-      tx,
-    });
-    return updated!;
+    return saveDraftInvoiceTx(tx, ctx.user.id, input);
   });
+}
+
+/**
+ * saveDraftInvoice inside the caller's transaction; the caller authorises (commercial.invoices). Lines may carry
+ * what they bill (referenceType / referenceId), which issueInvoiceTx keeps when it re-prices the draft.
+ */
+export async function saveDraftInvoiceTx(tx: DbOrTx, actorUserId: string, input: DraftInvoiceInput): Promise<InvoiceRow> {
+  const minorUnits = await currencyMinorUnits(tx, input.currency);
+  if (input.organizationId) {
+    const [org] = await tx.select({ id: organizations.id }).from(organizations).where(eq(organizations.id, input.organizationId)).limit(1);
+    if (!org) throw notFound("Organisation");
+  } else if (input.buyerUserId) {
+    const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, input.buyerUserId)).limit(1);
+    if (!user) throw notFound("Buyer");
+  }
+  const config = await getCommercialConfig(tx);
+  const lines = draftLinesFromInput(input, minorUnits, config["commercial.default_tax_code"]);
+  const treatmentOverride = input.taxTreatment === "auto" ? null : input.taxTreatment;
+  const dueDays = input.dueDays ?? config["commercial.invoice_due_days"];
+  const now = new Date();
+  const base = {
+    currency: input.currency,
+    organizationId: input.organizationId ?? null,
+    buyerUserId: input.buyerUserId ?? null,
+    taxTreatment: treatmentOverride ?? ("standard" as const),
+    notes: input.notes ?? null,
+    internalNotes: input.internalNotes ?? null,
+    purchaseOrderReference: input.purchaseOrderReference ?? null,
+    servicePeriodStart: input.servicePeriodStart ?? null,
+    servicePeriodEnd: input.servicePeriodEnd ?? null,
+    // Provisional: the due date is re-based on the issue date (same number of days).
+    dueAt: addDays(now, dueDays),
+  };
+  let draft: InvoiceRow;
+  if (input.id) {
+    const existing = await lockInvoice(tx, input.id);
+    if (existing.status !== "draft") throw invalidState("Only draft invoices can be edited. Void the invoice and issue a new one.");
+    if (existing.currency !== input.currency) {
+      const redeemed = await couponForInvoice(tx, existing.id);
+      if (redeemed?.discountType === "fixed") throw invalidState("Remove the fixed-amount coupon before changing the currency.");
+    }
+    [draft] = (await tx.update(invoices).set(base).where(eq(invoices.id, existing.id)).returning()) as [InvoiceRow];
+    await tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, draft.id));
+  } else {
+    [draft] = (await tx.insert(invoices).values({ ...base, status: "draft" }).returning()) as [InvoiceRow];
+  }
+  const priced = await previewPricing(tx, draft, lines, treatmentOverride, null);
+  const pricedLines = priced!.lines;
+  await tx.insert(invoiceLines).values(lineRows(draft.id, draft.currency, pricedLines));
+  // Draft lines keep the manual discount only; totals are a preview without the coupon.
+  const [updated] = await tx
+    .update(invoices)
+    // taxTreatment keeps the staff's choice ("standard" = automatic): the computed treatment is decided at issue.
+    .set({ ...priced!.totals, placeOfSupply: priced!.determination.placeOfSupply })
+    .where(eq(invoices.id, draft.id))
+    .returning();
+  await audit({
+    action: input.id ? "commercial.invoice_draft_updated" : "commercial.invoice_draft_created",
+    entityType: "invoice",
+    entityId: draft.id,
+    organizationId: draft.organizationId,
+    actorUserId,
+    actorType: "staff",
+    metadata: { currency: draft.currency, lines: lines.length, totalMinor: priced!.totals.totalMinor },
+    tx,
+  });
+  return updated!;
 }
 
 export async function deleteDraftInvoice(ctx: StaffContext, invoiceId: string): Promise<void> {

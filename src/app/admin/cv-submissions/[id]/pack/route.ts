@@ -4,6 +4,7 @@ import { ActionError } from "@/lib/actions";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 import { buildCvSubmissionPack } from "@/modules/operations/cv-pack";
 import { pdfResponse } from "@/server/pdf/pack";
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const ctx = await getStaffContext();
   if (!ctx) return new Response("Sign in as staff to download documents.", { status: 401 });
   if (!staffCan(ctx, "candidates.view") || !staffCan(ctx, ["candidates.view_documents", "recruitment.manage"], "any")) return new Response("You do not have permission to open candidate documents.", { status: 403 });
+  if (await staffTwoFactorMissing(ctx)) return new Response(STAFF_TWO_FACTOR_MESSAGE, { status: 403 });
   const limit = await rateLimit(`admin:cv-pack:${ctx.user.id}`, 60, 3600);
   if (!limit.allowed) return new Response("Too many downloads. Try again later.", { status: 429 });
   const { id } = await params;

@@ -17,6 +17,7 @@ import { financialYearLabel } from "./fiscal";
  *   DSR data-subject request · CRT certificate · ASM skill assessment · ENQ enquiry · LEAD lead
  *   OFR offer · PLC placement · INT interview · SUB partner submission · PAY payment · RFD refund
  *   CRS course · BAT batch · DRV campus drive · MOB mobilisation · GRV grievance · STL partner settlement
+ *   CV CV submission · SLT booking slot · BKG slot booking
  *
  * Tax invoices and credit notes do NOT use nextCode — use nextGstDocumentNumber() below.
  */

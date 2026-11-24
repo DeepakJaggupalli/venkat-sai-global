@@ -12,8 +12,34 @@ import { boolean, check, date, index, integer, pgTable, smallint, text, uniqueIn
 
 import { countryCode, createdAtOnly, pk, timestamps, tstz } from "./_shared";
 import { cmsEntries } from "./content";
-import { files, users } from "./core";
+import { files, organizations, users } from "./core";
 import { countries, jobCategories } from "./taxonomy";
+
+/** How a CV submission entered the system: the public form, a staff Excel import, or typed in by staff. */
+export const CV_SUBMISSION_SOURCES = ["website", "import", "staff"] as const;
+export type CvSubmissionSource = (typeof CV_SUBMISSION_SOURCES)[number];
+
+/**
+ * One staff Excel import of existing CVs (/admin/cv-submissions/import). Rows created by the import point back
+ * here (cv_submissions.importBatchId) so staff can see what came from which file.
+ */
+export const cvImportBatches = pgTable(
+  "cv_import_batches",
+  {
+    id: pk(),
+    /** Original file name as uploaded (display only). */
+    fileName: text().notNull(),
+    totalRows: integer().notNull().default(0),
+    createdCount: integer().notNull().default(0),
+    skippedCount: integer().notNull().default(0),
+    createdByUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    ...createdAtOnly,
+  },
+  (t) => [
+    index("cv_import_batches_created_by_idx").on(t.createdByUserId),
+    check("cv_import_batches_counts_chk", sql`${t.totalRows} >= 0 and ${t.createdCount} >= 0 and ${t.skippedCount} >= 0`),
+  ],
+);
 
 /**
  * The placement journey staff move a candidate through (in order), plus two side states. Migration 0006 rewrote the
@@ -38,7 +64,14 @@ export const cvSubmissions = pgTable(
     tradeOther: text(),
     /** Trade as shown to staff (category name at submission time, or the typed trade). */
     tradeLabel: text().notNull(),
+    /** Total years of experience (abroad + India when both are given; kept for matching and older rows). */
     experienceYears: smallint(),
+    /** Years of experience abroad (Gulf, Singapore...), as the candidate gave it. */
+    experienceAbroadYears: smallint(),
+    /** Years of experience in India, as the candidate gave it. */
+    experienceIndiaYears: smallint(),
+    /** Optional email, lower-cased and trimmed. */
+    email: text(),
     preferredCountryCode: countryCode().references(() => countries.code),
     /** null = not answered. */
     hasPassport: boolean(),
@@ -57,10 +90,16 @@ export const cvSubmissions = pgTable(
     /**
      * The submitted CV (purpose cv_submission). Further documents (passport scans, certificates) attach to the
      * submission through the files module (files.metadata / grants with contextType "cv_submission", contextId = id).
+     * Null when the candidate applied without a CV file (they send it later on WhatsApp) or the row was imported.
      */
-    cvFileId: uuid()
-      .notNull()
-      .references(() => files.id),
+    cvFileId: uuid().references(() => files.id),
+    source: text({ enum: CV_SUBMISSION_SOURCES }).notNull().default("website"),
+    /** Excel import that created this row (source "import"). */
+    importBatchId: uuid().references(() => cvImportBatches.id, { onDelete: "set null" }),
+    /** Referral code from a "refer a friend" link (/send-cv?ref=CODE), upper-cased; resolved by the referrals module. */
+    referralCode: text(),
+    /** Travel agency / company the worker was supplied to (set by staff; used for per-worker invoices). */
+    placedOrganizationId: uuid().references(() => organizations.id, { onDelete: "set null" }),
     /** Requirement poster (cms_entries, collection requirement_posts) the candidate applied from. */
     requirementEntryId: uuid().references(() => cmsEntries.id, { onDelete: "set null" }),
     /** Poster title at submission time (kept if the poster is later deleted). */
@@ -107,6 +146,17 @@ export const cvSubmissions = pgTable(
     check("cv_submissions_candidate_note_chk", sql`${t.candidateNote} is null or char_length(${t.candidateNote}) <= 500`),
     index("cv_submissions_passport_expiry_idx").on(t.passportExpiry).where(sql`${t.passportExpiry} is not null`),
     check("cv_submissions_experience_chk", sql`${t.experienceYears} is null or ${t.experienceYears} between 0 and 60`),
+    check(
+      "cv_submissions_experience_split_chk",
+      sql`(${t.experienceAbroadYears} is null or ${t.experienceAbroadYears} between 0 and 60) and (${t.experienceIndiaYears} is null or ${t.experienceIndiaYears} between 0 and 60)`,
+    ),
+    check("cv_submissions_email_chk", sql`${t.email} is null or (char_length(${t.email}) <= 254 and ${t.email} = lower(${t.email}))`),
+    check("cv_submissions_referral_code_chk", sql`${t.referralCode} is null or ${t.referralCode} ~ '^[A-Z0-9]{4,16}$'`),
+    index("cv_submissions_email_idx").on(t.email).where(sql`${t.email} is not null`),
+    index("cv_submissions_referral_code_idx").on(t.referralCode).where(sql`${t.referralCode} is not null`),
+    index("cv_submissions_import_batch_idx").on(t.importBatchId),
+    index("cv_submissions_placed_org_idx").on(t.placedOrganizationId),
+    index("cv_submissions_source_idx").on(t.source, t.createdAt),
   ],
 );
 

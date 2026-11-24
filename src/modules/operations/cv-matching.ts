@@ -73,6 +73,8 @@ export type MatchPerson = {
   prefersTargetCountry: boolean;
   /** CV submission status (null for candidate profiles). */
   status: CvSubmissionStatus | null;
+  /** CV submissions: a CV file is attached (false = applied without one); null for candidate profiles. */
+  hasCv: boolean | null;
   phoneMasked: string;
   hasPhone: boolean;
   createdAt: Date;
@@ -307,6 +309,7 @@ type CvRow = {
   preferred_country_code: string | null;
   country_name: string | null;
   status: CvSubmissionStatus;
+  has_cv: boolean;
   created_at: Date | string;
   cat_match: boolean;
   exact_term: string | null;
@@ -316,7 +319,7 @@ type CvRow = {
   score: number | string;
 };
 
-type ProfileRow = Omit<CvRow, "code" | "trade_label" | "experience_years" | "preferred_country_code" | "status" | "phone"> & {
+type ProfileRow = Omit<CvRow, "code" | "trade_label" | "experience_years" | "preferred_country_code" | "status" | "phone" | "has_cv"> & {
   phone: string | null;
   trade: string | null;
   experience_months: number | null;
@@ -357,6 +360,7 @@ export async function findMatches(ctx: StaffContext, criteria: MatchCriteria, op
     db.execute<CvRow>(sql`
       with m as (
         select s.id, s.code, s.name, s.phone, s.trade_label, s.experience_years, s.preferred_country_code, s.status, s.created_at,
+          (s.cv_file_id is not null) as has_cv,
           coalesce(s.job_category_id = any(${cats}), false) as cat_match,
           ${cvFirstTerm(base, "exact")} as exact_term,
           ${cvFirstTerm(base, "partial")} as partial_term,
@@ -403,6 +407,7 @@ export async function findMatches(ctx: StaffContext, criteria: MatchCriteria, op
       countryName: r.country_name,
       prefersTargetCountry: r.country_match,
       status: r.status,
+      hasCv: Boolean(r.has_cv),
       phoneMasked: maskPhone(r.phone),
       hasPhone: Boolean(r.phone),
       createdAt: toDate(r.created_at),
@@ -422,6 +427,7 @@ export async function findMatches(ctx: StaffContext, criteria: MatchCriteria, op
       countryName: r.country_name,
       prefersTargetCountry: r.country_match,
       status: null,
+      hasCv: null,
       phoneMasked: maskPhone(r.phone),
       hasPhone: Boolean(r.phone),
       createdAt: toDate(r.created_at),

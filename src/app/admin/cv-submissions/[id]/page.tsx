@@ -1,4 +1,4 @@
-import { Download, Eye, FileStack, MessageCircle, Phone, Stamp } from "lucide-react";
+import { Download, Eye, FileStack, MessageCircle, Phone, ReceiptText, Stamp, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,19 +10,30 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
-import { whatsappHref } from "@/config/contact";
 import { sp as pick, type SearchParams } from "@/lib/http";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
-import { CV_SUBMISSION_STATUS_LABELS, CV_SUBMISSION_STATUS_TONE, CV_SUBMISSION_STATUS_VALUES } from "@/modules/operations/cv-submission-schemas";
+import {
+  CV_INVOICE_STATUSES,
+  CV_SUBMISSION_SOURCE_LABELS,
+  CV_SUBMISSION_STATUS_LABELS,
+  CV_SUBMISSION_STATUS_TONE,
+  CV_SUBMISSION_STATUS_VALUES,
+} from "@/modules/operations/cv-submission-schemas";
 import { listCvSubmissionDocuments } from "@/modules/operations/cv-submission-documents";
 import { getCvSubmission } from "@/modules/operations/cv-submissions";
 
+import { askForCvWhatsApp, candidateWhatsApp } from "../_components/applicant-columns";
 import { setCvSubmissionRemarksAction, setCvSubmissionStatusAction } from "../actions";
+import { AttachCvForm } from "./_components/attach-cv-form";
 import { DocumentsCard } from "./_components/documents-card";
 
 export const metadata: Metadata = { title: "CV submission" };
 
 const statusOptions = CV_SUBMISSION_STATUS_VALUES.map((value) => ({ value, label: CV_SUBMISSION_STATUS_LABELS[value] }));
+
+function yearsText(value: number | null): string {
+  return value === null ? "Not given" : `${value} ${value === 1 ? "year" : "years"}`;
+}
 
 export default async function CvSubmissionPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> }) {
   const ctx = await requireStaff("candidates.view");
@@ -31,8 +42,14 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
   if (!s) notFound();
   const canManage = staffCan(ctx, "candidates.manage");
   const canOpenDocuments = staffCan(ctx, ["candidates.view_documents", "recruitment.manage"], "any");
+  const canInvoice = staffCan(ctx, "commercial.invoices") && CV_INVOICE_STATUSES.includes(s.status);
+  const canAskReview = canManage && s.status === "departed";
+  const canSeePosters = staffCan(ctx, "content.view");
   const documents = await listCvSubmissionDocuments(ctx, s.id);
   const wordCv = s.cvMimeType === "application/msword" || s.cvMimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const whatsapp = candidateWhatsApp(s);
+  const askCv = !s.hasCv ? askForCvWhatsApp(s) : null;
+  const splitGiven = s.experienceAbroadYears !== null || s.experienceIndiaYears !== null;
 
   const passport = s.passportNumber ? (
     <span className="font-mono font-semibold" data-testid="passport-full">
@@ -40,9 +57,9 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
     </span>
   ) : s.passportLast4 ? (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <span className="font-mono">…{s.passportLast4}</span>
+      <span className="font-mono">{s.passportDisplay}</span>
       {s.canRevealPassport ? (
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="min-h-11 md:min-h-7">
           <Link href={`/admin/cv-submissions/${s.id}?reveal=passport`} data-testid="reveal-passport">
             <Eye aria-hidden="true" />
             Show full number (logged)
@@ -58,24 +75,73 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
     "Not answered"
   );
 
+  const cvValue = s.cvUrl ? (
+    <div className="space-y-3">
+      <Button asChild variant="outline" size="sm" className="min-h-11 md:min-h-7">
+        <a href={s.cvUrl} data-testid="cv-download">
+          <Download aria-hidden="true" />
+          Download {s.cvName ?? "CV"}
+        </a>
+      </Button>
+      {canManage ? <AttachCvForm submissionId={s.id} replace /> : null}
+    </div>
+  ) : !s.hasCv ? (
+    <div className="space-y-3" data-testid="no-cv">
+      <p className="font-medium text-foreground">No CV yet, ask on WhatsApp.</p>
+      {askCv ? (
+        <Button asChild size="sm" className="min-h-11 md:min-h-8">
+          <a href={askCv} target="_blank" rel="noopener noreferrer" data-testid="ask-cv-whatsapp">
+            <MessageCircle aria-hidden="true" />
+            Ask for the CV on WhatsApp
+          </a>
+        </Button>
+      ) : null}
+      {canManage ? <AttachCvForm submissionId={s.id} /> : null}
+    </div>
+  ) : s.cvBlocked ? (
+    // Still being scanned, failed the scan or the file was removed: a clean copy (e.g. from WhatsApp) can replace it.
+    <div className="space-y-3" data-testid="cv-blocked">
+      <p className="text-foreground">The CV is waiting for the security scan, did not pass it, or was removed.</p>
+      {canManage ? <AttachCvForm submissionId={s.id} replace /> : null}
+    </div>
+  ) : (
+    "You do not have access to CVs"
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={s.name}
         eyebrow={s.code}
-        backLink={{ href: "/admin/cv-submissions", label: "CV submissions" }}
+        backLink={{ href: "/admin/cv-submissions", label: "Applicants and CVs" }}
         status={<StatusBadge tone={CV_SUBMISSION_STATUS_TONE[s.status]}>{CV_SUBMISSION_STATUS_LABELS[s.status]}</StatusBadge>}
         actions={
           <div className="flex flex-wrap gap-2">
+            {whatsapp ? (
+              <>
+                <Button asChild className="min-h-11 md:min-h-8">
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle aria-hidden="true" />
+                    WhatsApp
+                  </a>
+                </Button>
+                <Button asChild variant="outline" className="min-h-11 md:min-h-8">
+                  <a href={`tel:${s.phone}`}>
+                    <Phone aria-hidden="true" />
+                    Call
+                  </a>
+                </Button>
+              </>
+            ) : null}
             {canOpenDocuments ? (
               <>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" className="min-h-11 md:min-h-8">
                   <a href={`/admin/cv-submissions/${s.id}/pack?type=cv`} data-testid="cv-pack-download">
                     <FileStack aria-hidden="true" />
                     Download CV pack
                   </a>
                 </Button>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" className="min-h-11 md:min-h-8">
                   <a href={`/admin/cv-submissions/${s.id}/pack?type=visa`} data-testid="visa-pack-download">
                     <Stamp aria-hidden="true" />
                     Download visa pack
@@ -83,21 +149,21 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
                 </Button>
               </>
             ) : null}
-            {s.phone ? (
-              <>
-                <Button asChild>
-                  <a href={whatsappHref(`Hello ${s.name}, this is Venkat Sai Global about the CV you sent for ${s.tradeLabel}.`, s.phone)} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle aria-hidden="true" />
-                    WhatsApp
-                  </a>
-                </Button>
-                <Button asChild variant="outline">
-                  <a href={`tel:${s.phone}`}>
-                    <Phone aria-hidden="true" />
-                    Call
-                  </a>
-                </Button>
-              </>
+            {canInvoice ? (
+              <Button asChild variant="outline" className="min-h-11 md:min-h-8">
+                <Link href={`/admin/commercial/worker-invoices/new?cv=${s.id}`} data-testid="worker-invoice-link">
+                  <ReceiptText aria-hidden="true" />
+                  Create invoice for this worker
+                </Link>
+              </Button>
+            ) : null}
+            {canAskReview ? (
+              <Button asChild variant="outline" className="min-h-11 md:min-h-8">
+                <Link href={`/admin/reviews?ask=${s.id}`} data-testid="ask-review-link">
+                  <Star aria-hidden="true" />
+                  Ask for a review
+                </Link>
+              </Button>
             ) : null}
           </div>
         }
@@ -107,14 +173,32 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
           The CV is a Word file, which cannot be merged into the PDF packs (they include a note page instead). Download the Word CV separately and attach it next to the pack.
         </p>
       ) : null}
+      {s.referralCode ? (
+        <p className="rounded-lg border border-teal/30 bg-teal-soft p-3 text-sm text-foreground" data-testid="referral-code">
+          Referred with code <strong className="font-mono font-semibold">{s.referralCode}</strong>
+        </p>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
         <SectionCard title="Details">
           <KeyValueList
             items={[
               { label: "Mobile / WhatsApp", value: s.phone ?? `${s.phoneMasked} (needs the contact details permission)` },
+              {
+                label: "Email",
+                value: s.email ? (
+                  <a href={`mailto:${s.email}`} className="break-all underline underline-offset-4">
+                    {s.email}
+                  </a>
+                ) : s.emailMasked ? (
+                  `${s.emailMasked} (needs the contact details permission)`
+                ) : (
+                  "Not given"
+                ),
+              },
               { label: "Trade", value: s.tradeOther ? `${s.tradeLabel} (typed by the candidate)` : s.tradeLabel },
-              { label: "Experience", value: s.experienceYears !== null ? `${s.experienceYears} years` : "Not given" },
-              { label: "Preferred country", value: s.countryName ?? "Any" },
+              { label: "Experience abroad", value: yearsText(s.experienceAbroadYears) },
+              { label: "Experience in India", value: yearsText(s.experienceIndiaYears) },
+              ...(!splitGiven && s.experienceYears !== null ? [{ label: "Experience (total)", value: yearsText(s.experienceYears) }] : []),
               { label: "Passport", value: passport },
               {
                 label: "Passport expiry",
@@ -131,38 +215,34 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
                   "Not given"
                 ),
               },
+              { label: "Preferred country", value: s.countryName ?? "Any" },
               {
-                label: "Requirement",
+                label: "Applied for",
                 value: s.requirementTitle ? (
-                  s.requirementSlug ? (
-                    <Link href={`/requirements/${s.requirementSlug}`} target="_blank" className="underline underline-offset-4">
-                      {s.requirementTitle}
-                    </Link>
-                  ) : (
-                    s.requirementTitle
-                  )
+                  <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {s.requirementSlug ? (
+                      <Link href={`/requirements/${s.requirementSlug}`} target="_blank" className="underline underline-offset-4">
+                        {s.requirementTitle}
+                      </Link>
+                    ) : (
+                      s.requirementTitle
+                    )}
+                    {s.requirementEntryId && canSeePosters ? (
+                      <Link href={`/admin/requirements/posters/${s.requirementEntryId}/applicants`} className="text-sm text-navy underline underline-offset-4">
+                        All applicants
+                      </Link>
+                    ) : null}
+                  </span>
                 ) : (
-                  "General CV"
+                  "General (no requirement)"
                 ),
               },
               { label: "Notes for us (from the candidate)", value: s.candidateNotes ? <span className="whitespace-pre-line">{s.candidateNotes}</span> : "None" },
-              { label: "Received", value: <DateText value={s.createdAt} mode="datetime" /> },
+              { label: "Applied on", value: <DateText value={s.createdAt} mode="datetime" /> },
+              { label: "Came from", value: CV_SUBMISSION_SOURCE_LABELS[s.source] },
+              ...(s.placedOrganizationName ? [{ label: "Supplied to", value: s.placedOrganizationName }] : []),
               { label: "First contacted", value: s.contactedAt ? <DateText value={s.contactedAt} mode="datetime" /> : "Not yet" },
-              {
-                label: "CV",
-                value: s.cvUrl ? (
-                  <Button asChild variant="outline" size="sm">
-                    <a href={s.cvUrl} data-testid="cv-download">
-                      <Download aria-hidden="true" />
-                      Download {s.cvName ?? "CV"}
-                    </a>
-                  </Button>
-                ) : s.cvBlocked ? (
-                  "Waiting for the security scan"
-                ) : (
-                  "You do not have access to CVs"
-                ),
-              },
+              { label: "CV", value: cvValue },
             ]}
           />
         </SectionCard>
@@ -182,7 +262,7 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
                     optional: true,
                     rows: 3,
                     defaultValue: s.candidateNote ?? "",
-                    placeholder: "Trade test on 5 December at our Hyderabad office. Bring your original certificates.",
+                    placeholder: "Trade test on 5 December at our office. Bring your original certificates.",
                     hint: "The candidate sees this note. Do not write anything private; use the staff remarks for that.",
                   },
                 ]}

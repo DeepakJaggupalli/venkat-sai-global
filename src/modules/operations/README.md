@@ -231,8 +231,12 @@ and partner permissions with unread counts; notes visibility; lead pipeline; tas
 
 ## Send your CV: documents and packs
 
-- `cv-submissions.ts`: public `submitCvSubmission` (returns a 2-hour `uploadToken`), staff list/detail/status/remarks,
-  `listCvSubmissionsForExport` (Excel rows).
+- `cv-submissions.ts`: public `submitCvSubmission` (quick apply: name, phone and trade required; email, experience
+  abroad / in India, passport, referral code and the CV file optional; returns `hasCv` and a 2-hour `uploadToken`),
+  staff list/detail/status/remarks with filters for requirement poster, source and has-CV (full passport numbers in the
+  list only with candidates.view_documents, logged), `countApplicantsByPoster`, `listCvSubmissionRequirements`,
+  `listCvSubmissionPhones` ("Copy all phone numbers", logged), `attachCvSubmissionFile` (staff add the CV later),
+  `listCvSubmissionsForExport` (Excel rows; columns in `src/modules/exports/cv-submissions.ts`).
 - `cv-submission-documents.ts`: one-file-per-request documents (`cv_submission_documents`, file purpose
   `cv_submission_document`): `addCvSubmissionDocument` (candidate via signed link, rate limited; or staff with
   candidates.manage), `listCvSubmissionDocuments`, `moveCvSubmissionDocument`, `deleteCvSubmissionDocument`,
@@ -240,7 +244,8 @@ and partner permissions with unread counts; notes visibility; lead pipeline; tas
   Single kinds (passport cover / first / last page, photo) replace the previous file.
 - `cv-document-tokens.ts`: HMAC upload tokens (`src/lib/signed-token.ts`, purpose `cv_submission_documents`).
 - `cv-pack.ts`: `buildCvSubmissionPack(ctx, id, "cv" | "visa")` — resume (generated resume from the resume service when
-  present), certificates, licences, other, passport cover, first page, last page, photo; logged download.
+  present, else the CV, else a "No CV file" page), certificates, licences, other, passport cover, first page, last page,
+  photo; logged download.
 
 ## Open items
 

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { logger } from "@/lib/logger";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 import { renderBlankResumeTemplate } from "@/modules/resume-service/service";
 
 /**
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const ctx = await getStaffContext();
   if (!ctx) return new Response("Sign in as staff to download the template.", { status: 401 });
   if (!staffCan(ctx, "candidates.manage")) return new Response("You do not have permission to download the template.", { status: 403 });
+  if (await staffTwoFactorMissing(ctx)) return new Response(STAFF_TWO_FACTOR_MESSAGE, { status: 403 });
   const format = request.nextUrl.searchParams.get("format") === "pdf" ? "pdf" : "docx";
   try {
     const bytes = await renderBlankResumeTemplate(ctx, format);

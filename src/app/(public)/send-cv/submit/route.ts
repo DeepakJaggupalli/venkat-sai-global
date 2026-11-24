@@ -7,15 +7,16 @@ import { CV_MAX_BYTES, cvSubmissionSchema, type CvSubmissionResult } from "@/mod
 import { submitCvSubmission } from "@/modules/operations/cv-submissions";
 
 /**
- * POST /send-cv/submit — the public "Send your CV" form (multipart: fields + `cv` file, or `shared`: the signed
- * token of a file shared to the site from the phone's share sheet or /share/choose, used once instead of `cv`).
+ * POST /send-cv/submit — the public quick apply / "Send your CV" form (multipart: fields + an optional `cv` file, or
+ * `shared`: the signed token of a file shared to the site from the phone's share sheet or /share/choose, used once
+ * instead of `cv`). Without a file the application is still recorded; the candidate sends the CV later on WhatsApp.
  *
  * A route handler rather than a Server Action because the CV travels in the same request (up to 4 MB, under
  * the 4.5 MB Vercel body limit; Server Actions are capped lower). No account needed. Same-origin only (CSRF);
  * honeypot, rate limits, consent and the file checks are enforced by the operations module.
  *
  * `Accept: application/json` (the enhanced form) → ActionResult JSON. Plain form posts (no JavaScript) are
- * redirected back to /send-cv with the reference (or an error flag).
+ * redirected back to /send-cv with the reference (or an error flag), plus `nocv=1` when no CV file came with it.
  */
 export const maxDuration = 60;
 
@@ -24,7 +25,9 @@ const BODY_LIMIT = CV_MAX_BYTES + 256 * 1024;
 function respond(request: NextRequest, status: number, result: ActionResult<CvSubmissionResult>): Response {
   const wantsJson = (request.headers.get("accept") ?? "").includes("application/json");
   if (wantsJson) return Response.json(result, { status, headers: { "Cache-Control": "no-store" } });
-  const query = result.ok ? `sent=${encodeURIComponent(result.data?.code ?? "1")}` : `error=${result.code === "rate_limited" ? "rate_limited" : "invalid"}`;
+  const query = result.ok
+    ? `sent=${encodeURIComponent(result.data?.code ?? "1")}${result.data && !result.data.hasCv && result.data.code ? "&nocv=1" : ""}`
+    : `error=${result.code === "rate_limited" ? "rate_limited" : "invalid"}`;
   // Relative Location (RFC 9110): stays on the host the browser used.
   return new Response(null, { status: 303, headers: { Location: `/send-cv?${query}`, "Cache-Control": "no-store" } });
 }
@@ -49,21 +52,19 @@ export async function POST(request: NextRequest): Promise<Response> {
   const hasFile = cv instanceof File && cv.size > 0;
   const parsed = cvSubmissionSchema.safeParse(formDataToObject(form));
   if (!parsed.success) {
-    const fieldErrors = zodFieldErrors(parsed.error);
-    if (!hasFile && !sharedToken) fieldErrors.cv = ["Attach your CV"];
-    return respond(request, 400, { ok: false, error: "Please check the highlighted fields.", fieldErrors, code: "invalid" });
+    return respond(request, 400, { ok: false, error: "Please check the highlighted fields.", fieldErrors: zodFieldErrors(parsed.error), code: "invalid" });
   }
 
   try {
     const meta = await getRequestMeta();
     const upload = hasFile ? { data: new Uint8Array(await cv.arrayBuffer()), name: cv.name, type: cv.type || null } : sharedToken ? { sharedToken } : null;
     const result = await submitCvSubmission(parsed.data, upload, { ipHash: meta.ipHash, sourcePage: "/send-cv" });
-    return respond(request, 200, { ok: true, data: result, message: "Thank you. We have received your CV." });
+    return respond(request, 200, { ok: true, data: result, message: result.hasCv ? "Thank you. We have received your CV." : "Thank you. We have received your application." });
   } catch (error) {
     if (error instanceof ActionError) {
       return respond(request, error.code === "rate_limited" ? 429 : 400, { ok: false, error: error.message, fieldErrors: error.fieldErrors, code: error.code });
     }
     logger.error("CV submission failed", { error });
-    return respond(request, 500, { ok: false, error: "Something went wrong while sending your CV. Please try again, or send it to us on WhatsApp.", code: "server_error" });
+    return respond(request, 500, { ok: false, error: "Something went wrong while sending your application. Please try again, or send it to us on WhatsApp.", code: "server_error" });
   }
 }

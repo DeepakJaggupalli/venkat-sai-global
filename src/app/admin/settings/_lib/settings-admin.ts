@@ -45,9 +45,14 @@ export async function loadSettingStates(keys: readonly SettingKey[]): Promise<Ma
   );
 }
 
-/** Which permission edits a group. Security policy is separated from general settings. */
+/**
+ * Which permission edits a group. Security policy is separated from general settings; so is the backup email (where
+ * a copy of all business data goes), which the Super Admin sets on /admin/system/backup. The business inbox
+ * (Notifications) too: it gets every new CV with phone numbers, and the daily backup goes there when no backup
+ * address is set, so whoever may change it could have the whole database emailed to themselves.
+ */
 export function editPermissionFor(group: string) {
-  return group === "Security" ? ("settings.security" as const) : ("settings.manage" as const);
+  return group === "Security" || group === "Backup" || group === "Notifications" ? ("settings.security" as const) : ("settings.manage" as const);
 }
 
 /**

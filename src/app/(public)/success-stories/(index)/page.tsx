@@ -1,12 +1,14 @@
 import { Award, Building2, MapPin, MessageSquareQuote } from "lucide-react";
 import type { Metadata } from "next";
 
+import { WorkerReviewsSection } from "@/components/public/worker-reviews";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LinkTabs } from "@/components/shared/link-tabs";
 import { Pagination } from "@/components/shared/pagination";
 import { TESTIMONIAL_TYPE_OPTIONS } from "@/modules/content/collections";
 import { getPublishedEntries } from "@/modules/content/queries";
 import { industryOptions } from "@/modules/taxonomy/queries";
+import { countPublicWorkerReviews } from "@/modules/worker-reviews/queries";
 
 import { countryName } from "../../events/_lib/schedule";
 import { EntryCard, EntryGrid } from "../../news/_components/entry-card";
@@ -21,7 +23,7 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
   const sp = await searchParams;
   return listingMetadata(
     "Success stories",
-    "Verified case studies and testimonials, published with the consent of the people and organisations involved.",
+    "Reviews from workers we placed abroad, case studies and testimonials, published with the consent of the people and organisations involved.",
     "/success-stories",
     { noindex: pageParam(sp.page) > 1 || Boolean(sp.type) },
   );
@@ -31,22 +33,27 @@ export default async function SuccessStoriesPage({ searchParams }: { searchParam
   const sp = await searchParams;
   const page = pageParam(sp.page);
   const type = pickParam(sp.type, TYPE_VALUES);
-  const [stories, testimonials, industries] = await Promise.all([
+  const [stories, testimonials, industries, reviewCount] = await Promise.all([
     safeLoad("case_studies", () => getPublishedEntries("case_studies", { page, pageSize: 9 }), emptyEntryPage<"case_studies">(9)),
     safeLoad("testimonials", () => getPublishedEntries("testimonials", { category: type, limit: 24 }), emptyEntryPage<"testimonials">(24)),
     safeLoad("industries", () => industryOptions(), []),
+    safeLoad("worker_reviews", () => countPublicWorkerReviews(), 0),
   ]);
   const industryName = new Map(industries.map((o) => [o.value, o.label]));
-  const nothing = !stories.items.length && !testimonials.items.length && !type;
+  // Reviews from placed workers lead the first page (not the filtered testimonial views or later case-study pages).
+  const showReviews = reviewCount > 0 && page === 1 && !type;
+  const hasCmsContent = stories.items.length > 0 || testimonials.items.length > 0 || Boolean(type);
+  const nothing = !hasCmsContent && !showReviews;
 
   return (
     <>
       <PublicHero
         eyebrow="Success stories"
         title="Real work, real outcomes"
-        description="Case studies and testimonials from real engagements. Each one is published only with the written consent of the people and organisations involved, and states only results we can evidence."
+        description="Reviews from workers we placed abroad, case studies and testimonials from real engagements. Each one is published only with the consent of the people and organisations involved, and states only results we can evidence."
         breadcrumbs={[{ label: "Success stories" }]}
       />
+      {showReviews ? <WorkerReviewsSection tone="subtle" limit={24} className="py-12 sm:py-16 lg:py-20" /> : null}
       <div className="container-page">
         {nothing ? (
           <PublicSection>
@@ -59,7 +66,7 @@ export default async function SuccessStoriesPage({ searchParams }: { searchParam
               secondaryAction={{ label: "Contact us", href: "/contact", variant: "outline" }}
             />
           </PublicSection>
-        ) : (
+        ) : hasCmsContent ? (
           <>
             <PublicSection title="Case studies" id="case-studies" description="How we met real workforce requirements, from brief to outcome.">
               {stories.items.length ? (
@@ -137,7 +144,7 @@ export default async function SuccessStoriesPage({ searchParams }: { searchParam
               )}
             </PublicSection>
           </>
-        )}
+        ) : null}
       </div>
     </>
   );

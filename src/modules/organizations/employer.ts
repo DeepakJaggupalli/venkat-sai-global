@@ -5,6 +5,7 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { db, type DbOrTx } from "@/db";
 import { companyBranches, companyProfiles, countries, currencies, employerContracts, files, industries, jobCategories, organizations, users } from "@/db/schema";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { toMinorUnits } from "@/lib/format";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { sanitizeRichText } from "@/lib/sanitize";
@@ -419,13 +420,14 @@ export async function terminateEmployerContract(staff: StaffContext, input: { co
 // Public employer pages
 // ---------------------------------------------------------------------------
 
-/** Condition for organisations that may appear publicly: verified (not lapsed), public page on, not deleted. */
+/** Condition for organisations that may appear publicly: verified (not lapsed), public page on, not deleted, not a demo account. */
 function publiclyListable(now: Date): SQL {
   return and(
     eq(organizations.status, "verified"),
     eq(organizations.isPublic, true),
     isNull(organizations.deletedAt),
     or(isNull(organizations.verificationExpiresAt), gt(organizations.verificationExpiresAt, now)),
+    notDemoSql(organizations.metadata),
   )!;
 }
 

@@ -57,6 +57,20 @@
       "when": 1795434526087,
       "tag": "0007_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795449680448,
+      "tag": "0008_cv_apply_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795487477412,
+      "tag": "0009_bookings_referrals_reviews",
+      "breakpoints": true
     }
   ]
 }

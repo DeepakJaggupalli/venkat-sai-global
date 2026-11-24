@@ -87,6 +87,8 @@ export function ConfirmDialog({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // The dialog renders in a portal, but React still bubbles its submit event to any form the trigger sits in.
+    event.stopPropagation();
     const formData = new FormData(event.currentTarget);
     setError(null);
     startTransition(async () => {

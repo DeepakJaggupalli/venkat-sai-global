@@ -14,6 +14,8 @@ export const setCvSubmissionStatusAction = createFormAction(cvSubmissionStatusSc
   await setCvSubmissionStatus(ctx, input);
   revalidatePath(CV_SUBMISSIONS_ADMIN_PATH);
   revalidatePath(`${CV_SUBMISSIONS_ADMIN_PATH}/${input.id}`);
+  // The same row is listed on its poster's applicants page.
+  revalidatePath("/admin/requirements/posters/[id]/applicants", "page");
   return ok(undefined, "Status updated.");
 });
 

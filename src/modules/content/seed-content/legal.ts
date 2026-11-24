@@ -129,6 +129,8 @@ const COOKIES = [
   p("These keep the website working and secure: they keep you signed in, protect forms against misuse and remember security settings. They cannot be switched off, and they do not track you for analytics or advertising."),
   h2("Functional"),
   p("These remember choices that make the site easier to use, such as your language and whether you dismissed a notice. They are used only if you allow functional cookies."),
+  h2("Referral links"),
+  p("If you open a friend's referral link (an address starting with /r/), we set one cookie that holds only your friend's referral code for 30 days, so that when you apply we know who referred you. It holds nothing else and is not used for analytics or advertising."),
   h2("Analytics"),
   p("If you allow analytics cookies, we record how pages are used (for example which pages are visited and how people move between them) with a random, pseudonymous identifier. We do not record what you type into forms. If an external analytics service is enabled, it is used only with this consent."),
   h2("Session insights"),

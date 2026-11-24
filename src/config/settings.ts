@@ -81,6 +81,10 @@ export const SETTINGS = {
   "recruitment.partner_attribution_days": { default: 90, label: "Partner candidate attribution window (days)", group: "Recruitment" },
   "recruitment.profile_unlock_days": { default: 90, label: "How long an employer contact unlock lasts (days)", group: "Recruitment" },
 
+  // Referrals ("Refer a friend", /refer and /admin/referrals)
+  /** Reward wording shown on /refer, written by the business (e.g. amount and currency). Blank = no amount is shown. */
+  "referrals.reward_text": { default: "", label: "Referral reward shown on the Refer a friend page (blank = no amount shown)", group: "Referrals" },
+
   // Platform
   /** ISO country code of Venkat Sai's home market; jobs outside it are flagged as overseas. */
   "platform.home_country": { default: "IN", label: "Home country (jobs elsewhere are overseas)", group: "Platform" },
@@ -92,6 +96,12 @@ export const SETTINGS = {
   // Notifications
   /** Business inbox that receives a copy of every new CV, contact enquiry and workforce requirement (blank = off). */
   "notifications.business_inbox_email": { default: "vsweld@gmail.com", label: "Business inbox for new CVs, enquiries and requirements (blank = none)", group: "Notifications" },
+
+  // Backup (edited on /admin/system/backup by the Super Admin; the "backup.daily_email" task reads them)
+  /** Email the Excel backup of the business data every day (passport numbers cut to the last 4 digits). */
+  "backup.daily_email_enabled": { default: true, label: "Email a backup of the business data every day", group: "Backup" },
+  /** Address for the daily backup. Blank = the business inbox above. */
+  "backup.daily_email_to": { default: "", label: "Send the daily backup to (blank = the business inbox)", group: "Backup" },
 
   // Resume service ("Prepare my resume", edited on /admin/resume-requests)
   /** Price of the paid resume-writing service: amount in minor units + ISO currency. 0 = "Price on request". */

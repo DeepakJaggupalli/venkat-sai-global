@@ -5,6 +5,7 @@ import { ActionError, type ActionResult } from "@/lib/actions";
 import { logger } from "@/lib/logger";
 import { isSameOrigin } from "@/lib/request";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 import { addCvSubmissionDocument } from "@/modules/operations/cv-submission-documents";
 import { CV_DOCUMENT_MAX_BYTES, cvDocumentKindSchema } from "@/modules/operations/cv-submission-schemas";
 import { CV_SUBMISSIONS_ADMIN_PATH } from "@/modules/operations/cv-submissions";
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const ctx = await getStaffContext();
   if (!ctx) return json(401, { ok: false, error: "Sign in as staff to upload documents.", code: "unauthenticated" });
   if (!staffCan(ctx, "candidates.manage")) return json(403, { ok: false, error: "You do not have permission to add documents.", code: "forbidden" });
+  if (await staffTwoFactorMissing(ctx)) return json(403, { ok: false, error: STAFF_TWO_FACTOR_MESSAGE, code: "two_factor_required" });
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json(404, { ok: false, error: "This CV submission could not be found.", code: "not_found" });
   const declared = Number(request.headers.get("content-length"));

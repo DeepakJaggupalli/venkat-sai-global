@@ -7,13 +7,15 @@ import { rateLimit } from "@/lib/rate-limit";
 import { buildXlsx, EXPORT_MAX_ROWS, exportFilename, xlsxResponse, type XlsxColumn } from "@/lib/xlsx-export";
 import { audit, logDataAccess } from "@/modules/audit";
 import { getStaffContext, staffCan, type StaffContext } from "@/modules/identity/authz";
+import { getSetting } from "@/modules/settings";
 
 import { exportVisibility } from "./people";
 
 /**
- * Shared GET handler body for staff Excel exports: authorise (same permission as the list page), rate limit, build
- * the sheet, then record the export in the data-access log and the audit trail (who, which list, filters, row count,
- * whether full phone numbers / passport numbers were included).
+ * Shared GET handler body for staff Excel exports: authorise (same permission as the list page, and the staff
+ * two-factor rule the Command Centre pages apply through requireStaff), rate limit, build the sheet, then record the
+ * export in the data-access log and the audit trail (who, which list, filters, row count, whether full phone numbers /
+ * passport numbers were included).
  */
 
 export type ExportSheet<T> = {
@@ -45,6 +47,10 @@ export async function staffExport<T>(opts: {
   const ctx = await getStaffContext();
   if (!ctx) return new Response("Sign in as staff to download this list.", { status: 401 });
   if (!staffCan(ctx, opts.permission, opts.mode ?? "all")) return new Response("You do not have permission to download this list.", { status: 403 });
+  // A direct link to the download must not skip the two-factor set-up that every Command Centre page asks for.
+  if (!ctx.user.twoFactorEnabled && (await getSetting("security.require_staff_2fa"))) {
+    return new Response("Set up two-factor authentication at /account/security first.", { status: 403 });
+  }
   const limit = await rateLimit(`admin:xlsx-export:${ctx.user.id}`, 30, 3600);
   if (!limit.allowed) return new Response("Too many downloads. Try again later.", { status: 429 });
 

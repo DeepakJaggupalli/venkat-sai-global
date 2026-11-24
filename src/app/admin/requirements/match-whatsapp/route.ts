@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ActionError } from "@/lib/actions";
 import { getStaffContext, staffCan } from "@/modules/identity/authz";
+import { STAFF_TWO_FACTOR_MESSAGE, staffTwoFactorMissing } from "@/modules/identity/staff-route";
 import { matchWhatsappHref, type MatchPersonKind, type MatchTargetKind } from "@/modules/operations/cv-matching";
 
 /**
@@ -25,6 +26,7 @@ function split<K extends string>(value: string): { kind: K; id: string } {
 export async function GET(request: NextRequest): Promise<Response> {
   const ctx = await getStaffContext();
   if (!ctx || !staffCan(ctx, ["candidates.view", "candidates.view_contact"])) return new Response("Forbidden", { status: 403 });
+  if (await staffTwoFactorMissing(ctx)) return new Response(STAFF_TWO_FACTOR_MESSAGE, { status: 403 });
   const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
   if (!parsed.success) return new Response("Bad request", { status: 400 });
   try {

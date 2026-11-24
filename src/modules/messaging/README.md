@@ -8,7 +8,7 @@ then uses these transports. Auth uses them directly only for one-time codes.
 
 | Function | Signature |
 |---|---|
-| `sendEmail` | `(m: { to, subject, html, text, replyTo?, tags?, headers? }) => Promise<SendResult>` — `headers` (e.g. `List-Unsubscribe`) are sanitised by every transport (`sanitizeEmailHeaders`: CR / LF and control characters become spaces, malformed and reserved names such as From / To / Subject / Bcc are dropped); the dev outbox stores them in `metadata.headers` |
+| `sendEmail` | `(m: { to, subject, html, text, replyTo?, tags?, headers?, attachments? }) => Promise<SendResult>` — `headers` (e.g. `List-Unsubscribe`) are sanitised by every transport (`sanitizeEmailHeaders`: CR / LF and control characters become spaces, malformed and reserved names such as From / To / Subject / Bcc are dropped); the dev outbox stores them in `metadata.headers`. `attachments` (`{ filename, content: Uint8Array, contentType }[]`, raw bytes only, never a path or URL) are checked first (`checkAttachments` in `attachments.ts`: at most 5, non-empty, valid MIME type, 15 MB in total, safe file names); SMTP sends them as byte buffers, the dev outbox keeps only `metadata.attachments` (name, type, size), never the bytes. Messages without attachments are sent exactly as before. Used by the daily backup email (`src/modules/backup`) |
 | `sendSms` | `(m: { to (E.164), body, templateId?, variables? }) => Promise<SendResult>` |
 | `sendWhatsApp` | `(m: { to (E.164), templateName, languageCode, variables: string[], fallbackText? }) => Promise<SendResult>` |
 | `devProviders` | the dev-outbox implementation (stores messages in `dev_outbox`) |

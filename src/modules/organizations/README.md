@@ -189,7 +189,7 @@ setBranchActive(actor, branchId, isActive)                                 // on
 listEmployerContracts(actor, orgId)                                        // employer.billing.view / staff orgs.view|commercial.view
 createEmployerContract(staff, orgId, input), updateEmployerContract(staff, contractId, input),
 activateEmployerContract(staff, contractId), terminateEmployerContract(staff, { contractId, reason })   // orgs.manage
-getPublicCompany(slug, now?): Promise<PublicCompany | null>                 // verified (not lapsed) + isPublic only
+getPublicCompany(slug, now?): Promise<PublicCompany | null>                 // verified (not lapsed) + isPublic only, never demo accounts (src/lib/demo-accounts.ts)
 listPublicCompanies({ q?, countryCode?, hiringRegion?, overseasOnly? }, page, now?): Promise<Paginated<PublicCompanyListItem>>
 ```
 
@@ -201,7 +201,7 @@ Contract fee amounts are entered as decimals and stored in minor units of the co
 getInstitutionProfile(actor, orgId, tx?), updateInstitutionProfile(actor, orgId, input)
 setCertificateIssuerAuthorisation(staff, { organizationId, authorised, scope?, authorisedUntil?, note? }, now?)   // orgs.verify; org must be verified
 isAuthorisedIssuerNow(profile, now?): boolean
-getPublicInstitution(slug, now?): Promise<PublicInstitution | null>         // accreditation bodies are labelled "declared"
+getPublicInstitution(slug, now?): Promise<PublicInstitution | null>         // accreditation bodies are labelled "declared"; never demo accounts
 ```
 
 ### Queries (`queries.ts`)

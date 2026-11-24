@@ -157,7 +157,8 @@ describe.skipIf(!enabled)("CV submissions and requirement posters (PostgreSQL)",
     expect(row!.passportNumberEncrypted).not.toContain("Z1234567");
     expect(row!.passportNumberHash).toBeTruthy();
     submittedId = row!.id;
-    const [file] = await db.select().from(s.files).where(eq(s.files.id, row!.cvFileId));
+    expect(row).toMatchObject({ source: "website", email: null, referralCode: null });
+    const [file] = await db.select().from(s.files).where(eq(s.files.id, row!.cvFileId!));
     expect(file).toMatchObject({ purpose: "cv_submission", ownerUserId: null, visibility: "private", mimeType: "application/pdf" });
 
     const jobs = await db
@@ -176,8 +177,11 @@ describe.skipIf(!enabled)("CV submissions and requirement posters (PostgreSQL)",
     expect(bot.code).toBeNull();
   });
 
-  it("rejects missing, oversized and disguised CV files", async () => {
-    await expect(cv.submitCvSubmission(input(), null, { ipHash: null })).rejects.toMatchObject({ fieldErrors: { cv: [expect.any(String)] } });
+  it("rejects oversized and disguised CV files (a missing CV is allowed: it comes later on WhatsApp)", async () => {
+    const noCv = await cv.submitCvSubmission(input(), null, { ipHash: null });
+    expect(noCv).toMatchObject({ hasCv: false, code: expect.stringMatching(/CV/) });
+    const empty = await cv.submitCvSubmission(input(), { data: new Uint8Array(0), name: "empty.pdf", type: "application/pdf" }, { ipHash: null });
+    expect(empty.hasCv).toBe(false);
     await expect(cv.submitCvSubmission(input(), { data: new Uint8Array(4 * 1024 * 1024 + 1), name: "big.pdf", type: "application/pdf" }, { ipHash: null })).rejects.toMatchObject({
       fieldErrors: { cv: [expect.stringMatching(/4 MB/)] },
     });

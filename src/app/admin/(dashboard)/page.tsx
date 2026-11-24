@@ -97,7 +97,7 @@ export default async function ExecutiveDashboardPage() {
         description={`Welcome back, ${firstName}. Live figures across Venkat Sai Global.`}
         actions={[
           ...(staffCan(staff, ["content.edit", "media.manage"]) ? [{ label: "Post requirement", href: "/admin/requirements/posters/new" }] : []),
-          ...(staffCan(staff, "candidates.view") ? [{ label: "CV submissions", href: "/admin/cv-submissions", variant: "outline" as const }] : []),
+          ...(staffCan(staff, "candidates.view") ? [{ label: "Applicants and CVs", href: "/admin/cv-submissions", variant: "outline" as const }] : []),
         ]}
         meta={
           <span className="text-sm text-muted-foreground">

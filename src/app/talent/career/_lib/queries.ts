@@ -4,6 +4,7 @@ import { and, count, countDistinct, desc, eq, gt, inArray, isNull, or, sql } fro
 
 import { db } from "@/db";
 import { courses, jobSkills, jobs, skills } from "@/db/schema";
+import { notDemoOrganizationRefSql } from "@/lib/demo-accounts";
 import { logger } from "@/lib/logger";
 import type { CourseOffer, SkillDemand } from "@/components/talent/career/skill-gap";
 import { getPublishedEntries } from "@/modules/content/queries";
@@ -13,7 +14,9 @@ import { getPublishedEntries } from "@/modules/content/queries";
  * published jobs, published courses teaching given skills, and CMS interview-preparation resources.
  */
 
-const liveJob = () => and(eq(jobs.status, "published"), isNull(jobs.deletedAt), or(isNull(jobs.expiresAt), gt(jobs.expiresAt, sql`now()`)));
+// Jobs and courses of demo organisations never reach real people (src/lib/demo-accounts.ts).
+const liveJob = () =>
+  and(eq(jobs.status, "published"), isNull(jobs.deletedAt), or(isNull(jobs.expiresAt), gt(jobs.expiresAt, sql`now()`)), notDemoOrganizationRefSql(jobs.organizationId));
 
 /** Skills most often listed on live published jobs (optionally only in the given categories). */
 export async function getSkillDemand(categoryIds: readonly string[], limit = 30): Promise<{ totalJobs: number; demand: SkillDemand[] }> {
@@ -39,7 +42,14 @@ export async function getCoursesTeaching(skillIds: readonly string[], limit = 20
   const rows = await db
     .select({ id: courses.id, slug: courses.slug, title: courses.title, skillIds: courses.skillIds })
     .from(courses)
-    .where(and(eq(courses.status, "published"), isNull(courses.deletedAt), sql`${courses.skillIds} && ARRAY[${sql.join(skillIds.map((id) => sql`${id}`), sql`, `)}]::uuid[]`))
+    .where(
+      and(
+        eq(courses.status, "published"),
+        isNull(courses.deletedAt),
+        notDemoOrganizationRefSql(courses.organizationId),
+        sql`${courses.skillIds} && ARRAY[${sql.join(skillIds.map((id) => sql`${id}`), sql`, `)}]::uuid[]`,
+      ),
+    )
     .orderBy(desc(courses.publishedAt))
     .limit(limit);
   return rows.map((r) => ({ id: r.id, slug: r.slug, title: r.title, skillIds: r.skillIds ?? [] }));

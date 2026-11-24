@@ -5,6 +5,7 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, 
 import { db } from "@/db";
 import { applications, candidateCredentials, candidateDocuments, candidatePrivacySettings, candidateProfiles, countries, jobs, profileUnlocks, users } from "@/db/schema";
 import { ActionError } from "@/lib/actions";
+import { hasDemoMarker, notDemoSql } from "@/lib/demo-accounts";
 import { toMinorUnits } from "@/lib/format";
 import { paginated } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
@@ -31,6 +32,7 @@ import type { CandidateCard, CandidateSearchResult, CandidateViewer } from "./ty
  * Cards never carry contact details, photos (reduces appearance-based screening) or identity data.
  * Searches for overseas roles (or by a foreign employer) exclude minors, and employers never find a
  * minor without granted guardian consent (DPDP Rules 2025 — regulatory notes rec. 21).
+ * Demo people (src/lib/demo-accounts.ts) are found only by demo organisations.
  */
 
 const PROFICIENCY_RANK = sql`case cl.proficiency when 'basic' then 1 when 'conversational' then 2 when 'fluent' then 3 when 'native' then 4 else 0 end`;
@@ -48,7 +50,7 @@ const passedAssessmentSql: SQL = sql`exists (
   where sa.candidate_id = ${candidateProfiles.id} and sa.status = 'completed' and sa.result = 'pass' and sa.result_published_at is not null)`;
 
 type SearchContext =
-  | { kind: "employer"; organizationId: string; organizationVerified: boolean; overseasEmployer: boolean }
+  | { kind: "employer"; organizationId: string; organizationVerified: boolean; overseasEmployer: boolean; demoOrganization: boolean }
   | { kind: "staff"; includeHidden: boolean };
 
 async function authorise(viewer: CandidateViewer, filters: CandidateSearchFilters): Promise<SearchContext> {
@@ -78,6 +80,7 @@ async function authorise(viewer: CandidateViewer, filters: CandidateSearchFilter
       organizationVerified: ctx.organization.status === "verified",
       // A foreign employer is always hiring for overseas employment.
       overseasEmployer: Boolean(ctx.organization.countryCode && ctx.organization.countryCode !== homeCountry),
+      demoOrganization: hasDemoMarker(ctx.organization.metadata),
     };
   }
   throw new ActionError("Candidate search is available to employers and Venkat Sai staff only.", { code: "forbidden" });
@@ -102,6 +105,7 @@ function buildConditions(filters: CandidateSearchFilters, ctx: SearchContext, ts
     c.push(ctx.organizationVerified ? inArray(cp.visibility, ["public_to_employers", "verified_employers"]) : eq(cp.visibility, "public_to_employers"));
     c.push(sql`not (${ctx.organizationId}::uuid = any(coalesce(${candidatePrivacySettings.blockedOrganizationIds}, '{}'::uuid[])))`);
     c.push(sql`not ${restrictedMinorSql}`);
+    if (!ctx.demoOrganization) c.push(notDemoSql(users.preferences));
   } else if (!ctx.includeHidden) {
     c.push(ne(cp.visibility, "hidden"));
   }

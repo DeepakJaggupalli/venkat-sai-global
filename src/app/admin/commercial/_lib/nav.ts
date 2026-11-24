@@ -7,6 +7,7 @@ export const commercialNav: { href: string; label: string; match: "exact" | "pre
   { href: `${ADMIN_COMMERCIAL}/plans`, label: "Plans", match: "prefix", permission: "commercial.view" },
   { href: `${ADMIN_COMMERCIAL}/subscriptions`, label: "Subscriptions", match: "prefix", permission: "commercial.view" },
   { href: `${ADMIN_COMMERCIAL}/invoices`, label: "Invoices", match: "prefix", permission: "commercial.view" },
+  { href: `${ADMIN_COMMERCIAL}/worker-invoices`, label: "Worker invoices", match: "prefix", permission: "commercial.view" },
   { href: `${ADMIN_COMMERCIAL}/payments`, label: "Payments", match: "prefix", permission: "commercial.view" },
   { href: `${ADMIN_COMMERCIAL}/refunds`, label: "Refunds", match: "prefix", permission: "commercial.view" },
   { href: `${ADMIN_COMMERCIAL}/disputes`, label: "Disputes", match: "prefix", permission: "commercial.view" },

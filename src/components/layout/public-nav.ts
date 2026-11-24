@@ -130,6 +130,8 @@ export const DEFAULT_FOOTER_COLUMNS: readonly FooterColumn[] = [
       { title: "Send your CV", href: "/send-cv" },
       { title: "Check your CV status", href: "/status" },
       { title: "Training courses", href: "/training" },
+      { title: "Book a trade test or training", href: "/book" },
+      { title: "Refer a friend", href: "/refer" },
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, ExternalLink, ImageIcon, Megaphone, Plus, Trash2, Users } from "lucide-react";
+import { Archive, ArchiveRestore, ExternalLink, ImageIcon, Megaphone, Plus, Trash2, UserCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import { parsePage, type SearchParams } from "@/lib/http";
 import { CMS_ENTRY_STATUS_LABELS } from "@/modules/content/constants";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
 import { countMatches, posterCriteriaFromList } from "@/modules/operations/cv-matching";
+import { countApplicantsByPoster, posterApplicantsPath } from "@/modules/operations/cv-submissions";
 import { posterShareDetails } from "@/modules/recruitment-posters/share";
 import { listPosters, POSTER_PERMISSIONS } from "@/modules/recruitment-posters/service";
 
@@ -41,13 +42,15 @@ export default async function PostersPage({ searchParams }: { searchParams: Prom
   const canPublish = staffCan(ctx, "content.publish");
   const canEdit = staffCan(ctx, "content.edit");
   const canMatch = staffCan(ctx, "candidates.view");
-  const matches = canMatch ? await countMatches(ctx, result.items.map(posterCriteriaFromList)) : null;
+  const [matches, applicants] = canMatch
+    ? await Promise.all([countMatches(ctx, result.items.map(posterCriteriaFromList)), countApplicantsByPoster(ctx, result.items.map((p) => p.id))])
+    : [null, null];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Requirement posters"
-        description="Recruitment posters shown under Latest requirements on the website. Post one from your phone in a few seconds."
+        description="Recruitment posters shown under Latest requirements on the website. Post one from your phone in a few seconds. Tap Applicants to see who applied and download the list in Excel."
         actions={
           canPost ? (
             <Button asChild size="lg" data-testid="post-requirement">
@@ -102,6 +105,14 @@ export default async function PostersPage({ searchParams }: { searchParams: Prom
             header: "Actions",
             cell: (p) => (
               <div className="flex flex-wrap gap-2">
+                {applicants ? (
+                  <Button asChild size="sm" className="min-h-11 md:min-h-7">
+                    <Link href={posterApplicantsPath(p.id)} data-testid="poster-applicants">
+                      <UserCheck aria-hidden="true" />
+                      Applicants ({applicants.get(p.id) ?? 0})
+                    </Link>
+                  </Button>
+                ) : null}
                 {p.status === "published" ? (
                   <Button asChild variant="outline" size="sm">
                     <Link href={p.publicPath} target="_blank" rel="noopener noreferrer">

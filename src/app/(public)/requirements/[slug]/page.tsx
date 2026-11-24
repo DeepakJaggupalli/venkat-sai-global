@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarClock, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +8,7 @@ import { Flag } from "@/components/public/flag";
 import { JsonLd } from "@/components/public/json-ld";
 import { Breadcrumbs } from "@/components/public/page-hero";
 import { PreviewRibbon } from "@/components/public/preview-ribbon";
+import { requirementApplyHref, requirementWhatsAppMessage } from "@/components/public/requirements/card-helpers";
 import { CallButton, CONTACT_BUTTON_STYLES, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { loadPoster } from "@/components/public/requirements/data";
 import { LatestRequirements } from "@/components/public/requirements/latest-requirements";
@@ -50,9 +51,8 @@ export default async function RequirementPage({ params, searchParams }: Props) {
   const poster = await loadPoster(slug, previewTokenFrom(sp));
   if (!poster) notFound();
   const { card } = poster;
-  const where = card.countryName ? ` (${card.countryName})` : "";
-  const whatsappMessage = `Hello Venkat Sai, I am interested in the requirement "${card.title}"${where}. Please call me.`;
-  const applyHref = `/send-cv?requirement=${encodeURIComponent(card.slug)}`;
+  const whatsappMessage = requirementWhatsAppMessage({ title: card.title, countryName: card.countryName, url: absoluteUrl(card.href) });
+  const applyHref = requirementApplyHref(card.slug);
   // Google job listing: not for previews; null once the poster's apply-by date (or 30 days) has passed.
   const jobPosting = poster.preview
     ? null
@@ -67,17 +67,16 @@ export default async function RequirementPage({ params, searchParams }: Props) {
       <PreviewRibbon show={poster.preview} />
       <div className="container-page pt-10 pb-16 sm:pt-12 sm:pb-24">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Requirements", href: "/requirements" }, { label: card.title }]} className="mb-8" />
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
-          <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-surface-subtle p-3 shadow-card">
-            {card.poster ? (
+        {/* With a poster: poster left, details right. Without one: the details alone, in a comfortable reading width. */}
+        <div className={cn("grid gap-10 lg:items-start lg:gap-14", card.poster ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "max-w-3xl")}>
+          {card.poster ? (
+            <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-surface-subtle p-3 shadow-card">
               <a href={card.poster.url} target="_blank" rel="noopener noreferrer" className="block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                 <CmsImage asset={{ ...card.poster, alt: card.alt }} size="lg" priority className="h-auto object-contain" sizes="(min-width: 1024px) 55vw, 100vw" />
                 <span className="sr-only"> (open the full-size poster in a new tab)</span>
               </a>
-            ) : (
-              <p className="p-8 text-sm text-muted-foreground">The poster image is not available.</p>
-            )}
-          </div>
+            </div>
+          ) : null}
 
           <div className="min-w-0 space-y-6">
             <div>
@@ -89,16 +88,8 @@ export default async function RequirementPage({ params, searchParams }: Props) {
               ) : null}
               <h1 className="mt-4 text-balance font-display text-[2.25rem] text-foreground sm:text-5xl">{card.title}</h1>
               {card.companyName ? <p className="mt-2 text-base text-foreground">Company: {card.companyName}</p> : null}
-              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                <span>
-                  Posted <DateText value={card.publishedAt} />
-                </span>
-                {card.applyBy ? (
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarClock className="size-4" aria-hidden="true" />
-                    Apply by <DateText value={card.applyBy} dateOnly />
-                  </span>
-                ) : null}
+              <p className="mt-2 text-sm text-muted-foreground">
+                Posted <DateText value={card.publishedAt} />
               </p>
             </div>
 
@@ -107,7 +98,7 @@ export default async function RequirementPage({ params, searchParams }: Props) {
                 Apply: send your CV
                 <ArrowRight aria-hidden="true" className="size-4! transition-transform duration-150 group-hover/apply:translate-x-0.5 motion-reduce:transition-none" />
               </Link>
-              <WhatsAppButton message={whatsappMessage} />
+              <WhatsAppButton message={whatsappMessage} label="Apply on WhatsApp" />
               <CallButton className={CONTACT_BUTTON_STYLES.outline} />
               <ShareToWhatsApp
                 imageUrl={card.poster?.url ?? null}
@@ -169,7 +160,7 @@ export default async function RequirementPage({ params, searchParams }: Props) {
           </div>
         </div>
       </div>
-      <LatestRequirements heading="More requirements" limit={4} className="bg-surface-subtle" />
+      <LatestRequirements heading="More requirements" limit={4} tone="subtle" excludeSlug={card.slug} />
     </>
   );
 }

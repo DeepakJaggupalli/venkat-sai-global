@@ -4,6 +4,7 @@ import { and, count, desc, eq, isNull, or, type SQL } from "drizzle-orm";
 
 import { db, type DbOrTx } from "@/db";
 import { countries, internshipProgrammes, jobs, organizations } from "@/db/schema";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { toMinorUnits } from "@/lib/format";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { audit } from "@/modules/audit";
@@ -131,11 +132,11 @@ export async function listInternships(actor: TrainingActor, filters: { status?: 
   return paginated(rows, total[0]?.value ?? 0, page);
 }
 
-/** Open programmes of verified organisers (and Venkat Sai) for the public site. */
+/** Open programmes of verified organisers (never demo accounts, src/lib/demo-accounts.ts) and Venkat Sai for the public site. */
 export async function listPublicInternships(page: PageQuery): Promise<Paginated<PublicInternship>> {
   const condition = and(
     eq(internshipProgrammes.status, "open"),
-    or(isNull(internshipProgrammes.organizationId), and(eq(organizations.status, "verified"), isNull(organizations.deletedAt))),
+    or(isNull(internshipProgrammes.organizationId), and(eq(organizations.status, "verified"), isNull(organizations.deletedAt), notDemoSql(organizations.metadata))),
   );
   const [rows, total] = await Promise.all([
     db

@@ -23,6 +23,7 @@ export async function MatchesView({ ctx, criteria, breadcrumb, back, editHref }:
     countryName: m.countryName,
     prefersTargetCountry: m.prefersTargetCountry,
     status: m.status,
+    hasCv: m.hasCv,
     phoneMasked: m.phoneMasked,
     hasPhone: m.hasPhone,
     createdAt: m.createdAt.toISOString(),

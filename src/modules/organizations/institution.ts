@@ -4,6 +4,7 @@ import { and, count, eq, gt, isNull, or, type SQL } from "drizzle-orm";
 
 import { db, type DbOrTx } from "@/db";
 import { courses, files, institutionProfiles, organizations } from "@/db/schema";
+import { notDemoSql } from "@/lib/demo-accounts";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { audit } from "@/modules/audit";
 import { fileUrl, requireUploadedFile, setFileVisibility, thumbnailUrl } from "@/modules/files";
@@ -134,7 +135,7 @@ function publicImage(file: typeof files.$inferSelect | null | undefined) {
   return { url: fileUrl(file, { variant: "lg" }), thumbnailUrl: thumbnailUrl(file) };
 }
 
-/** Public institution page data (verified institutions with the public page enabled only). */
+/** Public institution page data (verified institutions with the public page enabled only; never a demo account). */
 export async function getPublicInstitution(slug: string, now: Date = new Date()): Promise<PublicInstitution | null> {
   const listable: SQL = and(
     eq(organizations.slug, slug),
@@ -143,6 +144,7 @@ export async function getPublicInstitution(slug: string, now: Date = new Date())
     eq(organizations.isPublic, true),
     isNull(organizations.deletedAt),
     or(isNull(organizations.verificationExpiresAt), gt(organizations.verificationExpiresAt, now)),
+    notDemoSql(organizations.metadata),
   )!;
   const [row] = await db
     .select({ org: organizations, profile: institutionProfiles })

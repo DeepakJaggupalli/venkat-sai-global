@@ -15,7 +15,7 @@ import { settle } from "../server";
 /**
  * Data for the requirement posters (CMS collection `requirement_posts`): poster cards for the homepage band,
  * the /requirements listing and the detail page. Only public, consented media is resolved by the content
- * module, so a poster whose image is not public renders without it (and is skipped in grids).
+ * module, so a poster whose image is not public renders without it (as a text card in the lists).
  */
 
 export type PosterTrade = { trade: string; pay: string | null };

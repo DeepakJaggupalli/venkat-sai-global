@@ -17,8 +17,9 @@ import { assertStaff } from "./internal";
 
 /**
  * "Download CV pack" / "Download visa pack" for a CV submission: one PDF in the business's order — resume (the
- * generated resume when the candidate used the resume service, else the CV they sent), certificates, licences,
- * other documents, passport cover, passport first page, passport last page, photo on white background.
+ * generated resume when the candidate used the resume service, else the CV they sent, else a "No CV file" note page),
+ * certificates, licences, other documents, passport cover, passport first page, passport last page, photo on white
+ * background.
  * Staff need candidates.view plus candidates.view_documents or recruitment.manage; every file is re-checked with the
  * files module and the download is recorded in the data-access log.
  */
@@ -39,7 +40,9 @@ export async function buildCvSubmissionPack(ctx: StaffContext, submissionId: str
   const [submission] = await db.select().from(cvSubmissions).where(eq(cvSubmissions.id, submissionId)).limit(1);
   if (!submission) return null;
 
-  const [cvFile] = await db.select().from(files).where(and(eq(files.id, submission.cvFileId), sql`${files.deletedAt} is null`)).limit(1);
+  // The CV file is optional (the candidate may have applied without one and send it later on WhatsApp).
+  const cvFileId = submission.cvFileId;
+  const [cvFile] = cvFileId ? await db.select().from(files).where(and(eq(files.id, cvFileId), sql`${files.deletedAt} is null`)).limit(1) : [];
   const [generated] = await db
     .select({ file: files })
     .from(resumeRequests)
@@ -67,6 +70,7 @@ export async function buildCvSubmissionPack(ctx: StaffContext, submissionId: str
   const cv = await allowed(cvFile);
   if (generatedFile) items.push({ kind: "file", label: "Resume", file: generatedFile });
   else if (cv) items.push({ kind: "file", label: WORD_TYPES.has(cv.mimeType) ? "Resume (Word document)" : "Resume", file: cv });
+  else if (!cvFileId) items.push({ kind: "note", label: "Resume", text: "No CV file. The candidate applied without a CV: ask them to send it on WhatsApp, then attach it on the CV submission page." });
   else items.push({ kind: "note", label: "Resume", text: "The CV is waiting for its security check, or you do not have access to it." });
 
   for (const kind of PACK_ORDER) {
