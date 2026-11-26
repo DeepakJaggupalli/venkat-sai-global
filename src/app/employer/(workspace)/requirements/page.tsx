@@ -11,6 +11,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { env } from "@/lib/env";
 import { parsePage, sp as readParam, type SearchParams } from "@/lib/http";
 import { requireOrgMember } from "@/modules/identity/authz";
+import { employerKindOf } from "@/modules/organizations/employer-kind";
 import { REQUIREMENT_KIND_LABELS, REQUIREMENT_STATUS_VALUES, REQUIREMENT_URGENCY_LABELS } from "@/modules/operations/constants";
 import { listOrgRequirements } from "@/modules/operations/queries";
 import type { EmployerRequirementListItem } from "@/modules/operations/types";
@@ -27,14 +28,20 @@ export default async function EmployerRequirementsPage({ searchParams }: { searc
   const status: StatusFilter = raw === "all" ? undefined : raw === "open" ? "open" : (REQUIREMENT_STATUS_VALUES as readonly string[]).includes(raw) ? (raw as StatusFilter) : "open";
   const page = parsePage(sp, { defaultSize: 20, maxSize: 50 });
   const result = await listOrgRequirements(ctx, { status }, page);
+  // The Travel Agency Portal calls these manpower requests, made for its clients (its menu says so too).
+  const agency = employerKindOf(ctx.organization) === "travel_agency";
   const activeHref = raw === "all" ? "/employer/requirements?status=all" : status === "open" ? "/employer/requirements" : `/employer/requirements?status=${status}`;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Workforce requirements"
-        description="Tell Venkat Sai how many people you need, for which trades and by when. Our team sources, screens and tests candidates for you."
-        actions={[{ label: "New requirement", href: "/employer/requirements/new" }]}
+        title={agency ? "Manpower requirements" : "Workforce requirements"}
+        description={
+          agency
+            ? "Tell Venkat Sai how many workers your clients need, for which trades and by when. Our team sources, screens and tests the workers."
+            : "Tell Venkat Sai how many people you need, for which trades and by when. Our team sources, screens and tests candidates for you."
+        }
+        actions={[{ label: agency ? "Request manpower" : "New requirement", href: "/employer/requirements/new" }]}
       />
       <LinkTabs
         label="Requirement status"

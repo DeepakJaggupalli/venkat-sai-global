@@ -44,12 +44,17 @@ export default async function EmployerCompanyPage() {
     profile?.cultureMediaFileIds.length ? getFiles(profile.cultureMediaFileIds) : [],
   ]);
   const identityLocked = IDENTITY_LOCKED_STATUSES.has(org.status);
+  const agency = employerKindOf(org) === "travel_agency";
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Company profile"
-        description="Your company details, employer brand and branches. Verified details build trust with candidates."
+        title={agency ? "Agency profile" : "Company profile"}
+        description={
+          agency
+            ? "Your agency details, logo and branches. Verified details build trust with Venkat Sai and the workers you supply."
+            : "Your company details, employer brand and branches. Verified details build trust with candidates."
+        }
         status={<StatusBadge status={org.status} domain="organization" />}
         actions={[{ label: "Verification", href: "/employer/company/verification", icon: <ShieldCheck aria-hidden="true" />, variant: "outline" }]}
       />

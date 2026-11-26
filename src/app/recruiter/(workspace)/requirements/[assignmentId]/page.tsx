@@ -97,7 +97,10 @@ export default async function RecruiterRequirementDetailPage({ params }: { param
                 },
                 { label: "Assigned", value: <DateText value={assignment.createdAt} /> },
                 { label: "Location", value: location || null },
-                { label: "Jobs you can submit to", value: assignment.targetJobs.length ? assignment.targetJobs.map((j) => `${j.title} (${j.code})`).join(", ") : null },
+                // Only a requirement can cover several jobs; a single-job assignment is that job (its title above).
+                ...(assignment.requirement
+                  ? [{ label: "Jobs you can submit to", value: assignment.targetJobs.length ? assignment.targetJobs.map((j) => `${j.title} (${j.code})`).join(", ") : null }]
+                  : []),
               ]}
             />
           </SectionCard>

@@ -14,7 +14,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,8 @@ function SortableRow({ id, label, disabled, children }: { id: string; label: str
 
 /** Vertical list reordered by drag and drop (mouse, touch, keyboard) or move buttons. */
 export function SortableRows({ ids, labels, onMove, renderRow, disabled, className, listLabel }: Props) {
+  // A stable id keeps dnd-kit's generated aria-describedby the same on the server and in the browser (no hydration mismatch).
+  const dndId = useId();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -87,6 +89,7 @@ export function SortableRows({ ids, labels, onMove, renderRow, disabled, classNa
 
   return (
     <DndContext
+      id={dndId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={onDragEnd}

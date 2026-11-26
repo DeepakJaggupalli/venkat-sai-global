@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { MultiCombobox } from "@/components/shared/multi-combobox";
 import { SearchableSelect } from "@/components/shared/selects";
 import type { SelectOption } from "@/components/shared/types";
@@ -49,7 +50,7 @@ export function NewThreadForm({
   const isStaff = portal === "admin";
 
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="new-thread-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="new-thread-form">
       <FormErrorAlert state={state} fieldLabels={{ subject: "Subject", message: "Message", organizationId: "Organisation", participantUserIds: "People" }} />
       <input type="hidden" name="portal" value={portal} />
       <input type="hidden" name="contextType" value="general" />

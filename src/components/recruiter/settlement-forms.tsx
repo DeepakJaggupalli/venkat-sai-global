@@ -51,7 +51,7 @@ export function PartnerInvoiceForm({ settlementId, organizationId, defaultNumber
           name="partnerInvoiceFileId"
           organizationId={organizationId}
           label="Invoice file (optional)"
-          description="PDF, up to 15 MB."
+          description="PDF or image, up to 15 MB."
           onUploadingChange={setUploading}
         />
       ) : null}

@@ -193,6 +193,16 @@ export function initialEnrolmentStatus(batch: { status: BatchStatus; capacity: n
   return full ? "waitlisted" : "applied";
 }
 
+/**
+ * Can enrolment open today? A batch whose registration date or end date has passed would show "open" while
+ * every application is refused, so the dates must be changed first.
+ */
+export function batchOpenCheck(batch: { registrationDeadline: string | null; endsOn: string | null }, today: string): string | null {
+  if (batch.endsOn && batch.endsOn < today) return "This batch has already ended. Change its dates before opening enrolment.";
+  if (batch.registrationDeadline && batch.registrationDeadline < today) return "Registration for this batch has closed. Change the registration date before opening enrolment.";
+  return null;
+}
+
 /** Can candidates apply to this batch today? */
 export function batchApplicationCheck(
   batch: { status: BatchStatus; registrationDeadline: string | null; startsOn: string | null },
@@ -282,4 +292,22 @@ export function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return toIsoDate(d);
+}
+
+/** Today's calendar date (YYYY-MM-DD) in a time zone; an empty or unknown zone falls back to India time. */
+export function todayInZone(timeZone: string | null | undefined, now: Date = new Date()): string {
+  const format = (zone: string) => new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  try {
+    return format(timeZone || "Asia/Kolkata");
+  } catch {
+    return format("Asia/Kolkata");
+  }
+}
+
+/**
+ * Attendance is taken on the day of the class or later, never for a future date (it would count in attendance
+ * rates before the class happened). One day of slack covers a browser that is ahead of the batch's time zone.
+ */
+export function attendanceSessionDateError(sessionDate: string, batchTimeZone: string | null | undefined, now: Date = new Date()): string | null {
+  return sessionDate > addDays(todayInZone(batchTimeZone, now), 1) ? "A session cannot be in the future. Add it on the day of the class." : null;
 }

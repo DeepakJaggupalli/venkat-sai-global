@@ -26,6 +26,7 @@ import {
   REQUIREMENT_STATUS_LABELS,
 } from "./constants";
 import type { PublicSubmissionMeta, PublicSubmissionResult } from "./enquiries";
+import { assertJoiningDateNotPast } from "./requirement-dates";
 import { assertAssignableStaff, assertStaff, enforceRateLimits, rethrowConstraint } from "./internal";
 import { findOrCreateInboundLead } from "./leads";
 import { staffRequirementHref } from "./links";
@@ -322,6 +323,7 @@ async function submitDraft(tx: DbOrTx, ctx: OrgContext<"employer">, requirement:
 export async function submitEmployerRequirement(ctx: OrgContext<"employer">, input: EmployerRequirementInput): Promise<{ id: string; code: string; status: RequirementStatus }> {
   assertEmployerCanSubmit(ctx);
   await assertRequirementsOpen({ organizationId: ctx.organization.id });
+  if (!input.asDraft) assertJoiningDateNotPast(input.joiningBy);
   if (!input.asDraft) await assertBulkRequirementAllowance(ctx);
   let result: { id: string; code: string; status: RequirementStatus };
   try {
@@ -358,6 +360,7 @@ export async function submitEmployerRequirement(ctx: OrgContext<"employer">, inp
 /** Edit a draft (including one returned with "changes requested"); `asDraft: false` submits it again. */
 export async function updateEmployerRequirement(ctx: OrgContext<"employer">, id: string, input: EmployerRequirementInput): Promise<{ status: RequirementStatus }> {
   assertEmployerCanSubmit(ctx);
+  if (!input.asDraft) assertJoiningDateNotPast(input.joiningBy);
   if (!input.asDraft) await assertBulkRequirementAllowance(ctx);
   let result: { status: RequirementStatus };
   try {
@@ -393,6 +396,7 @@ export async function submitEmployerRequirementDraft(ctx: OrgContext<"employer">
   const submitted = await db.transaction(async (tx) => {
     const requirement = await loadOrgRequirementForUpdate(tx, ctx, id);
     if (requirement.status !== "draft") throw new ActionError("This requirement has already been submitted.");
+    assertJoiningDateNotPast(requirement.joiningBy);
     const [{ lines } = { lines: 0 }] = await tx
       .select({ lines: sql<number>`count(*)::int` })
       .from(requirementLines)

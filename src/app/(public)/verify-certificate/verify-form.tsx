@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { SUBMIT_PILL } from "@/components/public/forms/form-parts";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
 import { keepFormValues } from "@/components/shared/form/keep-values";
 import { intlLocale } from "@/components/training/training-rules";
@@ -31,7 +32,9 @@ export function VerifyCertificateForm({ defaultCode }: { defaultCode?: string })
             className="font-mono uppercase sm:max-w-xs"
           />
         </FormField>
-        <SubmitButton pendingLabel={t("verify.checking")}>{t("verify.submit")}</SubmitButton>
+        <SubmitButton pendingLabel={t("verify.checking")} className={SUBMIT_PILL}>
+          {t("verify.submit")}
+        </SubmitButton>
       </form>
       <div aria-live="polite">{state?.ok && state.data ? <VerificationResult t={t} result={state.data} fmtLocale={intlLocale(locale)} /> : null}</div>
     </div>

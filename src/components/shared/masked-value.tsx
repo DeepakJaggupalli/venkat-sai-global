@@ -123,12 +123,12 @@ export function MaskedValue({
         <p role="alert" className={cn("text-xs", TONE_STYLES.danger.text)}>
           {error}
         </p>
-      ) : (
+      ) : notice ? (
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <ShieldAlert aria-hidden="true" className="size-3.5 shrink-0" />
           {notice}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

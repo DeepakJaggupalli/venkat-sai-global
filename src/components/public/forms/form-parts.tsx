@@ -8,6 +8,12 @@ import type { ActionState } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 
 /**
+ * Main submit button of a public form: the black pill (DESIGN.md), at least 48px tall so it is easy to tap on a
+ * phone, full width on phones. Pass to `<SubmitButton className={SUBMIT_PILL}>`.
+ */
+export const SUBMIT_PILL = "h-auto min-h-12 w-full rounded-full bg-foreground px-6 text-base font-semibold text-white hover:bg-[#26262b] sm:w-auto";
+
+/**
  * Hidden honeypot field (`website`). Real visitors never see or reach it (off-screen, not focusable, hidden from
  * assistive technology); bots that fill it are dropped silently by the operations module.
  */

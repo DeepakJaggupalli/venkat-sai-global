@@ -86,7 +86,7 @@ function RoleDialog({ role, groups, grantable, trigger }: { role?: RoleItem; gro
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   return (
-    <ResponsiveDialog open={open} onOpenChange={setOpen} trigger={trigger} title={role ? `Edit ${role.name}` : "Create a custom role"} description="Custom roles use the Employer Portal permission catalogue." size="lg">
+    <ResponsiveDialog open={open} onOpenChange={setOpen} trigger={trigger} title={role ? `Edit ${role.name}` : "Create a custom role"} description="Choose what people with this role can do in this workspace." size="lg">
       <RoleForm role={role} groups={groups} grantable={grantable} onDone={close} />
     </ResponsiveDialog>
   );

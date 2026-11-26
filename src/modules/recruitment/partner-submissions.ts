@@ -24,11 +24,14 @@ import { nextCode } from "@/lib/codes";
 import { encryptField, hmacToken } from "@/lib/crypto";
 import { normalizePhone } from "@/lib/validation";
 import { audit } from "@/modules/audit";
+import { isMinor } from "@/modules/candidates/profile-rules";
+import { hasGuardianConsentRecord } from "@/modules/candidates/refs";
 import { enqueueCandidateRefresh } from "@/modules/candidates/tasks";
 import { checkEntitlement, consumeEntitlement, EntitlementError } from "@/modules/commercial/entitlements";
 import type { OrgContext, StaffContext } from "@/modules/identity/authz";
 import { requireUploadedFile } from "@/modules/files";
 import { notify, notifyOrganization, notifyStaff, type NotificationRecipient } from "@/modules/notifications";
+import { getSetting } from "@/modules/settings";
 
 import { assertOrg, assertOrgActive, assertStaff, assertUuid } from "./access";
 import { createApplicationInTx } from "./applications";
@@ -56,6 +59,7 @@ import {
   updateAttributionSchema,
   type PartnerSubmissionInput,
 } from "./schemas";
+import { minorOverseasBlocker } from "./rules";
 import { getAttributionWindowDays } from "./settings";
 
 /**
@@ -94,18 +98,19 @@ type AssignmentRow = typeof partnerAssignments.$inferSelect;
 // Identity matching (database side)
 // ---------------------------------------------------------------------------
 
-type UserMatch = { userId: string; status: string; candidateId: string | null; candidateDeleted: boolean; matchedOn: ("email" | "phone")[] };
+type UserMatch = { userId: string; status: string; isStaff: boolean; candidateId: string | null; candidateDeleted: boolean; matchedOn: ("email" | "phone")[] };
 
 async function findUsersByContact(email: string | null, phone: string | null, tx: DbOrTx): Promise<UserMatch[]> {
   if (!email && !phone) return [];
   const rows = await tx
-    .select({ userId: users.id, email: users.email, phone: users.phone, status: users.status, candidateId: candidateProfiles.id, candidateDeletedAt: candidateProfiles.deletedAt })
+    .select({ userId: users.id, email: users.email, phone: users.phone, status: users.status, isStaff: users.isStaff, candidateId: candidateProfiles.id, candidateDeletedAt: candidateProfiles.deletedAt })
     .from(users)
     .leftJoin(candidateProfiles, eq(candidateProfiles.userId, users.id))
     .where(or(email ? eq(users.email, email) : sql`false`, phone ? eq(users.phone, phone) : sql`false`));
   return rows.map((r) => ({
     userId: r.userId,
     status: r.status,
+    isStaff: r.isStaff,
     candidateId: r.candidateId,
     candidateDeleted: Boolean(r.candidateDeletedAt),
     matchedOn: [...(email && r.email === email ? (["email"] as const) : []), ...(phone && r.phone === phone ? (["phone"] as const) : [])],
@@ -192,6 +197,44 @@ async function loadAssignmentForPartner(ctx: OrgContext<"recruitment_partner">, 
   return { ...row.assignment, title: row.jobTitle ?? row.requirementTitle ?? "" };
 }
 
+/** A real calendar date (the schema only checks the YYYY-MM-DD shape, so 2026-02-31 would reach the database). */
+function isCalendarDate(value: string): boolean {
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Field errors for dates that cannot be right: impossible calendar dates, and a birth date or a consent
+ * date in the future. "Future" allows the latest time zone, so today's date anywhere is accepted.
+ */
+export function partnerSubmissionDateErrors(data: Pick<PartnerSubmissionInput, "candidate" | "consent">, now: Date = new Date()): Record<string, string[]> {
+  const latestToday = new Date(now.getTime() + 14 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const errors: Record<string, string[]> = {};
+  const check = (key: string, value: string | null | undefined, opts: { past?: string } = {}) => {
+    if (!value) return;
+    if (!isCalendarDate(value) || value < "1900-01-01") errors[key] = ["Enter a real date"];
+    else if (opts.past && value > latestToday) errors[key] = [opts.past];
+  };
+  if (data.candidate.kind === "new") {
+    check("candidate.dateOfBirth", data.candidate.dateOfBirth, { past: "Date of birth cannot be in the future" });
+    check("candidate.passportExpiry", data.candidate.passportExpiry);
+  }
+  check("consent.capturedOn", data.consent.capturedOn, { past: "The date of consent cannot be in the future" });
+  return errors;
+}
+
+/** Overseas work for this submission: the target job's flag, or a requirement located outside the home country. */
+async function isOverseasTarget(jobId: string | null, requirementId: string | null, tx: DbOrTx): Promise<boolean> {
+  if (jobId) {
+    const [job] = await tx.select({ isOverseas: jobs.isOverseas }).from(jobs).where(eq(jobs.id, jobId)).limit(1);
+    return Boolean(job?.isOverseas);
+  }
+  if (!requirementId) return false;
+  const [requirement] = await tx.select({ countryCode: requirementRequests.countryCode }).from(requirementRequests).where(eq(requirementRequests.id, requirementId)).limit(1);
+  if (!requirement?.countryCode) return false;
+  return requirement.countryCode.toUpperCase() !== (await getSetting("platform.home_country")).toUpperCase();
+}
+
 /**
  * Submit a candidate for an assignment (partner.candidates.submit). See the file header for the
  * full flow. A person new to the platform gets an unclaimed account (status pending_verification,
@@ -203,6 +246,8 @@ export async function submitCandidateByPartner(ctx: OrgContext<"recruitment_part
   assertOrgActive(ctx);
   if (ctx.organization.status !== "verified") throw new ActionError("Your organisation must be verified before you can submit candidates.", { code: "org_not_verified" });
   const data = partnerSubmissionSchema.parse({ ...input, assignmentId });
+  const dateErrors = partnerSubmissionDateErrors(data);
+  if (Object.keys(dateErrors).length) throw new ActionError("Check the dates.", { fieldErrors: dateErrors });
   const entitlement = await checkEntitlement(ctx.organization.id, "partner_submissions");
   if (!entitlement.allowed) throw new ActionError(entitlement.reason ?? "Your plan does not allow more submissions this period.", { code: "entitlement_exhausted" });
 
@@ -287,14 +332,18 @@ export async function submitCandidateByPartner(ctx: OrgContext<"recruitment_part
         }
         const existingUser = userMatches[0];
         if (existingUser) {
-          if (existingUser.status === "closed" || existingUser.status === "suspended" || existingUser.candidateDeleted) {
+          // Venkat Sai staff accounts are never turned into candidates by a partner.
+          if (existingUser.status === "closed" || existingUser.status === "suspended" || existingUser.candidateDeleted || existingUser.isStaff) {
             throw new ActionError("This candidate cannot be submitted.", { code: "candidate_unavailable" });
           }
           if (existingUser.candidateId) {
             candidateId = existingUser.candidateId;
           } else {
-            // The person has an account (e.g. as an employer member) but no candidate profile yet.
-            candidateId = await createPartnerSourcedProfile(tx, ctx, existingUser.userId, person, passport, now);
+            // The person has an account (e.g. as an employer member) but no candidate profile yet. The partner
+            // did not create that account, so the profile is not marked as sourced by it: "sourced" unlocks the
+            // account's own email and phone on My candidates, which would let a partner look up anyone's
+            // phone number from their email address.
+            candidateId = await createPartnerSourcedProfile(tx, ctx, existingUser.userId, person, passport, now, { sourcedByPartner: false });
             candidateCreated = true;
           }
           candidateUserId = existingUser.userId;
@@ -332,6 +381,18 @@ export async function submitCandidateByPartner(ctx: OrgContext<"recruitment_part
           });
         }
         possibleMatches = findDuplicateMatches(probe, await findPossibleDuplicates(probe, tx)).filter((m) => m.candidateId !== candidateId && !m.isIdentityMatch);
+      }
+
+      // Children are never put forward for overseas work (the same rule blocks the application later);
+      // refusing here also rolls back any account or profile created above.
+      if (await isOverseasTarget(jobId, assignment.requirementId, tx)) {
+        const [profile] = await tx.select({ dateOfBirth: candidateProfiles.dateOfBirth }).from(candidateProfiles).where(eq(candidateProfiles.id, candidateId)).limit(1);
+        const dateOfBirth = profile?.dateOfBirth ?? (data.candidate.kind === "new" ? data.candidate.dateOfBirth : null);
+        const blocker = minorOverseasBlocker({ isOverseas: true }, isMinor(dateOfBirth, await hasGuardianConsentRecord(candidateUserId, tx), now), "partner");
+        if (blocker) {
+          const field = data.candidate.kind === "new" ? "candidate.dateOfBirth" : "candidate.candidateId";
+          throw new ActionError(blocker.message, { code: blocker.code, fieldErrors: { [field]: [blocker.message] } });
+        }
       }
 
       // Attribution: the candidate's own attributions decide first; a strong possible duplicate
@@ -470,7 +531,10 @@ async function createPartnerSourcedProfile(
   person: NewPersonInput,
   passport: string | null,
   now: Date,
+  /** False for a person who already had an account: the partner did not create it (see the caller). */
+  opts: { sourcedByPartner: boolean } = { sourcedByPartner: true },
 ): Promise<string> {
+  const sourcedByPartnerOrgId = opts.sourcedByPartner ? ctx.organization.id : null;
   let resumeFileId: string | null = null;
   if (person.resumeFileId) {
     resumeFileId = (await requireUploadedFile(person.resumeFileId, { purposes: ["resume"], ownerUserId: ctx.user.id, organizationId: ctx.organization.id }, tx)).id;
@@ -496,7 +560,7 @@ async function createPartnerSourcedProfile(
       resumeUpdatedAt: resumeFileId ? now : null,
       visibility: "venkat_sai_only",
       source: "partner",
-      sourcedByPartnerOrgId: ctx.organization.id,
+      sourcedByPartnerOrgId,
       createdByUserId: ctx.user.id,
     })
     .returning({ id: candidateProfiles.id });
@@ -511,7 +575,7 @@ async function createPartnerSourcedProfile(
     organizationId: ctx.organization.id,
     actorUserId: ctx.user.id,
     actorType: "user",
-    metadata: { source: "partner", sourcedByPartnerOrgId: ctx.organization.id, onBehalf: true },
+    metadata: { source: "partner", sourcedByPartnerOrgId, partnerOrganizationId: ctx.organization.id, onBehalf: true },
     tx,
   });
   return profile!.id;

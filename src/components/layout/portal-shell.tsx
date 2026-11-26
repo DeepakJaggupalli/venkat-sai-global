@@ -14,6 +14,7 @@ import { buildAutoTrail, filterNavSections, findActiveNavItem, isNavItemExact, n
 import { OrgSwitcher } from "./org-switcher";
 import { BreadcrumbTrailContext, ShellBreadcrumbs } from "./portal-breadcrumb";
 import { isOrgPortal, LAST_PORTAL_COOKIE, PORTAL_NOTIFICATIONS_HREF, PORTAL_SUPPORT_HREF, SIDEBAR_COOKIE } from "./portal-config";
+import { PORTAL_HELP_HREF } from "./portal-help";
 import { PortalMobileNav } from "./portal-mobile-nav";
 import { DesktopSidebar } from "./portal-sidebar";
 import { PortalTopbar } from "./portal-topbar";
@@ -173,6 +174,7 @@ export function PortalShell({
                 breadcrumb={<ShellBreadcrumbs entries={crumbs} label={t("shell.breadcrumb")} />}
                 portals={portals}
                 user={user}
+                guideHref={PORTAL_HELP_HREF[portal]}
                 helpHref={helpHref}
                 notificationsHref={PORTAL_NOTIFICATIONS_HREF[portal]}
                 translate={translate}

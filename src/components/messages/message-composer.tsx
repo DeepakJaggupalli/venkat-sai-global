@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues, resetFormValues } from "@/components/shared/form/keep-values";
 import { Textarea } from "@/components/ui/textarea";
 import { markThreadReadAction, postThreadMessageAction } from "@/modules/operations/actions";
 
@@ -20,13 +21,13 @@ export function MessageComposer({ portal, threadId, organizationId, labels = DEF
   useActionToast(state, {
     successMessage: labels.sent,
     onSuccess: () => {
-      formRef.current?.reset();
+      resetFormValues(formRef.current);
       setResetKey((k) => k + 1);
     },
   });
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-3" noValidate data-testid="message-composer">
+    <form ref={formRef} action={formAction} onResetCapture={keepFormValues} className="space-y-3" noValidate data-testid="message-composer">
       <FormErrorAlert state={state} />
       <input type="hidden" name="portal" value={portal} />
       <input type="hidden" name="threadId" value={threadId} />

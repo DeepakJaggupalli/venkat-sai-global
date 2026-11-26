@@ -134,9 +134,14 @@ test.describe("People Portal", () => {
 
   test("dashboard shows live blocks only", async ({ page }) => {
     await signIn(page, "/talent");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /recommended jobs/i })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /^applications$/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: /what do you want to do/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /jobs for you/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^my applications$/i })).toBeVisible();
+    // Every main button of the People Portal is one tap away (an adult account sees all eleven).
+    for (const label of [/latest requirements/i, /find jobs/i, /send \/ update my cv/i, /check cv status/i, /book a trade test/i, /training courses/i, /prepare my resume/i, /refer a friend/i, /my documents/i, /messages/i, /account and security/i]) {
+      await expect(page.locator('[data-slot="quick-actions"]').getByRole("link", { name: label }).first()).toBeVisible();
+    }
   });
 
   test("discover, save and see a saved job", async ({ page }) => {

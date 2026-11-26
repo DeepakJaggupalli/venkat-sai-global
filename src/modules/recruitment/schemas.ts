@@ -37,6 +37,16 @@ const optionalText = (max: number) =>
 const requiredText = (max: number, label = "This field") => z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`).max(max, "Too long");
 const dateString = () => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
 const optionalDate = () => dateString().optional().nullable().transform((v) => v ?? null);
+/** Interview meeting link: http(s) only. It is sent to the candidate and the panel, so javascript:, data: or file: links are refused. */
+const meetingLink = () =>
+  z
+    .string()
+    .trim()
+    .max(1000, "Keep the link under 1,000 characters")
+    .pipe(z.url({ protocol: /^https?$/, error: "Enter a meeting link starting with https://" }))
+    .optional()
+    .nullable()
+    .transform((v) => v ?? null);
 /** Partial updates: undefined = keep the current value, null / "" = clear it. */
 const patchText = (max: number) =>
   z
@@ -53,7 +63,13 @@ const patchDate = () =>
     .transform((v) => (v === undefined ? undefined : v));
 const currency = () => z.string().trim().length(3, "Choose a currency").toUpperCase();
 const country = () => z.string().trim().length(2, "Choose a country").toUpperCase();
-const minor = () => z.number().int("Amounts are whole minor units").nonnegative("Amount cannot be negative").max(Number.MAX_SAFE_INTEGER);
+// Range first and stop there: a huge amount is not a "safe" integer either, and one plain message is enough.
+const minor = () =>
+  z
+    .number()
+    .nonnegative({ error: "Amount cannot be negative", abort: true })
+    .max(Number.MAX_SAFE_INTEGER, { error: "Amount is too large", abort: true })
+    .int("Amounts are whole minor units");
 
 /** Ways consent can be captured on someone's behalf (staff assignment, partner submission). */
 export const CONSENT_CAPTURE_METHODS = ["written", "electronic", "verbal", "in_person"] as const;
@@ -131,7 +147,7 @@ export const staffAssignSchema = z.object({
   expectedSalary: expectedSalarySchema,
   /** Staff confirm the candidate agreed to be put forward for this job. */
   consentConfirmed: z.literal(true, { error: "Confirm that the candidate agreed to be put forward for this job." }),
-  consentMethod: z.enum(CONSENT_CAPTURE_METHODS),
+  consentMethod: z.enum(CONSENT_CAPTURE_METHODS, { error: "Choose how the candidate agreed" }),
   consentNote: optionalText(1000),
   assignedToUserId: uuid().optional().nullable().transform((v) => v ?? null),
   internalNote: optionalText(5000),
@@ -263,13 +279,13 @@ export const interviewParticipantSchema = z.object({
 export const scheduleInterviewSchema = z.object({
   applicationId: uuid(),
   roundName: requiredText(120, "Round name"),
-  roundNumber: z.number().int().min(1).max(20).optional(),
+  roundNumber: z.number().int("Enter a whole number").min(1, "Enter 1 or more").max(20, "Enter 20 or less").optional(),
   mode: z.enum(INTERVIEW_MODE_OPTIONS),
   startsAtLocal: localDateTime(),
-  timezone: z.string().trim().min(1).max(64),
-  durationMinutes: z.number().int().min(5).max(12 * 60).default(60),
+  timezone: z.string().trim().min(1, "Choose a time zone").max(64),
+  durationMinutes: z.number().int().min(5, "Choose at least 5 minutes").max(12 * 60, "Choose 12 hours or less").default(60),
   location: optionalText(500),
-  meetingUrl: z.string().trim().pipe(z.url("Enter a valid URL (including https://)")).optional().nullable().transform((v) => v ?? null),
+  meetingUrl: meetingLink(),
   candidateInstructions: optionalText(2000),
   participants: z.array(interviewParticipantSchema).max(20).default([]),
   /** Staff only: who conducts it (default: the employer when the job has one, Venkat Sai for trade tests). */
@@ -281,10 +297,10 @@ export type ScheduleInterviewInput = z.input<typeof scheduleInterviewSchema>;
 export const rescheduleInterviewSchema = z.object({
   interviewId: uuid(),
   startsAtLocal: localDateTime(),
-  timezone: z.string().trim().min(1).max(64),
-  durationMinutes: z.number().int().min(5).max(12 * 60).default(60),
+  timezone: z.string().trim().min(1, "Choose a time zone").max(64),
+  durationMinutes: z.number().int().min(5, "Choose at least 5 minutes").max(12 * 60, "Choose 12 hours or less").default(60),
   location: optionalText(500),
-  meetingUrl: z.string().trim().pipe(z.url("Enter a valid URL (including https://)")).optional().nullable().transform((v) => v ?? null),
+  meetingUrl: meetingLink(),
   candidateInstructions: optionalText(2000),
   reason: optionalText(1000),
 });
@@ -342,7 +358,7 @@ const offerFields = {
   countryCode: country().optional().nullable().transform((v) => v ?? null),
   workLocation: optionalText(300),
   startDate: optionalDate(),
-  contractDurationMonths: z.number().int().min(1).max(120).optional().nullable().transform((v) => v ?? null),
+  contractDurationMonths: z.number().int("Enter a whole number").min(1, "Enter 1 or more").max(120, "Enter 120 or less").optional().nullable().transform((v) => v ?? null),
   /** Offer letter (purpose application_attachment, uploaded by the acting user). */
   offerFileId: uuid().optional().nullable().transform((v) => v ?? null),
   expiresAt: z.coerce.date().optional().nullable().transform((v) => v ?? null),
@@ -534,7 +550,7 @@ export const newPartnerCandidateSchema = z
   })
   .refine((v) => Boolean(v.email || v.phone), { message: "Enter an email address or a phone number so the candidate can be contacted", path: ["email"] });
 
-export const existingPartnerCandidateSchema = z.object({ kind: z.literal("existing"), candidateId: uuid() });
+export const existingPartnerCandidateSchema = z.object({ kind: z.literal("existing"), candidateId: z.uuid("Choose a candidate") });
 
 export const partnerSubmissionSchema = z.object({
   assignmentId: uuid(),
@@ -545,7 +561,7 @@ export const partnerSubmissionSchema = z.object({
   consent: z.object({
     /** The partner attests the candidate agreed to be submitted for this requirement and to have the profile shared with the hiring employer. */
     attested: z.literal(true, { error: "Confirm that the candidate gave consent." }),
-    method: z.enum(CONSENT_CAPTURE_METHODS),
+    method: z.enum(CONSENT_CAPTURE_METHODS, { error: "Choose how the candidate agreed" }),
     capturedOn: optionalDate(),
     /** Optional evidence (signed form, message screenshot) uploaded by the partner. */
     evidenceFileId: uuid().optional().nullable().transform((v) => v ?? null),

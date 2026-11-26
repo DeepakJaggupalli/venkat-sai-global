@@ -25,6 +25,7 @@ import {
   REQUIREMENT_URGENCY_LABELS,
 } from "@/modules/operations/constants";
 import { getOrgRequirement } from "@/modules/operations/queries";
+import { employerKindOf } from "@/modules/organizations/employer-kind";
 
 import { loadEntityTimeline } from "../../jobs/_lib/timeline";
 import { RequirementActions } from "../_components/requirement-actions";
@@ -105,7 +106,7 @@ export default async function EmployerRequirementDetailPage({ params }: { params
 
   return (
     <div className="space-y-8">
-      <PortalBreadcrumb items={[{ label: "Workforce requirements", href: "/employer/requirements" }, { label: r.title }]} />
+      <PortalBreadcrumb items={[{ label: employerKindOf(ctx.organization) === "travel_agency" ? "Manpower requirements" : "Workforce requirements", href: "/employer/requirements" }, { label: r.title }]} />
       <PageHeader
         title={r.title}
         eyebrow={r.code}

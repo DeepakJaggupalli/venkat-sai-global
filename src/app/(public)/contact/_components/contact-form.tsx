@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { SUBMIT_PILL } from "@/components/public/forms/form-parts";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -127,7 +128,7 @@ export function ContactForm({ initialType, privacyHref = "/legal/privacy-policy"
         .
       </ConsentCheckbox>
 
-      <SubmitButton pending={pending} pendingLabel="Sending…" size="lg" className="w-full sm:w-auto">
+      <SubmitButton pending={pending} pendingLabel="Sending…" className={SUBMIT_PILL}>
         Send message
       </SubmitButton>
     </form>

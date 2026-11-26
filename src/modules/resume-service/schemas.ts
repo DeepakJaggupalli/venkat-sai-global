@@ -106,8 +106,8 @@ export const resumeDetailsSchema = z
     religion: optionalString(60),
     languages: optionalString(200),
     permanentAddress: optionalString(500),
-    /** E.164 with country code. */
-    contactPhone: f.phone(),
+    /** E.164 with country code. Blank (the form sends "" in the JSON) reads "Phone number is required", not "Enter a valid…". */
+    contactPhone: z.preprocess(blankToUndefined, f.phone()),
     alternatePhone: z.preprocess(blankToUndefined, f.phone().optional()),
     email: z.preprocess(blankToUndefined, f.optionalEmail()),
     passport: passportDetailsSchema.default({}),

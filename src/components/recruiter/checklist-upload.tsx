@@ -19,6 +19,8 @@ export function ChecklistUpload({ itemId, itemLabel, organizationId }: { itemId:
   const errorId = `checklist-${itemId}-error`;
 
   function submit() {
+    // A second click while the first is being saved would send the document twice.
+    if (pending) return;
     if (!file) {
       setError("Upload the document first.");
       return;
@@ -54,7 +56,7 @@ export function ChecklistUpload({ itemId, itemLabel, organizationId }: { itemId:
         </p>
       ) : null}
       <div className="flex justify-end">
-        <Button type="button" size="sm" onClick={submit} disabled={uploading} aria-disabled={pending || uploading}>
+        <Button type="button" size="sm" onClick={submit} disabled={uploading || pending} aria-busy={pending || undefined}>
           {pending ? "Submitting…" : "Submit for checking"}
         </Button>
       </div>

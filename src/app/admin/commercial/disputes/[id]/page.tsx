@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Dispute" };
 export default async function DisputePage({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("commercial.view");
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const data = await getDisputeDetail(staff, id);
   if (!data) notFound();
   const { dispute: d } = data;

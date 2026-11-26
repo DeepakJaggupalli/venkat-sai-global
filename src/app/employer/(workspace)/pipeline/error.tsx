@@ -2,6 +2,6 @@
 
 import { EmployerRouteError } from "@/components/employer/route-error";
 
-export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <EmployerRouteError area="the pipeline" reset={reset} digest={error.digest} />;
+export default function ErrorBoundary({ error, reset, retry }: { error: Error & { digest?: string }; reset: () => void; retry?: () => void }) {
+  return <EmployerRouteError area="the pipeline" reset={reset} retry={retry} digest={error.digest} />;
 }

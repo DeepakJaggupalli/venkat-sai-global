@@ -119,10 +119,15 @@ export default async function AdminJobDetailPage({ params }: { params: Params })
               items={[
                 {
                   label: "Employer",
+                  // Only staff who may open the organisation get a link (others would land on a no-access page).
                   value: detail.organization ? (
-                    <Link className="text-teal-strong underline underline-offset-4" href={`/admin/organizations/${detail.organization.id}`}>
-                      {detail.organization.name}
-                    </Link>
+                    staffCan(ctx, "orgs.view") ? (
+                      <Link className="text-teal-strong underline underline-offset-4" href={`/admin/organizations/${detail.organization.id}`}>
+                        {detail.organization.name}
+                      </Link>
+                    ) : (
+                      detail.organization.name
+                    )
                   ) : (
                     employerName
                   ),

@@ -47,8 +47,8 @@ function NewSessionForm({ batchId, moduleOptions, onDone }: { batchId: string; m
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <input type="hidden" name="batchId" value={batchId} />
       <FormErrorAlert state={state} fieldLabels={{ sessionDate: "Session date", topic: "Topic", courseModuleId: "Syllabus module", durationHours: "Duration (hours)" }} />
-      <FormField label="Session date" name="sessionDate" required state={state}>
-        <Input type="date" defaultValue={iso} />
+      <FormField label="Session date" name="sessionDate" required state={state} hint="The day of the class: today or an earlier day.">
+        <Input type="date" defaultValue={iso} max={iso} />
       </FormField>
       <FormField label="Topic" name="topic" optional state={state}>
         <Input maxLength={200} />

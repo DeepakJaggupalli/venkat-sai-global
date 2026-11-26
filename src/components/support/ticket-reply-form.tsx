@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues, resetFormValues } from "@/components/shared/form/keep-values";
 import { SimpleSelect } from "@/components/shared/selects";
 import type { SelectOption } from "@/components/shared/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,14 +36,14 @@ export function TicketReplyForm({
   const [state, formAction] = useActionState(mode === "staff" ? staffReplyToTicketAction : replyToMyTicketAction, null);
   useActionToast(state, {
     onSuccess: () => {
-      formRef.current?.reset();
+      resetFormValues(formRef.current);
       setInternal(false);
       setResetKey((k) => k + 1);
     },
   });
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4" noValidate data-testid="ticket-reply-form">
+    <form ref={formRef} action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate data-testid="ticket-reply-form">
       <FormErrorAlert state={state} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <FormField label={internal ? "Internal note" : "Your reply"} name="body" required state={state} hint={internal ? "Only Venkat Sai staff can see internal notes." : undefined}>

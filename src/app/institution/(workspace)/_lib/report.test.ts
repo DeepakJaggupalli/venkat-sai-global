@@ -13,6 +13,12 @@ describe("institution report", () => {
     expect(reportRates({ completed: 0, dropped: 0, passed: 0, failed: 0, placedLearners: 0 })).toEqual({ completionRate: null, passRate: null, placementRate: null });
   });
 
+  it("divides placed learners by distinct completed learners, not completed enrolments", () => {
+    // 4 learners completed the course twice (8 completions); 1 of them was placed: 25%, as on the dashboard.
+    expect(reportRates({ completed: 8, completedLearners: 4, dropped: 0, passed: 0, failed: 0, placedLearners: 1 }).placementRate).toBe(25);
+    expect(reportRates({ completed: 0, completedLearners: 0, dropped: 0, passed: 0, failed: 0, placedLearners: 1 }).placementRate).toBeNull();
+  });
+
   it("caps the placement rate at 100%", () => {
     expect(reportRates({ completed: 2, dropped: 0, passed: 0, failed: 0, placedLearners: 5 }).placementRate).toBe(100);
   });

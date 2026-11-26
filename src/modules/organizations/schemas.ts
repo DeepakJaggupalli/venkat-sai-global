@@ -149,7 +149,8 @@ export const setOrganizationPublicSchema = z.object({ orgType: orgTypeField, isP
 export const organizationDocumentSchema = z
   .object({
     documentType: f.enumOf(ORG_DOCUMENT_TYPES, "Choose the document type"),
-    fileId: f.uuid(),
+    // Empty until the file has finished uploading; f.uuid() would say "Invalid identifier".
+    fileId: z.uuid("Upload the document file"),
     title: f.optionalText(200),
     documentNumber: f.optionalText(100),
     issuedBy: f.optionalText(200),

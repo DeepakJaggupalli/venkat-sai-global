@@ -31,7 +31,14 @@ export type CurrencyTotal = { currency: string; amountMinor: number; count: numb
 export type OwnerOverview = {
   days: OverviewPeriod;
   since: Date;
-  cvs: { total: number; byTrade: { trade: string; count: number }[]; otherTrades: number; byStatus: { status: CvSubmissionStatus; count: number }[] };
+  cvs: {
+    total: number;
+    byTrade: { trade: string; count: number }[];
+    otherTrades: number;
+    byStatus: { status: CvSubmissionStatus; count: number }[];
+    /** CVs per India-time day inside the period (days without CVs are absent; the page fills the gaps). */
+    perDay: { day: string; count: number }[];
+  };
   posters: { published: number; open: number; topCountries: { countryCode: string; countryName: string; count: number }[] };
   requirements: { received: number; open: number; filled: number; positionsFilled: number };
   recruitment: { applications: number; placements: number; departed: number; arrived: number; joined: number };
@@ -52,7 +59,7 @@ export async function getOwnerOverview(ctx: StaffContext, days: OverviewPeriod, 
   const sinceDate = since.toISOString().slice(0, 10);
   const canMoney = staffCan(ctx, "commercial.view");
 
-  const [scalars, trades, statuses, countries, received, outstanding] = await Promise.all([
+  const [scalars, trades, statuses, countries, received, outstanding, perDay] = await Promise.all([
     db.execute<Record<string, unknown>>(sql`
       select
         (select count(*) from cv_submissions where created_at >= ${since}) as cvs,
@@ -97,6 +104,9 @@ export async function getOwnerOverview(ctx: StaffContext, days: OverviewPeriod, 
           where document_type = 'invoice' and status in ('issued', 'partially_paid', 'overdue') and total_minor > amount_paid_minor
           group by currency order by currency`)
       : null,
+    db.execute<{ day: string; count: unknown }>(sql`
+      select to_char((created_at at time zone 'Asia/Kolkata')::date, 'YYYY-MM-DD') as day, count(*) as count
+      from cv_submissions where created_at >= ${since} group by 1 order by 1`),
   ]);
 
   const s = scalars.rows[0] ?? {};
@@ -113,6 +123,7 @@ export async function getOwnerOverview(ctx: StaffContext, days: OverviewPeriod, 
       byTrade,
       otherTrades: Math.max(0, cvTotal - byTrade.reduce((a, r) => a + r.count, 0)),
       byStatus: CV_SUBMISSION_STATUSES.map((status) => ({ status, count: statusCounts.get(status) ?? 0 })),
+      perDay: perDay.rows.map((r) => ({ day: r.day, count: n(r.count) })),
     },
     posters: {
       published: n(s.posters_published),

@@ -14,6 +14,7 @@ import { Timeline, type TimelineItem } from "@/components/shared/timeline";
 import { env } from "@/lib/env";
 import { requireOrgMember } from "@/modules/identity/authz";
 import { ORG_DOCUMENT_TYPE_LABELS, ORG_DOCUMENT_TYPES } from "@/modules/organizations/constants";
+import { employerKindOf } from "@/modules/organizations/employer-kind";
 import { getOrganizationOverview, listOrganizationDocuments, listVerificationHistory } from "@/modules/organizations/queries";
 
 import { DocumentUploadForm } from "../_components/document-upload-form";
@@ -61,13 +62,20 @@ export default async function EmployerVerificationPage() {
   }
   timeline.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
+  const agency = employerKindOf(org) === "travel_agency";
+  const noun = agency ? "agency" : "company";
+
   return (
     <div className="space-y-8">
-      <PortalBreadcrumb items={[{ label: "Company profile", href: "/employer/company" }, { label: "Verification" }]} />
+      <PortalBreadcrumb items={[{ label: agency ? "Agency profile" : "Company profile", href: "/employer/company" }, { label: "Verification" }]} />
       <PageHeader
-        title="Company verification"
-        description="Venkat Sai checks your registration before your jobs can be published. Verified companies carry a verified badge."
-        backLink={{ href: "/employer/company", label: "Back to company profile" }}
+        title={agency ? "Agency verification" : "Company verification"}
+        description={
+          agency
+            ? "Venkat Sai checks your agency's registration and licence before working with you. Verified agencies carry a verified badge."
+            : "Venkat Sai checks your registration before your jobs can be published. Verified companies carry a verified badge."
+        }
+        backLink={{ href: "/employer/company", label: `Back to ${noun} profile` }}
         status={<StatusBadge status={org.status} domain="organization" />}
       />
 

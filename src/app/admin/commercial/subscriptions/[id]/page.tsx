@@ -29,7 +29,7 @@ type PageProps = { params: Promise<{ id: string }>; searchParams: Promise<Record
 export default async function SubscriptionPage({ params, searchParams }: PageProps) {
   const staff = await requireStaff("commercial.view");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const detail = await getSubscriptionDetail(staff, id);
   if (!detail) notFound();
   const { subscription: s, notes, invoices } = detail;

@@ -111,7 +111,9 @@ export function RichTextEditor({
     },
   });
 
-  const characters = useEditorState({ editor, selector: ({ editor: e }) => (e ? e.getText().length : 0) }) ?? 0;
+  // The snapshot's editor stays null until the first transaction after the editor is created (immediatelyRender:
+  // false), so read the live instance too: otherwise saved content counts as 0 characters until the first keystroke.
+  const characters = useEditorState({ editor, selector: ({ editor: e }) => ((e ?? editor)?.getText().length ?? 0) }) ?? 0;
   const overLimit = maxLength !== undefined && characters > maxLength;
   const invalid = overLimit || ariaInvalid === true || ariaInvalid === "true";
   const describedBy = [ariaDescribedBy, maxLength !== undefined ? counterId : null].filter(Boolean).join(" ") || undefined;

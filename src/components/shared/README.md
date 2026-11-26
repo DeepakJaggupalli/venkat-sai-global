@@ -72,6 +72,22 @@ never interrupt screen readers). Screen readers hear "Warning:/Error:/Success:" 
 Props: `title`, `description`, `icon` (lucide element, default inbox, `null` hides), `primaryAction`, `secondaryAction`
 (ActionSlot), `variant` (`dashed`|`plain`), `size` (`sm`|`md`), `titleAs` (`p` default, `h2`, `h3`).
 
+### `RouteError` — `route-error.tsx` (client) and `NotFoundView` — `not-found-view.tsx`
+The one friendly error screen for every `error.tsx`: plain message, **Try again** (Next.js `retry()`, or
+`router.refresh()` + `reset()`), **Go to my dashboard** (home of the portal in the URL, `areaHomeForPath()` in
+`portal-home.ts`), **WhatsApp us** (staff in `/admin` are asked to tell the owner instead) and the error digest as a
+reference code. Never the message or a stack trace. Props: `area` ("your jobs" → "We could not load your jobs"),
+`digest`, `retry`, `reset`, `homeHref`, `homeLabel`, `audience` (`staff`|`external`), `labels` (translations,
+`reference: "… {code}"`), `headingLevel`.
+```tsx
+export default function Error({ error, reset, retry }: { error: Error & { digest?: string }; reset: () => void; retry?: () => void }) {
+  return <RouteError area="your jobs" digest={error.digest} reset={reset} retry={retry} />;
+}
+```
+`NotFoundView({ homeHref, homeLabel? = "Go to my dashboard", secondary?, title?, description? })` for portal
+`not-found.tsx` files (same screen for unknown ids and other organisations' records). Each portal also has a
+`[...missing]/page.tsx` catch-all that calls `notFound()`, so mistyped links stay inside the portal shell.
+
 ### Loading presets — `loading-state.tsx`
 `LoadingState({ variant: "page" | "table" | "cards" | "detail", label? })` for `loading.tsx`, plus `PageSkeleton`,
 `TableSkeleton({ rows, columns })`, `CardsSkeleton({ count })`, `DetailSkeleton`, `StatGridSkeleton`,

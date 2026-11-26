@@ -22,7 +22,7 @@ const GATEWAYS = new Set(["razorpay", "stripe"]);
 export default async function RefundPage({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("commercial.view");
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const data = await getRefundDetail(staff, id);
   if (!data) notFound();
   const { refund: r } = data;

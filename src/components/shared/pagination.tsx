@@ -56,7 +56,8 @@ export function Pagination({
   const pageText = labels?.page?.(current, count) ?? `Page ${current} of ${count}`;
   const range = total !== undefined && pageSize ? pageRange(current, pageSize, total) : null;
 
-  if (count <= 1 && !range) return null;
+  // Nothing to page through: the list above shows its own empty state, so a "No …" line here would repeat it.
+  if (count <= 1 && (!range || total === 0)) return null;
 
   return (
     <div data-slot="pagination" className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>

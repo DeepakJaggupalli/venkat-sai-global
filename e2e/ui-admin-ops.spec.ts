@@ -17,6 +17,8 @@ import { hasCredentials, missingCredentials, signIn } from "./support";
 const expect = baseExpect.configure({ timeout: 30_000 });
 
 const ZERO_UUID = "00000000-0000-4000-8000-000000000000";
+/** The Command Centre home greets by India time ("Good morning, …"). */
+const DASHBOARD_GREETING = /^Good (morning|afternoon|evening)/;
 
 test.describe("Command Centre operations", () => {
   test.skip(!hasCredentials("admin"), missingCredentials("admin"));
@@ -26,9 +28,13 @@ test.describe("Command Centre operations", () => {
   });
 
   test("executive dashboard shows live sections with links", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1, name: "Executive dashboard" })).toBeVisible();
-    for (const name of ["Work queue", "People and organisations", "Hiring and training"]) {
+    await expect(page.getByRole("heading", { level: 1, name: DASHBOARD_GREETING })).toBeVisible();
+    for (const name of ["Needs your attention", "Quick actions", "Business at a glance", "How to use"]) {
       await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
+    }
+    // Every main button is there for the Super Admin, and the owner overview opens from the header.
+    for (const name of ["Import CVs from Excel", "Matching CVs", "New worker invoice", "Training batches", "Users and roles", "Backup"]) {
+      await expect(page.getByRole("link", { name: new RegExp(name) }).first()).toBeVisible();
     }
     await page.getByRole("link", { name: /Pending approvals/ }).click();
     await expect(page).toHaveURL(/\/admin\/approvals/);
@@ -39,7 +45,8 @@ test.describe("Command Centre operations", () => {
     test.setTimeout(300_000);
     const serverErrors = watchServerErrors(page);
     const routes: [string, string | RegExp][] = [
-      ["/admin", "Executive dashboard"],
+      ["/admin", DASHBOARD_GREETING],
+      ["/admin/overview?days=90", "Owner overview"],
       ["/admin/approvals", "Approval centre"],
       ["/admin/approvals?assignee=me", "Approval centre"],
       ["/admin/users", "Users"],
@@ -327,5 +334,12 @@ test.describe("Command Centre operations: permission boundaries", () => {
       expect(response?.status(), path).toBe(403);
       await expect(page.getByRole("heading", { level: 1 }), path).toHaveText(/access/i);
     }
+  });
+
+  test("a content manager's dashboard only offers what the role can open", async ({ page }) => {
+    await signIn(page, "content", { returnTo: "/admin" });
+    await expect(page.getByRole("heading", { level: 1, name: DASHBOARD_GREETING })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Post a requirement/ }).first()).toBeVisible();
+    for (const name of [/Applicants and CVs/, /Users and roles/, /Backup/, /New worker invoice/]) await expect(page.getByRole("link", { name })).toHaveCount(0);
   });
 });

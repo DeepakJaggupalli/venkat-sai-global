@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createsCycle, csvToInput, splitSynonyms, TAXONOMIES, TAXONOMY_KINDS } from "../taxonomies/_lib/config";
-import { displayValue, parseSettingValues, sameValue, settingGroups, settingMeta } from "./catalog";
+import { displayValue, mergeSellerDetails, parseSettingValues, sameValue, settingGroups, settingMeta } from "./catalog";
 import { csvBool, csvList, csvRecords, parseCsv } from "./csv";
 
 describe("settings catalogue", () => {
@@ -117,5 +117,51 @@ describe("taxonomy config", () => {
     expect(createsCycle("c", "a", parents)).toBe(false);
     expect(createsCycle("b", "b", parents)).toBe(true);
     expect(createsCycle("b", null, parents)).toBe(false);
+  });
+});
+
+describe("seller details saved from the Commercial settings group", () => {
+  // As saved by /admin/commercial/seller: structured address lines plus the one-line address it builds from them.
+  const stored = {
+    legalName: "Venkat Sai Welding Works",
+    address: "Plot 5, Auto Nagar, Visakhapatnam, 530012",
+    addressLine1: "Plot 5",
+    addressLine2: "Auto Nagar",
+    city: "Visakhapatnam",
+    postalCode: "530012",
+    countryCode: "AE",
+    stateCode: "",
+    taxId: "100123456700003",
+    taxIdType: "other",
+  };
+  /** What the settings form posts: only the fields it shows (blank ones are left out). */
+  const form = (overrides: Record<string, string> = {}) => {
+    const hidden = new Set(["addressLine1", "addressLine2", "taxIdType", "stateCode"]);
+    const shown = Object.fromEntries(Object.entries(stored).filter(([name]) => !hidden.has(name)));
+    return { ...shown, ...overrides };
+  };
+
+  it("keeps the fields the settings form does not show, so saving without edits changes nothing", () => {
+    const merged = mergeSellerDetails(stored, form());
+    expect(merged).toMatchObject({ addressLine1: "Plot 5", addressLine2: "Auto Nagar", taxIdType: "other" });
+    expect(sameValue(stored, merged)).toBe(true);
+  });
+
+  it("drops the stored address lines when the one-line address is changed here", () => {
+    const merged = mergeSellerDetails(stored, form({ address: "Gajuwaka, Visakhapatnam" }));
+    expect(merged.address).toBe("Gajuwaka, Visakhapatnam");
+    expect(merged.addressLine1).toBeUndefined();
+    expect(merged.addressLine2).toBeUndefined();
+    expect(merged.taxIdType).toBe("other");
+  });
+
+  it("drops the stored tax-number type when the tax number is changed here", () => {
+    const merged = mergeSellerDetails(stored, form({ taxId: "" }));
+    expect(merged.taxIdType).toBeUndefined();
+    expect(merged.addressLine1).toBe("Plot 5");
+  });
+
+  it("works when nothing is stored yet", () => {
+    expect(mergeSellerDetails(undefined, { legalName: "A", address: "B", stateCode: "37" })).toEqual({ legalName: "A", address: "B", stateCode: "37" });
   });
 });

@@ -3,6 +3,7 @@
 import { Check, Circle, PauseCircle } from "lucide-react";
 import { useActionState } from "react";
 
+import { SUBMIT_PILL } from "@/components/public/forms/form-parts";
 import { CallButton, WhatsAppButton } from "@/components/public/requirements/contact-buttons";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
 import { keepFormValues } from "@/components/shared/form/keep-values";
@@ -33,7 +34,7 @@ export function CvStatusForm({ defaultReference }: { defaultReference?: string }
         <FormField label="Reference" name="reference" required state={state} hint="Shown after you sent your CV, for example VSG-CV-000123.">
           <Input defaultValue={defaultReference} autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={24} placeholder="VSG-CV-000123" className={cn(INPUT, "font-mono uppercase sm:max-w-xs")} />
         </FormField>
-        <SubmitButton pendingLabel="Checking…">Check my status</SubmitButton>
+        <SubmitButton pendingLabel="Checking…" className={SUBMIT_PILL}>Check my status</SubmitButton>
       </form>
       <div aria-live="polite">{result ? <StatusResult view={result} /> : null}</div>
     </div>

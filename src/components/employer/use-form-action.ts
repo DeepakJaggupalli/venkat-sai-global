@@ -10,7 +10,8 @@ type FormActionFn<T> = (prev: ActionState<T>, formData: FormData) => Promise<Act
  * useActionState for Employer Portal forms. Submitting through onSubmit + startTransition keeps what the
  * person typed when the server returns field errors (React resets uncontrolled forms submitted through the
  * `action` prop). The submitter button is included, so `<button name="asDraft" value="true">` works.
- * Pass `pending` to <SubmitButton pending={pending}> because useFormStatus does not see this submission.
+ * Pass `pending` to <SubmitButton pending={pending}>. React also marks the whole <form> pending (useFormStatus), so a
+ * form with two submit buttons sets `indicator` on each to show the pending label only on the one that was clicked.
  */
 export function useEmployerForm<T>(action: FormActionFn<T>) {
   const [state, formAction, pending] = useActionState<ActionState<T>, FormData>(action, null);

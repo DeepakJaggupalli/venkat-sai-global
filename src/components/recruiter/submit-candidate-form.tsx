@@ -148,7 +148,7 @@ export function SubmitCandidateForm({
               <input type="radio" name="mode" value={o.value} checked={mode === o.value} disabled={o.disabled} onChange={() => setMode(o.value)} className="mt-1 size-4 accent-[var(--color-navy)]" />
               <span>
                 <span className="block text-sm font-medium text-foreground">{o.title}</span>
-                <span className="block text-sm text-muted-foreground">{o.disabled ? "You have no earlier candidates yet." : o.text}</span>
+                <span className="block text-sm text-muted-foreground">{o.disabled ? "No one to choose. People already submitted for this requirement are not listed." : o.text}</span>
               </span>
             </label>
           ))}

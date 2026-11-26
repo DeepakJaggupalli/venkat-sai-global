@@ -5,6 +5,7 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { SubmitButton } from "@/components/shared/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,8 @@ export function PartnerNoteForm({ applicationId }: { applicationId: string }) {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // A second click while the first note is being saved would post the note twice.
+    if (pending) return;
     const body = String(new FormData(event.currentTarget).get("body") ?? "").trim();
     if (!body) {
       setError("Write a note first.");
@@ -68,9 +71,9 @@ export function PartnerNoteForm({ applicationId }: { applicationId: string }) {
         </p>
       ) : null}
       <div className="flex justify-end">
-        <Button type="submit" variant="outline" aria-disabled={pending}>
-          {pending ? "Adding…" : "Add note"}
-        </Button>
+        <SubmitButton variant="outline" pending={pending} pendingLabel="Adding…">
+          Add note
+        </SubmitButton>
       </div>
     </form>
   );

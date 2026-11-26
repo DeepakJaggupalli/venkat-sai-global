@@ -47,7 +47,7 @@ import {
   TICKET_STAFF_TRANSITIONS,
   TICKET_STATUS_VALUES,
 } from "./constants";
-import { publicEnquirySchema, publicRequirementSchema } from "./schemas";
+import { isJoiningDateAcceptable, publicEnquirySchema, publicRequirementSchema } from "./schemas";
 
 const sorted = (values: readonly string[]) => [...values].sort();
 
@@ -134,5 +134,21 @@ describe("public form schemas", () => {
     expect(publicRequirementSchema.safeParse({ ...base, lines: [{ ...line, salaryMin: 1000 }] }).success).toBe(false);
     expect(publicRequirementSchema.safeParse({ ...base, lines: [{ ...line, salaryMin: 3000, salaryMax: 1000, salaryCurrency: "AED", salaryPeriod: "month" }] }).success).toBe(false);
     expect(publicRequirementSchema.safeParse({ ...base, lines: [{ ...line, salaryMin: 1000, salaryMax: 3000, salaryCurrency: "aed", salaryPeriod: "month" }] }).success).toBe(true);
+  });
+
+  it("reject a 'needed by' date that has already passed (one day of time-zone slack)", () => {
+    const base = { organizationName: "Sample organisation", contactName: "Contact", contactEmail: "contact@example.test", title: "Welders", consentToContact: "on", lines: [{ roleTitle: "TIG welder", positions: 10 }] };
+    const past = publicRequirementSchema.safeParse({ ...base, joiningBy: "2020-01-01" });
+    expect(past.success).toBe(false);
+    expect(past.error?.issues.map((i) => i.path.join("."))).toContain("joiningBy");
+    const future = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+    expect(publicRequirementSchema.safeParse({ ...base, joiningBy: future }).success).toBe(true);
+    expect(publicRequirementSchema.safeParse(base).success).toBe(true);
+
+    const now = new Date("2026-11-26T02:00:00.000Z");
+    expect(isJoiningDateAcceptable(undefined, now)).toBe(true);
+    expect(isJoiningDateAcceptable("2026-11-26", now)).toBe(true);
+    expect(isJoiningDateAcceptable("2026-11-25", now)).toBe(true);
+    expect(isJoiningDateAcceptable("2026-11-24", now)).toBe(false);
   });
 });

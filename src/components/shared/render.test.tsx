@@ -101,6 +101,11 @@ describe("server rendering smoke tests", () => {
     expect(html).toContain("jobs");
   });
 
+  it("renders no pagination for an empty list (the list shows its own empty state)", () => {
+    expect(render(<Pagination pathname="/jobs" page={1} pageCount={0} total={0} pageSize={20} itemLabel="jobs" />)).toBe("");
+    expect(render(<Pagination pathname="/jobs" page={1} pageCount={1} total={3} pageSize={20} itemLabel="jobs" />)).toContain("of");
+  });
+
   it("renders data tables with sorting, row links and mobile cards", () => {
     type Row = { id: string; title: string; n: number };
     const columns: DataTableColumn<Row>[] = [

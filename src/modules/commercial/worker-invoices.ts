@@ -117,7 +117,7 @@ export async function getWorkerInvoiceReadiness(ctx: StaffContext, organizationI
   const [profile, seller, config] = await Promise.all([getBillingProfile(org.id), getSellerDetails(), getCommercialConfig()]);
   const blockers: string[] = [];
   if (!profile) {
-    blockers.push(`${org.name} has no billing details yet (legal name, address, tax number). Add them below. You can save a draft now.`);
+    blockers.push(`${org.name} has no billing details yet (legal name, address, tax number). Add them on this page under Billing details.`);
   } else {
     const taxCtx = await buildTaxContext(db, { buyer: { countryCode: profile.countryCode, stateCode: profile.stateCode, taxExempt: profile.taxExempt }, seller, at: new Date() });
     const probe = priceInvoice([{ description: "Check", quantity: 1, unitAmountMinor: 100, taxCode: config["commercial.default_tax_code"] }], taxCtx);

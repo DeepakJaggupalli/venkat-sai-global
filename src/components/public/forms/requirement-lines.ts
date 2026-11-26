@@ -100,3 +100,33 @@ export function lineErrors(fieldErrors: Record<string, string[]> | undefined, li
   }
   return out;
 }
+
+const LINE_FIELD_LABELS: Record<string, string> = {
+  roleTitle: "role or trade",
+  positions: "number of positions",
+  experienceMinYears: "minimum experience",
+  experienceMaxYears: "maximum experience",
+  qualification: "qualification",
+  requiredSkills: "required skills",
+  salaryMin: "salary from",
+  salaryMax: "salary to",
+  salaryCurrency: "currency",
+  salaryPeriod: "salary period",
+  notes: "notes",
+};
+
+/**
+ * Labels for the error summary, so a role-line message names its row ("Role 2, number of positions: Enter 1 or
+ * more") instead of standing alone. Keys are the server's `lines.<payload index>.<field>`; the label uses the row
+ * number the visitor sees (blank rows are left out of the payload, so the two can differ).
+ */
+export function lineFieldLabels(lines: readonly RequirementLineDraft[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  let payloadIndex = 0;
+  lines.forEach((line, row) => {
+    if (isBlank(line)) return;
+    for (const [field, label] of Object.entries(LINE_FIELD_LABELS)) out[`lines.${payloadIndex}.${field}`] = `Role ${row + 1}, ${label}`;
+    payloadIndex += 1;
+  });
+  return out;
+}

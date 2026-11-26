@@ -8,7 +8,7 @@ import { audit } from "@/modules/audit";
 import { invalidStateError, notFoundError, validationError, withConstraintMessages } from "@/modules/organizations/errors";
 
 import { loadBatchForActor, trainingActorUserId, type TrainingActor } from "./access";
-import { computeAttendancePercent } from "./rules";
+import { attendanceSessionDateError, computeAttendancePercent } from "./rules";
 import type { AttendanceRecordInput, AttendanceSessionInput } from "./schemas";
 
 export type AttendanceSessionRow = typeof attendanceSessions.$inferSelect;
@@ -18,6 +18,11 @@ export type AttendanceRecordRow = typeof attendanceRecords.$inferSelect;
 const ATTENDANCE = { member: "institution.students.manage", staff: "training.manage", instructorScoped: true } as const;
 /** Enrolments attendance can be recorded for. */
 const ATTENDING_STATUSES = ["confirmed", "in_progress", "completed"] as const;
+
+function assertSessionDate(sessionDate: string, batchTimeZone: string | null): void {
+  const error = attendanceSessionDateError(sessionDate, batchTimeZone);
+  if (error) throw validationError(error, { sessionDate: [error] });
+}
 
 async function assertModuleOfCourse(tx: DbOrTx, moduleId: string | undefined, courseId: string): Promise<void> {
   if (!moduleId) return;
@@ -45,6 +50,7 @@ export async function createAttendanceSession(actor: TrainingActor, batchId: str
   return db.transaction(async (tx) => {
     const { batch } = await loadBatchForActor(actor, batchId, ATTENDANCE, { tx });
     if (batch.status === "cancelled") throw invalidStateError("This batch was cancelled.");
+    assertSessionDate(input.sessionDate, batch.timezone);
     await assertModuleOfCourse(tx, input.courseModuleId, batch.courseId);
     const [row] = await tx
       .insert(attendanceSessions)
@@ -66,6 +72,7 @@ export async function updateAttendanceSession(actor: TrainingActor, sessionId: s
   const userId = trainingActorUserId(actor);
   await db.transaction(async (tx) => {
     const { session, batch } = await loadSession(tx, actor, sessionId);
+    assertSessionDate(input.sessionDate, batch.timezone);
     await assertModuleOfCourse(tx, input.courseModuleId, batch.courseId);
     await tx
       .update(attendanceSessions)
@@ -97,6 +104,9 @@ export async function recordAttendance(actor: TrainingActor, sessionId: string, 
     () =>
       db.transaction(async (tx) => {
         const { session, batch } = await loadSession(tx, actor, sessionId);
+        if (attendanceSessionDateError(session.sessionDate, batch.timezone)) {
+          throw validationError("This session is dated in the future. Change its date, or mark attendance on the day of the class.");
+        }
         const ids = [...new Set(records.map((r) => r.enrolmentId))];
         if (ids.length !== records.length) throw validationError("Each learner can be marked once per session.");
         const valid = await tx

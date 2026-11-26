@@ -528,5 +528,6 @@
   "error.body": "We could not load this page. Your information is safe. Please try again.",
   "error.reference": "Reference: {code}",
   "error.retry": "Try again",
-  "error.back": "Go back"
+  "error.back": "Go back",
+  "error.whatsapp": "WhatsApp us"
 }

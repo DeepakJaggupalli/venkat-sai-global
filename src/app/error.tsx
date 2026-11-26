@@ -1,24 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { RouteError } from "@/components/shared/route-error";
 
-import { Button } from "@/components/ui/button";
-
-export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
+/**
+ * Last-resort error screen for pages outside a portal (and for errors in a portal layout itself). Portal pages
+ * have their own boundaries that keep the menu. Plain words, Try again, a way home, WhatsApp and the reference.
+ */
+export default function ErrorPage({ error, reset, retry }: { error: Error & { digest?: string }; reset: () => void; retry?: () => void }) {
   return (
-    <main id="main-content" className="container-page flex min-h-[60dvh] flex-col items-center justify-center py-16 text-center">
-      <h1 className="text-2xl font-bold text-navy sm:text-3xl">Something went wrong</h1>
-      <p className="mt-3 max-w-md text-muted-foreground">
-        An unexpected error occurred. Please try again. If the problem continues, contact support
-        {error.digest ? ` and quote reference ${error.digest}` : ""}.
-      </p>
-      <Button className="mt-8" onClick={() => reset()}>
-        Try again
-      </Button>
+    <main id="main-content" tabIndex={-1} className="container-page flex min-h-[70dvh] flex-col items-center justify-center focus:outline-none">
+      <RouteError reset={reset} retry={retry} digest={error.digest} />
     </main>
   );
 }

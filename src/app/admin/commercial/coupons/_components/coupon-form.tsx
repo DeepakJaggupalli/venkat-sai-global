@@ -52,7 +52,7 @@ export function CouponForm({ coupon, plans, currencies, canEdit }: { coupon?: Co
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6" aria-label={coupon ? "Edit coupon" : "New coupon"}>
       {coupon ? <input type="hidden" name="id" value={coupon.id} /> : null}
-      <FormErrorAlert state={state} fieldLabels={{ code: "Code", percentOff: "Percentage", amountOff: "Discount", currency: "Currency", durationCycles: "Billing cycles", validUntil: "Valid until" }} />
+      <FormErrorAlert state={state} fieldLabels={{ code: "Code", percentOff: "Percentage", amountOff: "Discount", currency: "Currency", durationCycles: "Billing cycles", maxRedemptions: "Total redemptions", maxRedemptionsPerOrganization: "Redemptions per organisation", validFrom: "Valid from", validUntil: "Valid until", planIds: "Plans" }} />
       {frozen ? <p className="rounded-lg bg-info-soft px-3 py-2 text-sm text-info">This coupon has been redeemed {coupon!.redeemedCount} times, so its discount can no longer change.</p> : null}
       <fieldset disabled={!canEdit} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">

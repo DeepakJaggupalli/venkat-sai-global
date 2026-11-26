@@ -195,7 +195,11 @@ export default async function CvSubmissionPage({ params, searchParams }: { param
                   "Not given"
                 ),
               },
-              { label: "Trade", value: s.tradeOther ? `${s.tradeLabel} (typed by the candidate)` : s.tradeLabel },
+              {
+                label: "Trade",
+                // Imported and staff-added rows were typed by the office, not by the candidate.
+                value: s.tradeOther ? `${s.tradeLabel} (${s.source === "website" ? "typed by the candidate" : "not one of our trade names"})` : s.tradeLabel,
+              },
               { label: "Experience abroad", value: yearsText(s.experienceAbroadYears) },
               { label: "Experience in India", value: yearsText(s.experienceIndiaYears) },
               ...(!splitGiven && s.experienceYears !== null ? [{ label: "Experience (total)", value: yearsText(s.experienceYears) }] : []),

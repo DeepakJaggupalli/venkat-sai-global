@@ -246,7 +246,7 @@ function link(file: FileRow | null | undefined): FileLink {
 /** One request with its details (candidates.manage; the read is logged). */
 export async function getResumeRequest(ctx: StaffContext, id: string): Promise<ResumeRequestDetail | null> {
   staffOnly(ctx);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
   const [row] = await db
     .select({ r: resumeRequests, recordedBy: users.displayName })
     .from(resumeRequests)

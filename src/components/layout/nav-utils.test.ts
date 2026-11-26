@@ -24,14 +24,14 @@ const titles = (sections: ReturnType<typeof filterNavSections>) => sections.flat
 describe("filterNavSections", () => {
   it("always keeps items without a permission and hides the rest unless granted", () => {
     const sections = filterNavSections(NAVIGATION.employer, ["employer.dashboard"]);
-    expect(titles(sections)).toEqual(["Dashboard", "Messages", "Support"]);
+    expect(titles(sections)).toEqual(["Dashboard", "Messages", "How to use", "Support"]);
   });
 
   it("drops sections that end up empty", () => {
     const sections = filterNavSections(NAVIGATION.recruiter, []);
     expect(sections).toHaveLength(1);
     expect(sections[0]?.title).toBe("Agency");
-    expect(titles(sections)).toEqual(["Support"]);
+    expect(titles(sections)).toEqual(["How to use", "Support"]);
   });
 
   it("shows every item to a viewer holding all permissions", () => {

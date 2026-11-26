@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { CertificateIssuerType } from "@/db/schema/training";
 
 import {
+  attendanceSessionDateError,
+  batchOpenCheck,
   batchApplicationCheck,
   canTransitionBatch,
   canTransitionEnrolment,
@@ -14,6 +16,7 @@ import {
   initialEnrolmentStatus,
   normalizeVerificationCode,
   seatDelta,
+  todayInZone,
   type CertificateIssuerActor,
   type CertificateSource,
 } from "./rules";
@@ -185,5 +188,38 @@ describe("attendance and results", () => {
       "venkat_sai_assessment",
     );
     expect(partial.finalScore).toBe(60);
+  });
+});
+
+describe("attendance session dates", () => {
+  // 26 Nov 2026, 20:00 UTC = 27 Nov 01:30 in India.
+  const now = new Date("2026-11-26T20:00:00.000Z");
+
+  it("reads today in the batch's time zone, falling back to India time", () => {
+    expect(todayInZone("Asia/Kolkata", now)).toBe("2026-11-27");
+    expect(todayInZone("America/New_York", now)).toBe("2026-11-26");
+    expect(todayInZone(null, now)).toBe("2026-11-27");
+    expect(todayInZone("Mars/Olympus", now)).toBe("2026-11-27");
+  });
+
+  it("accepts today, earlier days and one day of slack", () => {
+    expect(attendanceSessionDateError("2026-11-27", "Asia/Kolkata", now)).toBeNull();
+    expect(attendanceSessionDateError("2026-11-01", "Asia/Kolkata", now)).toBeNull();
+    expect(attendanceSessionDateError("2026-11-28", "Asia/Kolkata", now)).toBeNull();
+  });
+
+  it("refuses future sessions", () => {
+    expect(attendanceSessionDateError("2026-11-29", "Asia/Kolkata", now)).toMatch(/cannot be in the future/);
+    expect(attendanceSessionDateError("2099-01-01", null, now)).toMatch(/cannot be in the future/);
+    expect(attendanceSessionDateError("2026-11-28", "America/New_York", now)).toMatch(/cannot be in the future/);
+  });
+});
+
+describe("opening enrolment", () => {
+  it("refuses a batch whose registration date or end date has passed", () => {
+    expect(batchOpenCheck({ registrationDeadline: null, endsOn: null }, "2026-11-26")).toBeNull();
+    expect(batchOpenCheck({ registrationDeadline: "2026-11-26", endsOn: "2027-01-10" }, "2026-11-26")).toBeNull();
+    expect(batchOpenCheck({ registrationDeadline: "2026-11-25", endsOn: "2027-01-10" }, "2026-11-26")).toMatch(/registration for this batch has closed/i);
+    expect(batchOpenCheck({ registrationDeadline: null, endsOn: "2020-02-01" }, "2026-11-26")).toMatch(/already ended/);
   });
 });

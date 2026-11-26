@@ -110,8 +110,9 @@ AccountShell(props: { back: PortalLink | null; children: ReactNode }): JSX.Eleme
 Shell anatomy: fixed white sidebar (lg+, 17rem / 4.75rem collapsed — icons with tooltips; state saved in the
 `vsg_sidebar` cookie) with the logo, portal badge, organisation switcher and permission-filtered navigation;
 `Sheet` drawer below lg (same content plus help and other portals). Sticky translucent top bar: menu button +
-brand (mobile), breadcrumb (desktop), portal switcher, help (portal support page; Command Centre only with
-`support.view`), language switcher (People Portal), notification bell, account menu.
+brand (mobile), breadcrumb (desktop), portal switcher, "?" How to use (the portal guide `PORTAL_HELP_HREF[portal]`,
+every screen size), language switcher (People Portal), notification bell, account menu (its "Help and support" opens
+the portal support page; Command Centre only with `support.view`).
 
 - **NotificationBell** polls `GET /api/v1/notifications/summary` every 60 s while the tab is visible and on
   focus/visibility (5 s debounce), and on opening. Response contract (`notification-summary.ts`):
@@ -162,6 +163,8 @@ getHeaderAccount(): Promise<HeaderAccount | null>                       // never
 - `org-status.ts`: `getOrgStatusNotice(status, portal)`.
 - `notification-summary.ts`: `parseNotificationSummary(payload)`, types.
 - `time.ts`: `formatRelativeTime(value, locale, now?)` (Intl, localised for hi/te).
+- `portal-help.ts`: `PORTAL_HELP_HREF` ("How to use" page per portal: `/admin/help`, `/talent/help`, `/employer/help`,
+  `/agency/help`, `/recruiter/help`, `/institution/help`).
 - `portal-config.ts`: `PORTAL_SUPPORT_HREF`, `PORTAL_NOTIFICATIONS_HREF`, `VERIFICATION_HREF`, `ORG_TYPE_BY_PORTAL`,
   `PORTAL_BY_ORG_TYPE`, `PUBLIC_CTA`, `DEFAULT_LEGAL_LINKS`, `SIDEBAR_COOKIE`, `LAST_PORTAL_COOKIE`,
   `NOTIFICATION_SUMMARY_ENDPOINT`, `isOrgPortal`.
@@ -173,7 +176,7 @@ getHeaderAccount(): Promise<HeaderAccount | null>                       // never
 
 `POST /sign-out` (auth) · `GET /api/v1/notifications/summary` (notifications) · `/sign-in`, `/sign-up` ·
 `/employers/request` · `/account`, `/account/security`, `/account/notifications`, `/account/privacy` ·
-`/<portal>/support` · the three verification pages above · legal pages `/privacy`, `/terms`,
+`/<portal>/support` · `/<portal>/help` (guides, built from `src/config/portal-guides.ts`) · the three verification pages above · legal pages `/privacy`, `/terms`,
 `/cookie-preferences`, `/data-rights`, `/accessibility`, `/grievance-redressal` · all `NAVIGATION` hrefs.
 
 ## Shared words for People Portal pages (`common` namespace)

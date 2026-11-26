@@ -11,7 +11,7 @@ import { forbiddenError, invalidStateError, notFoundError, validationError, with
 
 import { isInstitutionActor, loadBatchForActor, loadCourseForActor, trainingActorUserId, type BatchRow, type TrainingActor } from "./access";
 import { candidateIdentities } from "./candidate";
-import { canTransitionBatch, toIsoDate } from "./rules";
+import { batchOpenCheck, canTransitionBatch, todayInZone, toIsoDate } from "./rules";
 import type { BatchInput, BatchInstructorInput } from "./schemas";
 
 export type BatchInstructorRow = typeof batchInstructors.$inferSelect;
@@ -103,7 +103,11 @@ async function transition(actor: TrainingActor, batchId: string, to: BatchRow["s
 
 /** planned → open (the course must be published). A batch at capacity opens as "full". */
 export async function openBatch(actor: TrainingActor, batchId: string): Promise<BatchRow> {
-  const updated = await transition(actor, batchId, "open", async () => ({}));
+  const updated = await transition(actor, batchId, "open", async (batch) => {
+    const closed = batchOpenCheck(batch, todayInZone(batch.timezone));
+    if (closed) throw invalidStateError(closed);
+    return {};
+  });
   if (updated.capacity !== null && updated.enrolledCount >= updated.capacity) {
     const [full] = await db.update(batches).set({ status: "full" }).where(and(eq(batches.id, updated.id), eq(batches.status, "open"))).returning();
     return full ?? updated;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { SUBMIT_PILL } from "@/components/public/forms/form-parts";
 import { FormErrorAlert, FormField, SubmitButton } from "@/components/shared/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,7 +52,9 @@ export function GuestDataRequestForm() {
         <FormField label={VERIFY_LABELS.otp} name="otp" required state={verifyState}>
           <Input inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} className="max-w-40 font-mono tracking-widest" />
         </FormField>
-        <SubmitButton pending={verifyPending} pendingLabel="Confirming…">Confirm request</SubmitButton>
+        <SubmitButton pending={verifyPending} pendingLabel="Confirming…" className={SUBMIT_PILL}>
+          Confirm request
+        </SubmitButton>
       </form>
     );
   }
@@ -93,7 +96,9 @@ export function GuestDataRequestForm() {
         </Link>{" "}
         is quicker.
       </p>
-      <SubmitButton pending={requestPending} pendingLabel="Sending…">Send request</SubmitButton>
+      <SubmitButton pending={requestPending} pendingLabel="Sending…" className={SUBMIT_PILL}>
+        Send request
+      </SubmitButton>
     </form>
   );
 }

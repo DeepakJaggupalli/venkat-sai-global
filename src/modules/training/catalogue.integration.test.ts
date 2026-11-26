@@ -110,8 +110,8 @@ describe.skipIf(!enabled)("training catalogue, delivery and reports", async () =
     await enrolmentService.confirmEnrolment(ctx, eb.id);
     await enrolmentService.updateEnrolmentFee(ctx, ea.id, { feeStatus: "paid", paymentReference: "Receipt 1042" });
 
-    const s1 = await attendance.createAttendanceSession(ctx, batchId, { sessionDate: "2027-02-01", topic: "Isometrics" });
-    const s2 = await attendance.createAttendanceSession(ctx, batchId, { sessionDate: "2027-02-02" });
+    const s1 = await attendance.createAttendanceSession(ctx, batchId, { sessionDate: "2026-02-01", topic: "Isometrics" });
+    const s2 = await attendance.createAttendanceSession(ctx, batchId, { sessionDate: "2026-02-02" });
     await attendance.recordAttendance(ctx, s1.id, [
       { enrolmentId: ea.id, status: "present" },
       { enrolmentId: eb.id, status: "absent" },

@@ -121,8 +121,9 @@ export function TagInput({
       {tags.length > 0 ? (
         <ul className="flex max-w-full flex-wrap items-center gap-1.5" aria-label="Added items">
           {tags.map((tag) => (
-            <li key={tag} className={cn("inline-flex h-6 max-w-full items-center gap-1 rounded-md pr-0.5 pl-2 text-xs font-medium", TONE_STYLES.neutral.soft)}>
-              <span className="truncate">{tag}</span>
+            <li key={tag} className={cn("inline-flex min-h-6 max-w-full items-center gap-1 rounded-md py-0.5 pr-0.5 pl-2 text-xs font-medium", TONE_STYLES.neutral.soft)}>
+              {/* A long item wraps instead of forcing its form wider than the card (sideways page scroll). */}
+              <span className="min-w-0 [overflow-wrap:anywhere]">{tag}</span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -131,7 +132,7 @@ export function TagInput({
                 }}
                 disabled={disabled}
                 aria-label={`Remove ${tag}`}
-                className="inline-flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-background hover:text-foreground"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-background hover:text-foreground"
               >
                 <X aria-hidden="true" className="size-3" />
               </button>

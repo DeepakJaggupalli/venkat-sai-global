@@ -13,6 +13,13 @@ type SubmitButtonProps = Omit<ComponentProps<typeof Button>, "type" | "asChild">
   pendingLabel?: ReactNode;
   /** Extra pending flag (e.g. the third value of useActionState) for buttons outside the form. */
   pending?: boolean;
+  /**
+   * Show the spinner and pending label while pending (default true). A form with several submit buttons passes
+   * false on the buttons that were not clicked: they still ignore clicks while the form is busy, but only the
+   * clicked one says "Saving…" or "Submitting…". React marks the whole form pending (useFormStatus), so without
+   * this every submit button of the form would show its own pending label at once.
+   */
+  indicator?: boolean;
 };
 
 /**
@@ -22,16 +29,17 @@ type SubmitButtonProps = Omit<ComponentProps<typeof Button>, "type" | "asChild">
  *
  *   <form action={formAction}> … <SubmitButton pendingLabel="Saving…">Save job</SubmitButton></form>
  */
-export function SubmitButton({ children, pendingLabel, pending: pendingProp, disabled, className, onClick, ...props }: SubmitButtonProps) {
+export function SubmitButton({ children, pendingLabel, pending: pendingProp, indicator = true, disabled, className, onClick, ...props }: SubmitButtonProps) {
   const status = useFormStatus();
   const pending = Boolean(pendingProp || status.pending);
+  const busy = pending && indicator;
   // The live region sits next to the button, not inside it: modal dialogs (aria-hidden's hideOthers) keep
   // [aria-live] elements exposed and hide their siblings, which stripped the label from every submit button
   // behind an open dialog (axe "button-name"). It comes first so `space-y-*` parents add no margin to the button.
   return (
     <>
       <span aria-live="polite" className="sr-only">
-        {pending ? "Submitting" : ""}
+        {busy ? "Submitting" : ""}
       </span>
       <Button
         {...props}
@@ -39,7 +47,7 @@ export function SubmitButton({ children, pendingLabel, pending: pendingProp, dis
         disabled={disabled}
         aria-disabled={pending || undefined}
         data-pending={pending || undefined}
-        className={cn("min-w-24", pending && "cursor-wait opacity-80", className)}
+        className={cn("min-w-24", pending && "cursor-wait", busy && "opacity-80", className)}
         onClick={(event) => {
           if (pending) {
             event.preventDefault();
@@ -48,8 +56,8 @@ export function SubmitButton({ children, pendingLabel, pending: pendingProp, dis
           onClick?.(event);
         }}
       >
-        {pending ? <Spinner aria-hidden="true" role="presentation" /> : null}
-        <span>{pending && pendingLabel ? pendingLabel : children}</span>
+        {busy ? <Spinner aria-hidden="true" role="presentation" /> : null}
+        <span>{busy && pendingLabel ? pendingLabel : children}</span>
       </Button>
     </>
   );

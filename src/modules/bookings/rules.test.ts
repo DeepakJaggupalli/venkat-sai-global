@@ -167,6 +167,15 @@ describe("booking form validation", () => {
     expect(staffBookingSchema.safeParse({ slotId, name: "A", phone: "9876543210", trade: "Fitter", seats: "2" }).success).toBe(false);
     expect(staffBookingSchema.safeParse({ slotId, name: "A", phone: "9876543210", trade: "Fitter", consentToContact: "on" }).success).toBe(false);
   });
+
+  it("tells staff (not the public) how to book more than the per-booking limit", () => {
+    const slotId = "7f1f3c1e-2a8b-4c55-9a77-0d3f8e0f1a22";
+    const tooMany = staffBookingSchema.safeParse({ slotId, name: "A", phone: "9876543210", trade: "Fitter", seats: "50", consentToContact: "on" });
+    expect(tooMany.success).toBe(false);
+    const message = tooMany.error!.issues.find((i) => i.path.join(".") === "seats")?.message ?? "";
+    expect(message).toMatch(/Add another booking/);
+    expect(message).not.toMatch(/WhatsApp us/);
+  });
 });
 
 describe("slot form validation", () => {

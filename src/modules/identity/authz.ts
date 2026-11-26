@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { forbidden, redirect } from "next/navigation";
 import { cache } from "react";
 
@@ -13,6 +13,7 @@ import {
   type OrgPermissionFor,
   type PlatformPermission,
 } from "@/config/permissions";
+import { logger } from "@/lib/logger";
 import { getSetting } from "@/modules/settings";
 
 import { currentPathForReturn, getCurrentSession, requireUser, type SessionUser } from "./session";
@@ -102,6 +103,23 @@ export type OrgContext<T extends OrgType = OrgType> = {
   isOwner: boolean;
 };
 
+/** Membership activity is recorded at most this often (team pages show "Last active …"). */
+const MEMBER_ACTIVITY_TOUCH_MS = 15 * 60 * 1000;
+
+/**
+ * Record that a member used the workspace, without blocking the request. Team pages show it as "Last active …" and
+ * it picks the default organisation for people in several; it used to be set only on joining, so every team page
+ * showed the join date.
+ */
+function touchMemberActivity(member: { id: string; lastActiveAt: Date | null }): void {
+  if (member.lastActiveAt && Date.now() - member.lastActiveAt.getTime() < MEMBER_ACTIVITY_TOUCH_MS) return;
+  const threshold = new Date(Date.now() - MEMBER_ACTIVITY_TOUCH_MS);
+  db.update(organizationMembers)
+    .set({ lastActiveAt: new Date() })
+    .where(and(eq(organizationMembers.id, member.id), or(isNull(organizationMembers.lastActiveAt), lt(organizationMembers.lastActiveAt, threshold))))
+    .catch((error) => logger.warn("Failed to record organisation member activity", { error }));
+}
+
 /**
  * Active organisation context for a portal (memoised per request), or null if the user
  * has no active membership of that organisation type. Prefers the organisation chosen
@@ -136,6 +154,7 @@ export const getOrgContext = cache(async <T extends OrgType>(orgType: T): Promis
 
   const row = rows[0];
   if (!row) return null;
+  touchMemberActivity(row.member);
   return {
     orgType,
     user: current.user,

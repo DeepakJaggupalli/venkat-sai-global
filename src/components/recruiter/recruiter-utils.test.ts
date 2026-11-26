@@ -47,6 +47,18 @@ describe("buildSubmissionPayload", () => {
     expect(paths).toContain("candidate.email");
   });
 
+  it("speaks plain English when nothing is chosen (no raw validation text)", () => {
+    const messages = (mode: "new" | "existing") => {
+      const parsed = partnerSubmissionSchema.safeParse(buildSubmissionPayload(ASSIGNMENT, mode, {}));
+      return parsed.success ? {} : Object.fromEntries(parsed.error.issues.map((i) => [i.path.join("."), i.message]));
+    };
+    expect(messages("new")["consent.method"]).toBe("Choose how the candidate agreed");
+    expect(messages("existing")["candidate.candidateId"]).toBe("Choose a candidate");
+    for (const message of [...Object.values(messages("new")), ...Object.values(messages("existing"))]) {
+      expect(message).not.toMatch(/invalid (option|input|identifier)|expected/i);
+    }
+  });
+
   it("ignores unknown locales", () => {
     const payload = buildSubmissionPayload(ASSIGNMENT, "new", { fullName: "A", email: "a@example.com", preferredLocale: "fr", consentAttested: "true", consentMethod: "written" });
     if (payload.candidate.kind !== "new") throw new Error("expected a new candidate");

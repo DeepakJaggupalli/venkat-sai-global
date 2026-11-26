@@ -1,18 +1,16 @@
 "use client";
 
-import { Callout } from "@/components/shared/callout";
-import { Button } from "@/components/ui/button";
+import { RouteError } from "@/components/shared/route-error";
 
 /** Error boundary body for billing routes. Never shows technical details. */
-export function BillingError({ reset }: { reset: () => void }) {
+export function BillingError({ reset, retry, digest }: { reset?: () => void; retry?: () => void; digest?: string }) {
   return (
-    <div className="mx-auto max-w-xl py-10">
-      <Callout tone="danger" title="Billing could not be loaded" live="polite">
-        <p>Something went wrong while loading this page. Nothing has been charged or changed.</p>
-        <Button className="mt-4" variant="outline" onClick={reset}>
-          Try again
-        </Button>
-      </Callout>
-    </div>
+    <RouteError
+      area="billing"
+      reset={reset}
+      retry={retry}
+      digest={digest}
+      labels={{ body: "Something went wrong while loading this page. Nothing has been charged or changed. Try again in a moment." }}
+    />
   );
 }

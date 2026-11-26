@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { employerPortalOfPath, inEmployerPortal } from "@/modules/organizations/employer-kind";
 
 import { TONE_STYLES } from "./tones";
 import { distinguishingKeys, isHrefActive } from "./url-state";
@@ -43,9 +44,13 @@ export function LinkTabs({ items, label, activeHref, className }: LinkTabsProps)
     <nav aria-label={label} data-slot="link-tabs" className={cn("-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0", className)}>
       <ul className="flex min-w-max items-center gap-1 border-b border-border">
         {items.map((item) => {
+          // /agency/… is served by the /employer/… pages: a tab for /employer/billing is also active at /agency/billing.
           const active = activeHref
             ? activeHref === item.href
-            : isHrefActive(item.href, pathname, new URLSearchParams(searchParams.toString()), { match: item.match ?? "exact", keys });
+            : isHrefActive(item.href, inEmployerPortal(pathname, employerPortalOfPath(item.href) ?? ""), new URLSearchParams(searchParams.toString()), {
+                match: item.match ?? "exact",
+                keys,
+              });
           return (
             <li key={item.href}>
               <Link

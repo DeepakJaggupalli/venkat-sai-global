@@ -226,6 +226,16 @@ const requirementContactFields = {
 
 const contactRefine = (v: { contactEmail?: string; contactPhone?: string }) => Boolean(v.contactEmail || v.contactPhone);
 
+/**
+ * A new requirement cannot be needed by a date that has passed. One day of slack: the visitor's "today" may be a day
+ * behind UTC and the field is a calendar day without a time zone.
+ */
+export function isJoiningDateAcceptable(joiningBy: string | undefined, now: Date = new Date()): boolean {
+  if (!joiningBy) return true;
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return joiningBy >= yesterday;
+}
+
 /** Public "Post a requirement" form (no account). Lines arrive as `lines:json`. */
 export const publicRequirementSchema = z
   .object({
@@ -237,7 +247,8 @@ export const publicRequirementSchema = z
     locale,
     utm,
   })
-  .refine(contactRefine, { path: ["contactEmail"], message: "Enter an email address or a phone number" });
+  .refine(contactRefine, { path: ["contactEmail"], message: "Enter an email address or a phone number" })
+  .refine((v) => isJoiningDateAcceptable(v.joiningBy), { path: ["joiningBy"], message: "Choose today or a later date" });
 export type PublicRequirementInput = z.output<typeof publicRequirementSchema>;
 
 /** Employer Portal requirement (organisation and contact come from the workspace unless overridden). */
@@ -294,10 +305,10 @@ const attachmentIds = f.uuidArray().pipe(z.array(z.uuid()).max(5, "Up to 5 attac
 
 /** Signed-in requester (any portal). */
 export const ticketCreateSchema = z.object({
-  category: f.enumOf(TICKET_CATEGORY_VALUES),
+  category: f.enumOf(TICKET_CATEGORY_VALUES, "Choose a category"),
   priority: z.enum(["low", "normal", "high"]).default("normal"),
   subject: f.text({ label: "Subject", max: 200 }),
-  message: f.text({ label: "Describe the issue", min: 10, max: 10_000 }),
+  message: f.text({ label: "Description", min: 10, max: 10_000 }),
   attachmentFileIds: attachmentIds,
   portal: f.enumOf(PORTAL_VALUES).default("talent"),
   relatedType: z.enum(RELATED_ENTITY_TYPES).optional(),
@@ -311,9 +322,9 @@ export const guestTicketSchema = z.object({
   name: f.text({ label: "Your name", max: 120 }),
   email: f.email(),
   phone: f.optionalPhone(),
-  category: f.enumOf(TICKET_CATEGORY_VALUES),
+  category: f.enumOf(TICKET_CATEGORY_VALUES, "Choose a category"),
   subject: f.text({ label: "Subject", max: 200 }),
-  message: f.text({ label: "Describe the issue", min: 10, max: 10_000 }),
+  message: f.text({ label: "Description", min: 10, max: 10_000 }),
   grievanceType: f.enumOf(GRIEVANCE_TYPE_VALUES).optional(),
   consentToContact: mustAgree("Please agree that we may contact you about your request"),
   website: honeypot,
@@ -330,7 +341,7 @@ export const staffTicketSchema = z
     requesterPhone: f.optionalPhone(),
     organizationId: f.optionalUuid(),
     channel: f.enumOf(TICKET_CHANNEL_VALUES).default("phone"),
-    category: f.enumOf(TICKET_CATEGORY_VALUES),
+    category: f.enumOf(TICKET_CATEGORY_VALUES, "Choose a category"),
     priority: f.enumOf(TICKET_PRIORITY_VALUES).default("normal"),
     subject: f.text({ label: "Subject", max: 200 }),
     message: f.text({ label: "What the requester said", max: 10_000 }),

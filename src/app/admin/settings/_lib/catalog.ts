@@ -117,6 +117,27 @@ export const SELLER_FIELDS: { name: keyof SellerDetailsSetting; label: string; r
   { name: "paymentInstructions", label: "Payment instructions on unpaid invoices", maxLength: 1000, textarea: true, hint: "Bank account or UPI details entered by finance." },
 ];
 
+/**
+ * The seller details are also edited on /admin/commercial/seller, which stores fields this form does not show
+ * (addressLine1, addressLine2, taxIdType). Saving the Commercial settings group must not drop them, or invoices print
+ * the one-line address next to the city line (city and postcode twice) and lose the tax-number type.
+ *  - Fields this form does not manage are kept from the stored value.
+ *  - When the one-line address is changed here, the stored address lines are dropped so the new address is printed.
+ *  - When the tax number is changed here, its stored type is dropped (it is worked out again from the country).
+ */
+export function mergeSellerDetails(before: unknown, next: Record<string, string>): Record<string, string> {
+  const stored = before && typeof before === "object" && !Array.isArray(before) ? (before as Record<string, unknown>) : {};
+  const managed = new Set<string>(SELLER_FIELDS.map((f) => f.name));
+  const kept: Record<string, string> = {};
+  for (const [name, value] of Object.entries(stored)) {
+    if (managed.has(name) || typeof value !== "string" || value === "") continue;
+    if ((name === "addressLine1" || name === "addressLine2") && (next.address ?? "") !== (stored.address ?? "")) continue;
+    if (name === "taxIdType" && (next.taxId ?? "") !== (stored.taxId ?? "")) continue;
+    kept[name] = value;
+  }
+  return { ...kept, ...next };
+}
+
 export const fieldName = (key: SettingKey, sub?: string) => (sub ? `${key}.${sub}` : key);
 
 export type ParsedSettings = { values: Partial<Record<SettingKey, unknown>>; fieldErrors: Record<string, string[]> };

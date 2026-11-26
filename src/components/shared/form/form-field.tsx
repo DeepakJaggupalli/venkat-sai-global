@@ -93,7 +93,7 @@ export function FormField({ label, name, id, required, optional, hint, errors, s
   }
 
   return (
-    <div data-slot="form-field" data-field-name={name} data-invalid={invalid || undefined} className={cn("grid gap-1.5", className)}>
+    <div data-slot="form-field" data-field-name={name} data-invalid={invalid || undefined} className={cn("grid content-start gap-1.5", className)}>
       {/* The label id lets non-labelable controls (rich text, custom widgets) use aria-labelledby. */}
       <Label id={`${controlId}-label`} htmlFor={controlId} className={cn("text-sm leading-snug font-medium text-foreground", hideLabel && "sr-only")}>
         {label}

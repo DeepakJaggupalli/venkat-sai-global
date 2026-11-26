@@ -88,7 +88,9 @@ export function MediaUploader({ multiple = false, folderId, onCreated, compact =
       if (d.people) fd.set("showsIdentifiablePeople", d.people);
       if (folderId) fd.set("folderId", folderId);
       fd.set("visibility", requestPublic && d.people === "no" ? "public" : "internal");
-      const result = await createMediaAssetAction(null, fd);
+      // A dropped connection rejects instead of returning an error result: show it on the item and keep going,
+      // so the button never stays on "Adding…".
+      const result = await createMediaAssetAction(null, fd).catch(() => ({ ok: false as const, error: "Could not reach the server. Check the connection and try again.", fieldErrors: undefined }));
       if (result.ok && result.data) {
         created.push(result.data.id);
         if (d.people === "yes") needsConsent += 1;

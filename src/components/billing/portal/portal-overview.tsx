@@ -139,11 +139,12 @@ export async function PortalBillingOverview({ portal, ctx, intro }: { portal: Bi
           )}
         </SectionCard>
 
-        <SectionCard title="Balance">
+        {/* The ledger can run below zero while plan limits are switched off; customers see "0 credits", never "-2". */}
+      <SectionCard title="Balance">
           <KeyValueList
             items={[
               { label: "Outstanding", value: <MoneyByCurrencyList items={overview.outstanding} empty="Nothing to pay" /> },
-              ...creditKeys.map((c) => ({ label: ENTITLEMENTS[c.key].label, value: c.limit === null && c.included ? "Unlimited" : `${c.balance ?? 0} credits` })),
+              ...creditKeys.map((c) => ({ label: ENTITLEMENTS[c.key].label, value: c.limit === null && c.included ? "Unlimited" : `${Math.max(0, c.balance ?? 0)} credits` })),
             ]}
           />
         </SectionCard>

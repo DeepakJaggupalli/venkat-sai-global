@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, LockKeyhole, Mail, Phone, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -123,7 +124,7 @@ export function ContactPanel(props: ContactPanelProps) {
       </p>
       {noCredits ? (
         <Button asChild size="sm" variant="outline">
-          <a href="/employer/billing">Buy unlock credits</a>
+          <Link href="/employer/billing">Buy unlock credits</Link>
         </Button>
       ) : (
         <ConfirmDialog

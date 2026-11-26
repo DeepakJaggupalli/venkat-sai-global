@@ -16,6 +16,8 @@ export type ReportRowInput = {
   certificates: number;
   placedLearners: number;
   verifiedPlacedLearners: number;
+  /** Distinct learners who completed (one learner can complete a course in two batches); defaults to `completed`. */
+  completedLearners?: number;
 };
 
 export type ReportRates = { completionRate: number | null; passRate: number | null; placementRate: number | null };
@@ -29,12 +31,14 @@ function rate(numerator: number, denominator: number): number | null {
  * Completion rate = completed / (completed + dropped) — learners still in training are not counted.
  * Pass rate = passed / (passed + failed) — pending and ungraded results are not counted.
  * Placement rate = placed learners / completed learners (self-reported and verified; verified shown separately).
+ * Both sides count distinct learners, like the institution-wide rate on the dashboard and the reports page.
  */
-export function reportRates(row: Pick<ReportRowInput, "completed" | "dropped" | "passed" | "failed" | "placedLearners">): ReportRates {
+export function reportRates(row: Pick<ReportRowInput, "completed" | "dropped" | "passed" | "failed" | "placedLearners" | "completedLearners">): ReportRates {
+  const completedLearners = row.completedLearners ?? row.completed;
   return {
     completionRate: rate(row.completed, row.completed + row.dropped),
     passRate: rate(row.passed, row.passed + row.failed),
-    placementRate: rate(Math.min(row.placedLearners, row.completed || row.placedLearners), row.completed),
+    placementRate: rate(Math.min(row.placedLearners, completedLearners || row.placedLearners), completedLearners),
   };
 }
 

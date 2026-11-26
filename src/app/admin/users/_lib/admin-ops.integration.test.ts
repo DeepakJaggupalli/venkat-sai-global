@@ -20,7 +20,7 @@ describe.skipIf(!enabled)("admin ops (PostgreSQL)", async () => {
     it("needs DATABASE_URL pointing to a vsg_test_* database", () => undefined);
     return;
   }
-  const { eq, inArray } = await import("drizzle-orm");
+  const { and, eq, inArray } = await import("drizzle-orm");
   const { db, pool } = await import("@/db");
   const s = await import("@/db/schema");
   const dash = await import("@/components/admin/dashboard-queries");
@@ -122,9 +122,15 @@ describe.skipIf(!enabled)("admin ops (PostgreSQL)", async () => {
     await expect(userAdmin.setStaffRoles(ctx, admin.id, [small.id])).rejects.toThrow(/your own account/);
     await expect(userAdmin.setStaffRoles(ctx, target.id, [big.id])).rejects.toThrow(/permissions you hold/);
 
-    await userAdmin.setStaffRoles(ctx, target.id, [small.id]);
+    expect(await userAdmin.setStaffRoles(ctx, target.id, [small.id])).toEqual({ changed: true });
     const [row] = await db.select({ isStaff: s.users.isStaff }).from(s.users).where(eq(s.users.id, target.id));
     expect(row!.isStaff).toBe(true);
+
+    // Saving the same roles again is not a change: no audit entry and no security warning.
+    const roleAudits = async () => (await db.select({ id: s.auditLogs.id }).from(s.auditLogs).where(and(eq(s.auditLogs.entityId, target.id), eq(s.auditLogs.action, "user.staff_roles_changed")))).length;
+    const before = await roleAudits();
+    expect(await userAdmin.setStaffRoles(ctx, target.id, [small.id])).toEqual({ changed: false });
+    expect(await roleAudits()).toBe(before);
 
     await userAdmin.setStaffRoles(ctx, target.id, []);
     const [row2] = await db.select({ isStaff: s.users.isStaff }).from(s.users).where(eq(s.users.id, target.id));

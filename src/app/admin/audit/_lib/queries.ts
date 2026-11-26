@@ -13,7 +13,12 @@ import { paginated, type PageQuery, type Paginated } from "@/lib/http";
  * Date filters are calendar days in the viewer's time zone (inclusive).
  */
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().catch(undefined);
+/** A real calendar day (z.iso.date rejects 2026-02-30 and 2026-13-01, which Postgres would fail on) or nothing. */
+const isoDate = z.iso
+  .date()
+  .refine((d) => d >= "1900-01-01")
+  .optional()
+  .catch(undefined);
 const text = (max: number) => z.string().trim().max(max).optional().catch(undefined);
 
 export const auditFilterSchema = z.object({

@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export function TicketRatingForm({ ticketId }: { ticketId: string }) {
   useActionToast(state, { successMessage: "Thank you for your feedback" });
 
   return (
-    <form action={formAction} className="space-y-4" noValidate data-testid="ticket-rating-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-4" noValidate data-testid="ticket-rating-form">
       <FormErrorAlert state={state} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <fieldset>

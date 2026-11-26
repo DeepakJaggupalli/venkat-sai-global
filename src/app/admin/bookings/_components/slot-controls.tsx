@@ -68,7 +68,7 @@ export function CancelSlotDialog({ id, title, activeCount }: { id: string; title
       description={
         activeCount
           ? `${activeCount} ${activeCount === 1 ? "booking is" : "bookings are"} cancelled with it. Next you see each person with a WhatsApp button to tell them.`
-          : "Nobody has booked this date yet. It disappears from the website."
+          : "No one is booked on this date now. It disappears from the website."
       }
       trigger={
         <Button type="button" variant="destructive" className="min-h-11" data-testid="slot-cancel">

@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/shared/section-card";
 import { PARTNER_PERMISSIONS } from "@/config/permissions";
 import { logger } from "@/lib/logger";
 import { checkEntitlement } from "@/modules/commercial/entitlements";
+import { seatsNote as seatLineFor } from "@/app/employer/(workspace)/team/_lib/seats";
 import { requireOrgMember } from "@/modules/identity/authz";
 import { listInvitations, listMembers, listOrgRoles } from "@/modules/organizations/members";
 
@@ -42,8 +43,9 @@ export default async function RecruiterTeamPage() {
   }
   const permissionLabels = Object.fromEntries(PARTNER_PERMISSIONS.map((p) => [p.key, p.label]));
   const pending = invitations.filter((i) => i.status === "pending" || i.status === "expired");
-  const seatsNote =
-    seats && seats.limit !== null ? `${seats.used} of ${seats.limit} seats in use on your plan (active members and pending invitations).${seats.allowed ? "" : ` ${seats.reason ?? ""}`}` : null;
+  // Same rule as the Company Portal: only while plan limits are enforced, counting pending invitations
+  // (an unenforced plan reported "3 of 0 seats in use").
+  const seatsNote = seatLineFor(seats, invitations.filter((i) => i.status === "pending").length);
 
   return (
     <div className="space-y-8">

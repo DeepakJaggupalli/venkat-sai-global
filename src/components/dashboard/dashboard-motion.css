@@ -1,0 +1,73 @@
+/*
+ * Dashboard kit motion (global classes, prefixed vsg-: this project loads every .css file as plain CSS, so
+ * CSS Modules are not available). Imported by ./motion.ts. CSS only, so it starts with the first paint and
+ * needs no JavaScript.
+ * Everything animates opacity / transform or a registered integer, and stops for reduced motion.
+ */
+
+/* Count-up: the visible digits are a CSS counter driven by a registered integer property. The real value is
+   always in the base style (shown as-is without animation or without @property support) and in sr-only text. */
+@property --vsg-count {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+
+.vsg-count-up {
+  --vsg-count: var(--vsg-count-to, 0);
+  counter-reset: vsg-count var(--vsg-count);
+  font-variant-numeric: tabular-nums;
+  animation: vsg-count-up 1100ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+.vsg-count-up::after {
+  content: counter(vsg-count);
+}
+
+@keyframes vsg-count-up {
+  from {
+    --vsg-count: 0;
+  }
+}
+
+/* Gentle rise for a block (header, tiles), staggered for the children of a .vsg-stagger container. */
+.vsg-rise {
+  animation: vsg-rise 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.vsg-stagger > * {
+  animation: vsg-rise 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vsg-stagger > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.vsg-stagger > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.vsg-stagger > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.vsg-stagger > :nth-child(5) {
+  animation-delay: 200ms;
+}
+.vsg-stagger > :nth-child(6) {
+  animation-delay: 250ms;
+}
+.vsg-stagger > :nth-child(n + 7) {
+  animation-delay: 300ms;
+}
+
+@keyframes vsg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vsg-count-up,
+  .vsg-rise,
+  .vsg-stagger > * {
+    animation: none;
+  }
+}

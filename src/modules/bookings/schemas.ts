@@ -70,7 +70,15 @@ const seatsNumber = z.coerce
   .min(1, "Book at least 1 seat")
   .max(MAX_SEATS_PER_BOOKING, `Up to ${MAX_SEATS_PER_BOOKING} seats at a time. For more, WhatsApp us.`);
 const optionalSeats = z.preprocess(blankToUndefined, seatsNumber.optional());
-const requiredSeats = z.preprocess(blankToUndefined, seatsNumber);
+/** Staff wording: "WhatsApp us" makes no sense to the office itself. */
+const staffSeats = z.preprocess(
+  blankToUndefined,
+  z.coerce
+    .number({ error: "Enter the number of seats" })
+    .int("Enter a whole number")
+    .min(1, "Book at least 1 seat")
+    .max(MAX_SEATS_PER_BOOKING, `Up to ${MAX_SEATS_PER_BOOKING} seats in one booking. Add another booking for more.`),
+);
 
 const optionalEmail = optionalBlank(z.string().trim().toLowerCase().max(254, "Too long").pipe(z.email("Enter a valid email address, or leave it empty")));
 
@@ -121,7 +129,7 @@ export const staffBookingSchema = z.object({
   trade: f.text({ label: "Trade", max: 80 }),
   email: optionalEmail,
   organizationName: f.optionalText(160),
-  seats: requiredSeats,
+  seats: staffSeats,
   notes: f.optionalText(1000),
   consentToContact: f.bool().refine((v) => v === true, { message: "Confirm that the person agreed to be called or WhatsApped about this booking" }),
 });

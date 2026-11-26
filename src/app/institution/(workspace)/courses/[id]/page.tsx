@@ -120,7 +120,7 @@ export default async function InstitutionCoursePage({ params }: { params: Promis
                 </ul>
               ) : null,
             },
-            { label: "Published", value: course.publishedAt ? <DateText value={course.publishedAt} timeZone={timeZone} /> : null },
+            { label: "Published", value: course.publishedAt ? <DateText value={course.publishedAt} timeZone={timeZone} /> : "Not yet" },
           ]}
         />
         {course.descriptionHtml ? (

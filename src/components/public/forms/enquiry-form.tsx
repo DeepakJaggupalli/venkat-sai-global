@@ -7,13 +7,14 @@ import { useActionState, useRef, useTransition, type FormEvent } from "react";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/client";
 import type { ENQUIRY_TYPE_OPTION_LABELS } from "@/modules/content/constants";
 import { submitEnquiryAction } from "@/modules/operations/actions";
 
 import { SAFE_RECRUITMENT_PATH } from "../links";
 import { ContactButtons } from "../requirements/contact-buttons";
-import { ConsentCheckbox, Honeypot } from "./form-parts";
+import { ConsentCheckbox, Honeypot, SUBMIT_PILL } from "./form-parts";
 
 /** Enquiry types the public form may send (the CMS list mirrors the operations module's ENQUIRY_TYPES). */
 export type PublicEnquiryType = keyof typeof ENQUIRY_TYPE_OPTION_LABELS;
@@ -119,7 +120,7 @@ export function EnquiryForm({
         </FormField>
       </div>
       <ConsentCheckbox state={state} className="mt-5" label="I agree that Venkat Sai may contact me about this enquiry." />
-      <SubmitButton pending={pending} pendingLabel="Sending…" className="mt-6 w-full sm:w-auto">
+      <SubmitButton pending={pending} pendingLabel="Sending…" className={cn(SUBMIT_PILL, "mt-6")}>
         Send enquiry
       </SubmitButton>
     </form>

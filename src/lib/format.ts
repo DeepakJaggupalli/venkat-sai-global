@@ -83,8 +83,14 @@ export function formatRelative(value: Date | string | null | undefined): string 
 
 export function initials(name: string | null | undefined): string {
   if (!name) return "?";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "")).toUpperCase() || "?";
+  // The first letter or digit of the first and last words, taken by code point: an emoji is never cut in half (a lone
+  // surrogate renders as "�" and differs between the server HTML and the browser, which breaks hydration).
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.match(/[\p{L}\p{N}]/u)?.[0])
+    .filter((c): c is string => Boolean(c));
+  return ((letters[0] ?? "") + (letters.length > 1 ? letters[letters.length - 1] : "")).toUpperCase() || "?";
 }
 
 /** r***@gmail.com */

@@ -12,7 +12,7 @@ import { staffCan } from "@/modules/identity/authz";
 import { setSetting } from "@/modules/settings";
 import { countryOptions, currencyOptions } from "@/modules/taxonomy/queries";
 
-import { displayValue, parseSettingValues, sameValue, settingMeta } from "./catalog";
+import { displayValue, mergeSellerDetails, parseSettingValues, sameValue, settingMeta } from "./catalog";
 
 export type SettingState = { key: SettingKey; value: unknown; isDefault: boolean; updatedAt: Date | null; updatedBy: string | null };
 
@@ -79,8 +79,9 @@ export async function saveSettingGroup(ctx: StaffContext, group: string, input: 
   const changed: SettingKey[] = [];
   for (const key of keys) {
     if (!(key in parsed.values)) continue;
-    const next = parsed.values[key];
     const before = current.get(key)?.value;
+    // Seller details: keep the fields only /admin/commercial/seller edits (see mergeSellerDetails).
+    const next = settingMeta(key).kind === "seller" ? mergeSellerDetails(before, parsed.values[key] as Record<string, string>) : parsed.values[key];
     if (sameValue(before, next)) continue;
     await setSetting(key, next as SettingValue<typeof key>, ctx.user.id);
     const isObject = typeof next === "object" && next !== null;

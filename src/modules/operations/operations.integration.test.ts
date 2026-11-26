@@ -270,6 +270,20 @@ describe.skipIf(!enabled)("operations services (PostgreSQL)", async () => {
       await expectActionError(requirementsSvc.changeRequirementStatus(approver, req!.id, "on_hold"), /reason/);
     });
 
+    it("keeps a draft with a past joining date but refuses to send it until the date is changed", async () => {
+      const employer = await makeOrg("employer", ["employer.requirements.manage"]);
+      const past = { ...work, joiningBy: "2020-01-01", attachmentFileIds: [] };
+      const draft = await requirementsSvc.submitEmployerRequirement(employer, { ...past, asDraft: true } as never);
+      expect(draft.status).toBe("draft");
+      await expectActionError(requirementsSvc.submitEmployerRequirement(employer, { ...past, asDraft: false } as never), /joining date has already passed/);
+      await expectActionError(requirementsSvc.submitEmployerRequirementDraft(employer, draft.id), /joining date has already passed/);
+      await expectActionError(requirementsSvc.updateEmployerRequirement(employer, draft.id, { ...past, asDraft: false } as never), /joining date has already passed/);
+      const future = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+      await requirementsSvc.updateEmployerRequirement(employer, draft.id, { ...past, joiningBy: future, asDraft: false } as never);
+      const [sent] = await db.select().from(s.requirementRequests).where(eq(s.requirementRequests.id, draft.id));
+      expect(sent!.status).toBe("submitted");
+    });
+
     it("lets employers submit, edit after a change request and see only their own requirements without internal notes", async () => {
       const employer = await makeOrg("employer", ["employer.requirements.manage", "employer.dashboard"]);
       const other = await makeOrg("employer", ["employer.requirements.manage"]);

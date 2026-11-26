@@ -105,13 +105,14 @@ test.describe("partner workspace (owner)", () => {
   });
 
   test("dashboard shows live sections and no placeholder numbers", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1, name: /welcome/i })).toBeVisible();
+    // The dashboard greets by time of day ("Good morning, …").
+    await expect(page.getByRole("heading", { level: 1, name: /^good (morning|afternoon|evening)/i })).toBeVisible();
     await expect(page.getByText(/open requirements/i).first()).toBeVisible();
     await expect(page.getByText(/lorem ipsum/i)).toHaveCount(0);
   });
 
   const pages: [string, RegExp][] = [
-    ["/recruiter", /welcome/i],
+    ["/recruiter", /^good (morning|afternoon|evening)/i],
     ["/recruiter/requirements", /assigned requirements/i],
     ["/recruiter/submissions", /^submissions$/i],
     ["/recruiter/candidates", /my candidates/i],

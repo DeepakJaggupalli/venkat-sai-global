@@ -14,7 +14,7 @@ export const publicTicketSchema = z.object({
   phone: f.optionalPhone(),
   category: f.enumOf(TICKET_CATEGORY_VALUES, "Choose what your request is about"),
   subject: f.text({ label: "Subject", max: 200 }),
-  message: f.text({ label: "Describe the issue", min: 10, max: 10_000 }),
+  message: f.text({ label: "Description", min: 10, max: 10_000 }),
   grievanceType: f.enumOf(GRIEVANCE_TYPE_VALUES).optional(),
   consentToContact: f.bool().refine((v) => v === true, { message: "Please agree that we may contact you about your request" }),
   website: z.string().max(500).optional(),

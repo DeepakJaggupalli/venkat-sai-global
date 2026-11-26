@@ -98,12 +98,26 @@ export function formDataToObject(fd: FormData): Record<string, unknown> {
   return out;
 }
 
+/**
+ * safeParse that also survives a transform or refine that throws on unexpected input (a hand-made request), so a
+ * bad payload gets a friendly error instead of failing the whole request. Null when parsing threw.
+ */
+function safeParseInput<TSchema extends z.ZodType>(schema: TSchema, input: unknown): z.ZodSafeParseResult<z.output<TSchema>> | null {
+  try {
+    return schema.safeParse(input);
+  } catch (err) {
+    logger.warn("Server action input could not be parsed", { error: err });
+    return null;
+  }
+}
+
 export function createFormAction<TSchema extends z.ZodType, TResult = undefined>(
   schema: TSchema,
   handler: (input: z.output<TSchema>, formData: FormData) => Promise<ActionResult<TResult> | void>,
 ): (prevState: ActionState<TResult>, formData: FormData) => Promise<ActionResult<TResult>> {
   return async (_prev, formData) => {
-    const parsed = schema.safeParse(formDataToObject(formData));
+    const parsed = safeParseInput(schema, formDataToObject(formData));
+    if (!parsed) return { ok: false, error: "Please check the form and try again." };
     if (!parsed.success) {
       return { ok: false, error: "Please correct the highlighted fields.", fieldErrors: zodFieldErrors(parsed.error) };
     }
@@ -130,7 +144,8 @@ export function createAction<TSchema extends z.ZodType, TResult = undefined>(
   handler: (input: z.output<TSchema>) => Promise<ActionResult<TResult> | void>,
 ): (input: z.input<TSchema>) => Promise<ActionResult<TResult>> {
   return async (input) => {
-    const parsed = schema.safeParse(input);
+    const parsed = safeParseInput(schema, input);
+    if (!parsed) return { ok: false, error: "Invalid request." };
     if (!parsed.success) {
       return { ok: false, error: "Invalid request.", fieldErrors: zodFieldErrors(parsed.error) };
     }

@@ -79,6 +79,11 @@ describe.skipIf(!enabled)("training management", async () => {
     expect((await queries.getCourseForActor(staff, course.id)).modules).toHaveLength(2);
     expect((await queries.listCourses(staff, { organizationId: "venkat_sai", q: tag }, page)).items[0]).toMatchObject({ id: course.id, batchCount: 0 });
 
+    // A batch whose registration date has passed cannot open: it would show "open" while refusing everyone.
+    const lapsed = await batchService.createBatch(staff, course.id, { title: "Last year", mode: "in_person", startsOn: "2020-01-06", endsOn: "2020-02-28", registrationDeadline: "2020-01-01" });
+    await expect(batchService.openBatch(staff, lapsed.id)).rejects.toMatchObject({ code: "invalid_state" });
+    expect((await db.select().from(batches).where(eq(batches.id, lapsed.id)))[0]!.status).toBe("planned");
+
     const batch = await batchService.createBatch(staff, course.id, { title: "Weekend", mode: "hybrid", capacity: 2 });
     await batchService.openBatch(staff, batch.id);
     await batchService.pauseBatchEnrolment(staff, batch.id);
@@ -102,8 +107,11 @@ describe.skipIf(!enabled)("training management", async () => {
     const detail = await queries.getBatchForActor(staff, batch.id);
     expect(detail.enrolmentCounts.confirmed).toBe(2);
     await batchService.startBatch(staff, batch.id);
-    const session = await attendance.createAttendanceSession(staff, batch.id, { sessionDate: "2027-05-01", courseModuleId: m2.id });
-    await attendance.updateAttendanceSession(staff, session.id, { sessionDate: "2027-05-02", topic: "Codes and standards" });
+    // Attendance is never taken for a future date (it would count before the class happened).
+    await expect(attendance.createAttendanceSession(staff, batch.id, { sessionDate: "2099-01-01" })).rejects.toMatchObject({ code: "validation" });
+    const session = await attendance.createAttendanceSession(staff, batch.id, { sessionDate: "2026-05-01", courseModuleId: m2.id });
+    await expect(attendance.updateAttendanceSession(staff, session.id, { sessionDate: "2099-01-02" })).rejects.toMatchObject({ code: "validation" });
+    await attendance.updateAttendanceSession(staff, session.id, { sessionDate: "2026-05-02", topic: "Codes and standards" });
     const roster = await queries.listBatchEnrolments(staff, batch.id);
     await attendance.recordAttendance(staff, session.id, roster.map((r) => ({ enrolmentId: r.id, status: "present" as const })));
     expect((await attendance.getAttendanceRegister(staff, batch.id)).records).toHaveLength(2);

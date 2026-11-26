@@ -65,7 +65,7 @@ test.describe("employer onboarding", () => {
     await page.getByRole("button", { name: /create employer workspace/i }).click();
 
     await page.waitForURL(/\/employer\?welcome=1/, NAV);
-    await expect(page.getByText(/your employer workspace is ready/i)).toBeVisible();
+    await expect(page.getByText(/your company workspace is ready/i)).toBeVisible();
     await expect(page.getByRole("region", { name: /set up your workspace/i })).toBeVisible();
   });
 });
@@ -78,10 +78,12 @@ test.describe("employer workspace", () => {
   });
 
   test("dashboard shows real figures and honest empty states", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1, name: /welcome/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /^good (morning|afternoon|evening)/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /hiring overview/i })).toBeVisible();
-    await expect(page.getByText("Active requirements")).toBeVisible();
-    await expect(page.getByText("Pending actions").first()).toBeVisible();
+    await expect(page.getByText("Open manpower requests")).toBeVisible();
+    await expect(page.getByRole("region", { name: /needs your action/i })).toBeVisible();
+    await expect(page.getByRole("region", { name: /quick actions/i }).getByRole("link", { name: /request manpower/i })).toBeVisible();
+    await expect(page.getByRole("region", { name: /large manpower order/i }).getByRole("link", { name: /whatsapp prasad/i })).toHaveAttribute("href", /^https:\/\/wa\.me\//);
   });
 
   test("company profile saves details and the verification page lists requirements", async ({ page }) => {
@@ -288,7 +290,7 @@ test.describe("employer navigation", () => {
   test("every Employer Portal link on the dashboard resolves", async ({ page }) => {
     test.setTimeout(240_000);
     await signIn(page, EMPLOYER_EMAIL!, EMPLOYER_PASSWORD!, "/employer");
-    await expect(page.getByRole("heading", { level: 1, name: /welcome/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /^good (morning|afternoon|evening)/i })).toBeVisible();
     const hrefs = await page.locator('a[href^="/employer"]').evaluateAll((links) => [...new Set(links.map((a) => a.getAttribute("href")!.split("#")[0]!))]);
     expect(hrefs.length).toBeGreaterThan(5);
     for (const href of hrefs) {

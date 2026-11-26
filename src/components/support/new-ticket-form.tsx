@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { FileUpload } from "@/components/files";
 import { FormErrorAlert, FormField, SubmitButton, useActionToast } from "@/components/shared/form";
+import { keepFormValues } from "@/components/shared/form/keep-values";
 import { SimpleSelect } from "@/components/shared/selects";
 import type { SelectOption } from "@/components/shared/types";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ export function NewTicketForm({ portal, basePath, categories, grievanceTypes, pr
   });
 
   return (
-    <form action={formAction} className="space-y-5" noValidate data-testid="new-ticket-form">
+    <form action={formAction} onResetCapture={keepFormValues} className="space-y-5" noValidate data-testid="new-ticket-form">
       <FormErrorAlert state={state} fieldLabels={{ category: "Category", subject: "Subject", message: "Description", grievanceType: "Grievance type", attachmentFileIds: "Attachments" }} />
       <input type="hidden" name="portal" value={portal} />
       {relatedType && relatedId ? (

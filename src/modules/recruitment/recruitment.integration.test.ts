@@ -564,6 +564,47 @@ describe.skipIf(!enabled)("recruitment services (PostgreSQL)", async () => {
     ).rejects.toMatchObject({ code: "not_found" });
   });
 
+  it("refuses under-18s for overseas work and impossible or future dates, leaving nothing behind", async () => {
+    const [overseas] = await db
+      .select()
+      .from(s.partnerAssignments)
+      .where(and(eq(s.partnerAssignments.partnerOrganizationId, partner2Org.id), eq(s.partnerAssignments.jobId, overseasJob.id)));
+    const email = `young.${run}@vsg-test.invalid`;
+    const submit = (candidate: { dateOfBirth?: string }, capturedOn?: string) =>
+      svc.submitCandidateByPartner(partner2Ctx, overseas!.id, { candidate: { kind: "new", fullName: "Young Person", email, ...candidate }, consent: { attested: true, method: "written", capturedOn } });
+
+    const minorDob = `${new Date().getUTCFullYear() - 15}-01-15`;
+    await expect(submit({ dateOfBirth: minorDob })).rejects.toMatchObject({ code: "minor_overseas", fieldErrors: { "candidate.dateOfBirth": [expect.stringMatching(/under 18/)] } });
+    // Refused inside the transaction: no account is left for the child.
+    expect(await db.select({ id: s.users.id }).from(s.users).where(eq(s.users.email, email))).toEqual([]);
+
+    await expect(submit({ dateOfBirth: "2999-01-01" })).rejects.toMatchObject({ fieldErrors: { "candidate.dateOfBirth": ["Date of birth cannot be in the future"] } });
+    await expect(submit({ dateOfBirth: "1990-02-31" })).rejects.toMatchObject({ fieldErrors: { "candidate.dateOfBirth": ["Enter a real date"] } });
+    await expect(submit({ dateOfBirth: "1990-01-15" }, "2999-01-01")).rejects.toMatchObject({ fieldErrors: { "consent.capturedOn": ["The date of consent cannot be in the future"] } });
+    expect(await db.select({ id: s.partnerSubmissions.id }).from(s.partnerSubmissions).where(eq(s.partnerSubmissions.assignmentId, overseas!.id))).toEqual([]);
+  });
+
+  it("never marks an existing account as sourced by the partner, and refuses staff accounts", async () => {
+    // A person who already has an account (here without a candidate profile) and a phone number on it.
+    const member = await makeUser("Existing Account Holder");
+    await db.update(s.users).set({ phone: "+919848011223" }).where(eq(s.users.id, member.id));
+    const result = await svc.submitCandidateByPartner(partner2Ctx, partner2AssignmentId, {
+      candidate: { kind: "new", fullName: "Existing Account Holder", email: member.email },
+      consent: { attested: true, method: "written" },
+    });
+    expect(result.candidateCreated).toBe(true);
+    const [profile] = await db.select().from(s.candidateProfiles).where(eq(s.candidateProfiles.id, result.candidateId));
+    // "Sourced" unlocks the account's own phone and email on My candidates; the partner only typed the email.
+    expect(profile).toMatchObject({ userId: member.id, source: "partner", sourcedByPartnerOrgId: null });
+    await svc.withdrawPartnerSubmission(partner2Ctx, result.submissionId);
+
+    const staffAccount = await makeUser("Staff Lookup Target", { isStaff: true });
+    await expect(
+      svc.submitCandidateByPartner(partner2Ctx, partner2AssignmentId, { candidate: { kind: "new", fullName: "Staff Lookup Target", email: staffAccount.email }, consent: { attested: true, method: "written" } }),
+    ).rejects.toMatchObject({ code: "candidate_unavailable" });
+    expect(await db.select({ id: s.candidateProfiles.id }).from(s.candidateProfiles).where(eq(s.candidateProfiles.userId, staffAccount.id))).toEqual([]);
+  });
+
   it("marks submissions of a candidate attributed to another partner as duplicates and flags possible duplicates", async () => {
     const sameEmail = await svc.submitCandidateByPartner(partner2Ctx, partner2AssignmentId, {
       candidate: { kind: "new", fullName: "Arjun Rao", email: `arjun.${run}@vsg-test.invalid` },

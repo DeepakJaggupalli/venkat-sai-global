@@ -30,6 +30,9 @@ export type PortalTopbarProps = {
   breadcrumb: ReactNode;
   portals: readonly PortalLink[];
   user: ShellUser;
+  /** "How to use" guide of this portal: the "?" button (every screen size). */
+  guideHref: string;
+  /** Support requests page (account menu "Help and support"); null hides it. */
   helpHref: string | null;
   notificationsHref: string;
   /** People Portal: translated labels + language switcher. */
@@ -46,6 +49,7 @@ export function PortalTopbar({
   breadcrumb,
   portals,
   user,
+  guideHref,
   helpHref,
   notificationsHref,
   translate,
@@ -53,7 +57,7 @@ export function PortalTopbar({
 }: PortalTopbarProps) {
   const t = useShellT();
   const lang = useShellLang();
-  const helpLabel = t("shell.help");
+  const guideLabel = t("shell.howToUse");
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
@@ -81,20 +85,18 @@ export function PortalTopbar({
           {portals.length > 0 && (
             <PortalSwitcher current={portal} portals={portals} translate={translate} className="hidden sm:inline-flex" />
           )}
-          {helpHref && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button asChild variant="ghost" size="icon" className={cn(TOPBAR_ICON_BUTTON, "hidden sm:inline-flex")}>
-                  <Link href={helpHref} aria-label={helpLabel}>
-                    <CircleHelp aria-hidden />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" lang={lang}>
-                {helpLabel}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon" className={TOPBAR_ICON_BUTTON}>
+                <Link href={guideHref} aria-label={guideLabel} data-slot="portal-guide-link">
+                  <CircleHelp aria-hidden />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" lang={lang}>
+              {guideLabel}
+            </TooltipContent>
+          </Tooltip>
           {translate && <LanguageSwitcher locale={locale} compact />}
           <NotificationBell viewAllHref={notificationsHref} />
           <UserMenu user={user} helpHref={helpHref} className="ml-0.5 sm:ml-1.5" />

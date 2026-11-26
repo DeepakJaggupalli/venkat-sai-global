@@ -50,7 +50,7 @@ export const planFormSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9_]{1,63}$/, "Use 2–64 lowercase letters, digits or underscores"),
   name: f.text({ label: "Name", max: 120 }),
   description: f.longText(2000),
-  audience: f.enumOf(PLAN_AUDIENCES),
+  audience: f.enumOf(PLAN_AUDIENCES, "Choose who the plan is for"),
   kind: f.enumOf(PLAN_KINDS).default("base"),
   isPublic: f.bool(),
   isActive: f.bool(),
@@ -181,7 +181,7 @@ export const taxRateFormSchema = z
     name: f.text({ label: "Name", max: 80 }),
     countryCode: f.countryCode(),
     region: z.string().trim().max(10).optional(),
-    kind: f.enumOf(TAX_RATE_KINDS),
+    kind: f.enumOf(TAX_RATE_KINDS, "Choose the kind of tax"),
     ratePercent: z
       .string({ error: "Rate is required" })
       .trim()
@@ -266,19 +266,27 @@ export const offlinePaymentSchema = z
     provider: f.enumOf(OFFLINE_PAYMENT_PROVIDERS),
     method: f.enumOf(PAYMENT_METHODS).optional(),
     amount: decimalAmount("Amount"),
-    currency: f.currencyCode(),
+    /** The invoice's currency (sent by the form once an invoice is chosen) or the one chosen for an advance payment. */
+    currency: f.currencyCode().optional(),
     /** Bank UTR, UPI transaction reference or cheque number. */
     externalReference: f.optionalText(100),
     receivedAt: f.date(),
     proofFileId: f.optionalUuid(),
     notes: f.optionalText(1000),
   })
-  .superRefine((v, ctx) => {
-    if (!v.invoiceId && !v.organizationId) ctx.addIssue({ code: "custom", path: ["invoiceId"], message: "Choose the invoice (or the organisation for an advance payment)" });
-    if (v.provider !== "manual" && !v.externalReference) {
-      ctx.addIssue({ code: "custom", path: ["externalReference"], message: v.provider === "cheque" ? "Enter the cheque number" : "Enter the UTR / UPI transaction reference" });
-    }
-  });
+  .superRefine(
+    (v, ctx) => {
+      // Runs even when other fields failed, so an empty form lists every missing field at once. Without an invoice or
+      // organisation there is no currency field on screen yet, so only the invoice is asked for.
+      if (!v.invoiceId && !v.organizationId) ctx.addIssue({ code: "custom", path: ["invoiceId"], message: "Choose the invoice (or the organisation for an advance payment)" });
+      else if (!v.currency) ctx.addIssue({ code: "custom", path: ["currency"], message: "Choose a currency" });
+      if (v.provider !== "manual" && !v.externalReference) {
+        ctx.addIssue({ code: "custom", path: ["externalReference"], message: v.provider === "cheque" ? "Enter the cheque number" : "Enter the UTR / UPI transaction reference" });
+      }
+    },
+    { when: () => true },
+  )
+  .transform((v) => ({ ...v, currency: v.currency ?? "" }));
 export type OfflinePaymentInput = z.output<typeof offlinePaymentSchema>;
 
 export const allocatePaymentSchema = z.object({ paymentId: f.uuid(), invoiceId: f.uuid() });
@@ -334,7 +342,7 @@ export const disputeDecisionSchema = z.object({
 export const startSubscriptionSchema = z.object({
   /** Staff only: the organisation (members always subscribe their own). */
   organizationId: f.optionalUuid(),
-  planId: f.uuid(),
+  planId: z.uuid("Choose a plan"),
   /** Required unless the plan is offered on contract (staff, manual). */
   planPriceId: f.optionalUuid(),
   couponCode: z.string().trim().toUpperCase().max(40).optional(),
@@ -344,9 +352,12 @@ export const startSubscriptionSchema = z.object({
 });
 export type StartSubscriptionInput = z.output<typeof startSubscriptionSchema>;
 
+/** Command Centre: staff always choose the organisation. */
+export const staffStartSubscriptionSchema = startSubscriptionSchema.extend({ organizationId: z.uuid("Choose the organisation") });
+
 export const changePlanSchema = z.object({
   subscriptionId: f.uuid(),
-  planId: f.uuid(),
+  planId: z.uuid("Choose a plan"),
   planPriceId: f.optionalUuid(),
   couponCode: z.string().trim().toUpperCase().max(40).optional(),
 });

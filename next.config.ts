@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "4mb",
     },
+    // Local test servers (NEXT_DIST_DIR set) keep compiled pages in memory only: the on-disk dev cache grew to
+    // ~9 GB during long browser-testing runs and filled the drive.
+    ...(process.env.NEXT_DIST_DIR ? { turbopackFileSystemCacheForDev: false } : {}),
   },
   images: {
     qualities: [60, 75, 90],

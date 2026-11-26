@@ -19,9 +19,19 @@ export type ReportFilters = { from?: Date; to?: Date; fromIso?: string; toIso?: 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * A real calendar day (YYYY-MM-DD) from the address bar, or undefined. "2026-13-45" matches the pattern but is an
+ * Invalid Date that made every report query throw, and "2026-02-31" would silently roll over into March.
+ */
+function calendarDay(value: SearchParams[string]): string | undefined {
+  if (typeof value !== "string" || !ISO_DATE.test(value)) return undefined;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : undefined;
+}
+
 export function parseReportFilters(sp: SearchParams): ReportFilters {
-  const from = typeof sp.from === "string" && ISO_DATE.test(sp.from) ? sp.from : undefined;
-  const to = typeof sp.to === "string" && ISO_DATE.test(sp.to) ? sp.to : undefined;
+  const from = calendarDay(sp.from);
+  const to = calendarDay(sp.to);
   const jobId = typeof sp.jobId === "string" && UUID.test(sp.jobId) ? sp.jobId : undefined;
   const toDate = to ? new Date(`${to}T00:00:00Z`) : undefined;
   if (toDate) toDate.setUTCDate(toDate.getUTCDate() + 1); // inclusive end date

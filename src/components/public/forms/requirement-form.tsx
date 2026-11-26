@@ -11,13 +11,14 @@ import type { SelectOption } from "@/components/shared/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { track } from "@/modules/analytics/client";
 import { submitRequirementAction } from "@/modules/operations/actions";
 
 import { ContactButtons } from "../requirements/contact-buttons";
-import { ConsentCheckbox, Honeypot } from "./form-parts";
+import { ConsentCheckbox, Honeypot, SUBMIT_PILL } from "./form-parts";
 import { RequirementLineFields } from "./requirement-line-fields";
-import { buildRequirementPayload, emptyLine, lineErrors, MAX_REQUIREMENT_LINES, type RequirementLineDraft } from "./requirement-lines";
+import { buildRequirementPayload, emptyLine, lineErrors, lineFieldLabels, MAX_REQUIREMENT_LINES, type RequirementLineDraft } from "./requirement-lines";
 
 export type RequirementFormOptions = {
   countries: SelectOption[];
@@ -38,7 +39,7 @@ const FIELD_LABELS: Record<string, string> = {
   contactPhone: "Phone",
   consentToContact: "Consent to contact",
   description: "Description",
-  joiningBy: "Joining by",
+  joiningBy: "Needed by",
   contractDurationMonths: "Contract duration",
 };
 
@@ -92,6 +93,7 @@ export function RequirementForm({ options, utm, sourcePage = "/employers/request
   useActionToast(state);
 
   const payload = useMemo(() => JSON.stringify(buildRequirementPayload(lines)), [lines]);
+  const fieldLabels = useMemo(() => ({ ...FIELD_LABELS, ...lineFieldLabels(lines) }), [lines]);
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined;
   const linesError = fieldErrors?.lines?.[0];
 
@@ -156,7 +158,7 @@ export function RequirementForm({ options, utm, sourcePage = "/employers/request
 
   return (
     <form onSubmit={onSubmit} onInput={onFirstInput} noValidate className="relative space-y-10 rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-8 lg:p-10" data-testid="requirement-form">
-      <FormErrorAlert state={state} fieldLabels={FIELD_LABELS} />
+      <FormErrorAlert state={state} fieldLabels={fieldLabels} />
       <input type="hidden" name="sourcePage" value={sourcePage} />
       <input type="hidden" name="locale" value="en" />
       <input type="hidden" name="lines:json" value={payload} />
@@ -289,7 +291,7 @@ export function RequirementForm({ options, utm, sourcePage = "/employers/request
 
       <div className="border-t border-border pt-8">
         <ConsentCheckbox state={state} label="I agree that Venkat Sai may contact me about this requirement." />
-        <SubmitButton pending={pending} pendingLabel="Submitting…" className="mt-6 w-full sm:w-auto" data-testid="requirement-submit">
+        <SubmitButton pending={pending} pendingLabel="Submitting…" className={cn(SUBMIT_PILL, "mt-6")} data-testid="requirement-submit">
           Submit requirement
         </SubmitButton>
       </div>

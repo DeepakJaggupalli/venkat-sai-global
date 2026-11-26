@@ -40,7 +40,15 @@ export function UsageMeters({ items, enforced, timeZone }: { items: readonly Usa
                   </span>
                 ) : null}
               </div>
-              {!item.included ? (
+              {!item.included && !enforced && item.mode === "counted" ? (
+                // Limits are off, so the organisation is using this anyway: show the real count, not "not included".
+                <>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    <span className="font-heading text-2xl font-semibold text-foreground tabular-nums">{item.used}</span> in use
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">No allowance on your plan yet. Nothing is blocked.</p>
+                </>
+              ) : !item.included ? (
                 <p className="mt-2 text-sm text-muted-foreground">Not included in your plan</p>
               ) : item.mode === "credit" ? (
                 <p className="mt-2 text-sm text-muted-foreground">

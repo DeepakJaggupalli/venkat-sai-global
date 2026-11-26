@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -81,17 +82,32 @@ export type JobFormSubmitGate = {
 const FIELD_LABELS: Record<string, string> = {
   title: "Job title",
   summary: "Summary",
+  jobCategoryId: "Job category",
+  industryId: "Industry",
+  responsibilities: "Responsibilities",
+  qualificationsText: "Qualifications and certifications",
+  recruitmentProcess: "Recruitment process",
   descriptionHtml: "Description",
   employmentType: "Employment type",
   workMode: "Work mode",
+  experienceLevel: "Experience level",
+  experienceMinYears: "Minimum experience",
   experienceMaxYears: "Maximum experience",
+  minEducationLevelId: "Minimum education",
   openings: "Openings",
+  employerReference: "Your reference",
   salaryMin: "Minimum salary",
   salaryMax: "Maximum salary",
   salaryCurrency: "Salary currency",
   salaryPeriod: "Pay period",
   countryCode: "Country",
+  visaSponsorship: "Visa sponsorship",
   sponsorshipDetails: "Sponsorship details",
+  contractDurationMonths: "Contract duration",
+  workingHours: "Working hours",
+  stateRegion: "State / region",
+  city: "City",
+  benefits: "Benefits",
   applicationDeadline: "Application deadline",
   expiresAt: "Listing end date",
   startDate: "Start date",
@@ -418,17 +434,20 @@ export function JobForm({
             {!gate.blockReason && gate.upgradeReason ? (
               <>
                 {" "}
-                <a href="/employer/billing" className="font-medium text-teal-strong underline underline-offset-4">
+                <Link href="/employer/billing" className="font-medium text-teal-strong underline underline-offset-4">
                   View plans
-                </a>
+                </Link>
               </>
             ) : null}
           </p>
         ) : null}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          {/* Both buttons ignore clicks while either is busy (no second job from a quick second click); only the
+              clicked one shows its pending label. */}
           <SubmitButton
             variant="outline"
-            pending={pending && clicked === "draft"}
+            pending={pending || submitting}
+            indicator={clicked === "draft"}
             pendingLabel="Saving…"
             onClick={() => {
               intent.current = "draft";
@@ -441,7 +460,8 @@ export function JobForm({
           </SubmitButton>
           {gate.statusAllowsSubmit ? (
             <SubmitButton
-              pending={(pending && clicked === "submit") || submitting}
+              pending={pending || submitting}
+              indicator={clicked === "submit"}
               pendingLabel="Submitting…"
               onClick={() => {
                 intent.current = "submit";

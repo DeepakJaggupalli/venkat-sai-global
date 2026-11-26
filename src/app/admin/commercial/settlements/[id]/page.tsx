@@ -28,7 +28,7 @@ type Line = SettlementDetail["lines"][number];
 export default async function SettlementPage({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("partners.settlements");
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const s = await getSettlementDetail(staff, id);
   if (!s) notFound();
   const timeZone = staff.user.timezone ?? env().DEFAULT_TIMEZONE;

@@ -1,6 +1,8 @@
 /**
  * Portal navigation (client-safe) — also the ROUTE CONTRACT for each portal:
  * every href listed here must exist. Items are filtered by permission in the portal shell.
+ * Every portal keeps a "How to use" item (no permission) pointing at its guide, PORTAL_HELP_HREF in
+ * src/components/layout/portal-help.ts (portal-guides.test.ts checks it).
  */
 import {
   Activity,
@@ -15,6 +17,7 @@ import {
   CalendarCheck2,
   CalendarClock,
   ClipboardCheck,
+  CircleHelp,
   ClipboardList,
   Coins,
   CreditCard,
@@ -126,6 +129,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
       items: [
         { title: "Notifications", href: "/talent/notifications", icon: Bell, i18nKey: "nav.notifications" },
         { title: "Messages", href: "/talent/messages", icon: MessageSquare, i18nKey: "nav.messages" },
+        { title: "How to use", href: "/talent/help", icon: CircleHelp, i18nKey: "nav.help" },
         { title: "Support", href: "/talent/support", icon: LifeBuoy, i18nKey: "nav.support" },
         { title: "Privacy & data", href: "/talent/privacy", icon: ShieldCheck, i18nKey: "nav.privacy" },
       ],
@@ -159,6 +163,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Announcements", href: "/employer/announcements", icon: Megaphone, permission: "employer.company.manage" },
         { title: "Billing", href: "/employer/billing", icon: CreditCard, permission: "employer.billing.view" },
         { title: "Messages", href: "/employer/messages", icon: MessageSquare },
+        { title: "How to use", href: "/employer/help", icon: CircleHelp },
         { title: "Support", href: "/employer/support", icon: LifeBuoy },
       ],
     },
@@ -187,6 +192,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Billing", href: "/agency/billing", icon: CreditCard, permission: "employer.billing.view" },
         { title: "Team", href: "/agency/team", icon: Users, permission: "employer.team.manage" },
         { title: "Agency profile & verification", href: "/agency/company", icon: Building2, permission: "employer.company.manage" },
+        { title: "How to use", href: "/agency/help", icon: CircleHelp },
         { title: "Support", href: "/agency/support", icon: LifeBuoy },
       ],
     },
@@ -213,6 +219,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Agency profile", href: "/recruiter/profile", icon: Building2, permission: "partner.profile.manage" },
         { title: "Announcements", href: "/recruiter/announcements", icon: Megaphone, permission: "partner.profile.manage" },
         { title: "Team", href: "/recruiter/team", icon: Users, permission: "partner.team.manage" },
+        { title: "How to use", href: "/recruiter/help", icon: CircleHelp },
         { title: "Support", href: "/recruiter/support", icon: LifeBuoy },
       ],
     },
@@ -239,6 +246,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Announcements", href: "/institution/announcements", icon: Megaphone, permission: "institution.profile.manage" },
         { title: "Billing", href: "/institution/billing", icon: CreditCard, permission: "institution.billing.manage" },
         { title: "Messages", href: "/institution/messages", icon: MessageSquare },
+        { title: "How to use", href: "/institution/help", icon: CircleHelp },
         { title: "Support", href: "/institution/support", icon: LifeBuoy },
       ],
     },
@@ -252,6 +260,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Approval centre", href: "/admin/approvals", icon: ListChecks, permission: "approvals.view" },
         { title: "My tasks", href: "/admin/tasks", icon: ClipboardCheck },
         { title: "Messages", href: "/admin/messages", icon: MessageSquare },
+        { title: "How to use", href: "/admin/help", icon: CircleHelp },
       ],
     },
     {

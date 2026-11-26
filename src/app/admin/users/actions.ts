@@ -51,9 +51,9 @@ export const resetTwoFactorAction = createFormAction(z.object({ userId: f.uuid()
 
 export const setStaffRolesAction = createFormAction(z.object({ userId: f.uuid(), roleIds: f.stringArray().pipe(z.array(z.uuid()).max(20)) }), async ({ userId, roleIds }) => {
   const ctx = await requireStaff("users.roles");
-  await setStaffRoles(ctx, userId, roleIds);
+  const { changed } = await setStaffRoles(ctx, userId, roleIds);
   refresh(userId);
-  return ok(undefined, roleIds.length ? "Roles saved" : "Staff access removed");
+  return ok(undefined, !changed ? "No changes to save" : roleIds.length ? "Roles saved" : "Staff access removed");
 });
 
 export const createStaffUserAction = createFormAction(

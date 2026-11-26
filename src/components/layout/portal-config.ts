@@ -23,7 +23,7 @@ export const PORTAL_BY_ORG_TYPE: Record<OrgType, OrgPortalKey> = {
   institution: "institution",
 };
 
-/** Help / support page linked from each portal's top bar. */
+/** Support requests page of each portal (account menu and drawer "Help and support"). */
 export const PORTAL_SUPPORT_HREF: Record<PortalKey, string> = {
   talent: "/talent/support",
   employer: "/employer/support",

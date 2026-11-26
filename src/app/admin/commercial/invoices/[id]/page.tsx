@@ -39,7 +39,7 @@ function isoDate(d: Date | null): string | null {
 export default async function InvoicePage({ params }: PageProps) {
   const staff = await requireStaff("commercial.view");
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const doc = await getInvoiceForStaff(staff, id);
   if (!doc) notFound();
   const timeZone = staff.user.timezone ?? env().DEFAULT_TIMEZONE;

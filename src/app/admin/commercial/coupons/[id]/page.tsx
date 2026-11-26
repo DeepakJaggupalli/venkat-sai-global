@@ -20,7 +20,7 @@ const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 export default async function CouponPage({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("commercial.view");
   const { id } = await params;
-  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const [coupon, plans, currencies] = await Promise.all([getCoupon(staff, id), listPlansForAdmin(staff), currencyOptions()]);
   if (!coupon) notFound();
 

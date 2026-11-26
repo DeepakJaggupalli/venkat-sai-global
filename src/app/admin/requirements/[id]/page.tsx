@@ -94,6 +94,9 @@ export default async function RequirementDetailPage({ params }: { params: Params
   const delivering = ["approved", "sourcing", "in_progress", "partially_filled"].includes(r.status);
 
   const canMatch = staffCan(ctx, "candidates.view");
+  // Link to the organisation and lead only for staff who may open them (others see the name, not a no-access page).
+  const canOpenOrg = staffCan(ctx, "orgs.view");
+  const canOpenLead = staffCan(ctx, "leads.view");
   const [staff, currencies, jobOptions, partners, assignments, threads, matchCount] = await Promise.all([
     listStaffOptions({ permission: "requirements.manage" }),
     canManage ? currencyOptions() : Promise.resolve([]),
@@ -283,13 +286,37 @@ export default async function RequirementDetailPage({ params }: { params: Params
               columns={2}
               dense
               items={[
-                { label: "Company", value: detail.organization ? <Link className="text-teal-strong underline underline-offset-4" href={`/admin/organizations/${detail.organization.id}`}>{detail.organization.name}</Link> : r.organizationName },
+                {
+                  label: "Company",
+                  value: detail.organization ? (
+                    canOpenOrg ? (
+                      <Link className="text-teal-strong underline underline-offset-4" href={`/admin/organizations/${detail.organization.id}`}>
+                        {detail.organization.name}
+                      </Link>
+                    ) : (
+                      detail.organization.name
+                    )
+                  ) : (
+                    r.organizationName
+                  ),
+                },
                 { label: "Contact person", value: [r.contactName, r.contactDesignation].filter(Boolean).join(", ") || null },
                 { label: "Email", value: r.contactEmail },
                 { label: "Phone", value: r.contactPhone },
                 { label: "Submitted by", value: detail.submittedByName },
                 { label: "Submitted", value: r.submittedAt ? <DateText value={r.submittedAt} mode="datetime" /> : null },
-                { label: "Lead", value: detail.lead ? <Link className="text-teal-strong underline underline-offset-4" href={`/admin/leads/${detail.lead.id}`}>{detail.lead.code} · {detail.lead.name}</Link> : null },
+                {
+                  label: "Lead",
+                  value: detail.lead ? (
+                    canOpenLead ? (
+                      <Link className="text-teal-strong underline underline-offset-4" href={`/admin/leads/${detail.lead.id}`}>
+                        {detail.lead.code} · {detail.lead.name}
+                      </Link>
+                    ) : (
+                      `${detail.lead.code} · ${detail.lead.name}`
+                    )
+                  ) : null,
+                },
               ]}
             />
           </SectionCard>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { groupByReach, reachGroupFor } from "./geo";
 import { resolveHomepageSections } from "./home/sections";
-import { buildRequirementPayload, emptyLine } from "./forms/requirement-lines";
+import { buildRequirementPayload, emptyLine, lineFieldLabels } from "./forms/requirement-lines";
 
 describe("resolveHomepageSections", () => {
   it("returns the default order when the CMS lists nothing", () => {
@@ -61,5 +61,13 @@ describe("requirement lines", () => {
     ]);
     expect(payload).toHaveLength(1);
     expect(payload[0]).toMatchObject({ salaryMin: 1200, salaryMax: 1500, salaryCurrency: "QAR", salaryPeriod: "month", experienceMinYears: 2 });
+  });
+
+  it("labels server errors with the role row the visitor sees, skipping blank rows", () => {
+    const labels = lineFieldLabels([emptyLine("a"), { ...emptyLine("b"), roleTitle: "Welder" }, { ...emptyLine("c"), positions: "-3" }]);
+    // Row 1 is blank and left out of the payload, so payload index 0 is the second row on screen.
+    expect(labels["lines.0.roleTitle"]).toBe("Role 2, role or trade");
+    expect(labels["lines.1.positions"]).toBe("Role 3, number of positions");
+    expect(labels["lines.2.positions"]).toBeUndefined();
   });
 });

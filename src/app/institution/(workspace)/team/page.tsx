@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { seatsNote as seatLineFor } from "@/app/employer/(workspace)/team/_lib/seats";
 import { InviteForm, PendingInvitations, TeamMembers } from "@/components/institution/team";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -32,8 +33,9 @@ export default async function InstitutionTeamPage() {
   const roleOptions = grantable.map((r) => ({ value: r.id, label: r.name }));
   const permissionLabels = new Map<string, string>(INSTITUTION_PERMISSIONS.map((p) => [p.key, p.label]));
   const pending = invitations.filter((i) => i.status === "pending" || i.status === "expired");
-  const seatsNote =
-    seats && seats.limit !== null ? `${seats.used} of ${seats.limit} seats in use on your plan (active members and pending invitations).${seats.allowed ? "" : ` ${seats.reason ?? ""}`}` : null;
+  // Same rule as the Company and Partner portals: only while plan limits are enforced, counting pending
+  // invitations (an unenforced plan reported "2 of 0 seats in use").
+  const seatsNote = seatLineFor(seats, invitations.filter((i) => i.status === "pending").length);
 
   return (
     <div className="space-y-8">

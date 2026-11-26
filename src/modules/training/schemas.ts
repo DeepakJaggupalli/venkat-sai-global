@@ -31,8 +31,8 @@ const optionalDecimal = (opts: { min?: number; max?: number } = {}) =>
     (v) => (v === undefined || v === null || v === "" ? undefined : v),
     z.coerce
       .number({ error: "Enter a number" })
-      .min(opts.min ?? 0, `Must be at least ${opts.min ?? 0}`)
-      .max(opts.max ?? 1_000_000, "Too large")
+      .min(opts.min ?? 0, `Enter ${opts.min ?? 0} or more`)
+      .max(opts.max ?? 1_000_000, `Enter ${opts.max ?? 1_000_000} or less`)
       .optional(),
   );
 

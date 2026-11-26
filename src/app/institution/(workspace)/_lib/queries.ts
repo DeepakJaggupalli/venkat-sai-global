@@ -1,11 +1,13 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, ilike, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
 import { attendanceRecords, attendanceSessions, assessmentScores, batches, campusDrives, candidateProfiles, certificates, courseAssessments, courses, enrolments, placementOutcomes, users } from "@/db/schema";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import type { OrgContext } from "@/modules/identity/authz";
+
+import { seesOwnBatchesOnly } from "./dashboard";
 
 /**
  * Read-only queries the Institution Portal needs and the training module does not expose yet
@@ -330,6 +332,8 @@ export type CourseReportRow = {
   certificates: number;
   placedLearners: number;
   verifiedPlacedLearners: number;
+  /** Distinct learners who completed the course (the placement-rate denominator). */
+  completedLearners: number;
 };
 
 /** Per-course outcome counts for the institution (live data; rates derived by the caller). */
@@ -347,6 +351,7 @@ export async function getCourseReport(ctx: InstitutionCtx): Promise<CourseReport
         courseId: batches.courseId,
         enrolled: countWhere(sql`${enrolments.status} in ('confirmed', 'in_progress', 'completed', 'dropped')`),
         completed: countWhere(sql`${enrolments.status} = 'completed'`),
+        completedLearners: sql<number>`count(distinct ${enrolments.candidateId}) filter (where ${enrolments.status} = 'completed')`.mapWith(Number),
         dropped: countWhere(sql`${enrolments.status} = 'dropped'`),
         passed: countWhere(sql`${enrolments.resultStatus} = 'passed'`),
         failed: countWhere(sql`${enrolments.resultStatus} = 'failed'`),
@@ -391,6 +396,7 @@ export async function getCourseReport(ctx: InstitutionCtx): Promise<CourseReport
     certificates: c.get(course.id)?.value ?? 0,
     placedLearners: p.get(course.id)?.placed ?? 0,
     verifiedPlacedLearners: p.get(course.id)?.verified ?? 0,
+    completedLearners: e.get(course.id)?.completedLearners ?? 0,
   }));
 }
 
@@ -431,4 +437,215 @@ export async function getInstitutionDrive(ctx: InstitutionCtx, driveId: string):
     .where(and(eq(campusDrives.id, driveId), eq(campusDrives.organizationId, ctx.organization.id)))
     .limit(1);
   return drive ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard (home page figures the training module's getInstitutionDashboardStats does not cover)
+// ---------------------------------------------------------------------------
+
+export type DashboardBatchItem = {
+  id: string;
+  code: string;
+  title: string;
+  courseTitle: string;
+  status: (typeof batches.$inferSelect)["status"];
+  startsOn: string | null;
+  endsOn: string | null;
+  enrolledCount: number;
+  capacity: number | null;
+};
+
+export type DashboardApplicationItem = {
+  id: string;
+  candidateName: string;
+  batchCode: string;
+  courseTitle: string;
+  status: (typeof enrolments.$inferSelect)["status"];
+  appliedAt: Date;
+};
+
+export type DashboardCertificateItem = {
+  id: string;
+  code: string;
+  holderName: string;
+  title: string;
+  status: (typeof certificates.$inferSelect)["status"];
+  issuedAt: Date;
+};
+
+export type InstitutionDashboardData = {
+  /** Distinct learners with a confirmed, in-progress or completed enrolment. */
+  learners: number;
+  /** Enrolments by status (the students page tabs). */
+  enrolmentsByStatus: Record<string, number>;
+  /** Batches by status. */
+  batchesByStatus: Record<string, number>;
+  /** Seats in batches that have not started yet (planned, open or full). Batches without a seat limit are counted apart. */
+  seats: { capacity: number; filled: number; batches: number; withoutLimit: number };
+  runningBatches: DashboardBatchItem[];
+  upcomingBatches: DashboardBatchItem[];
+  assessments: { total: number; unpublished: number };
+  /** Completed enrolments of the institution's own certificate courses without an active certificate. */
+  readyForCertificate: number;
+  recentApplications: DashboardApplicationItem[];
+  recentCertificates: DashboardCertificateItem[];
+  /** "YYYY-MM" (in the time zone) and a count, for roughly the last 7 months. */
+  applicationsByMonth: { month: string; value: number }[];
+  certificatesByMonth: { month: string; value: number }[];
+  nextDrive: { id: string; title: string; driveDate: string | null; employerName: string | null } | null;
+};
+
+const SAFE_TIME_ZONE = /^[A-Za-z][A-Za-z0-9_+\-/]{1,63}$/;
+
+/** A time zone that Postgres and Intl both accept, falling back to India time. */
+export function dashboardTimeZone(timeZone: string | null | undefined): string {
+  if (!timeZone || !SAFE_TIME_ZONE.test(timeZone)) return "Asia/Kolkata";
+  try {
+    new Intl.DateTimeFormat("en", { timeZone });
+    return timeZone;
+  } catch {
+    return "Asia/Kolkata";
+  }
+}
+
+function todayIn(now: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone }).format(now);
+}
+
+/**
+ * Everything else the Institution Portal home page shows: seats, running and upcoming batches, learners, results
+ * waiting to be published, certificates ready to issue, the latest applications and certificates, and monthly
+ * series for the charts. Batch-based figures follow seesOwnBatchesOnly(): instructors count the batches they are
+ * assigned to (the rule of the rest of the portal), everyone else the whole institution. Real counts only.
+ */
+export async function getInstitutionDashboardData(ctx: InstitutionCtx, opts: { now?: Date; timeZone?: string | null } = {}): Promise<InstitutionDashboardData> {
+  const now = opts.now ?? new Date();
+  const timeZone = dashboardTimeZone(opts.timeZone);
+  const today = todayIn(now, timeZone);
+  const orgId = ctx.organization.id;
+  const scope = seesOwnBatchesOnly(ctx.permissions) ? orgBatches(ctx) : eq(batches.organizationId, orgId);
+  const since = new Date(now.getTime() - 220 * 86_400_000);
+  const batchColumns = {
+    id: batches.id,
+    code: batches.code,
+    title: batches.title,
+    courseTitle: courses.title,
+    status: batches.status,
+    startsOn: batches.startsOn,
+    endsOn: batches.endsOn,
+    enrolledCount: batches.enrolledCount,
+    capacity: batches.capacity,
+  };
+  const notStarted = and(scope, inArray(batches.status, ["planned", "open", "full"]), or(isNull(batches.startsOn), sql`${batches.startsOn} >= ${today}`))!;
+  const monthOf = (column: typeof enrolments.appliedAt | typeof certificates.issuedAt) => sql<string>`to_char(${column} at time zone ${timeZone}, 'YYYY-MM')`;
+  const enrolmentMonth = monthOf(enrolments.appliedAt);
+  const certificateMonth = monthOf(certificates.issuedAt);
+
+  const [learners, enrolmentsByStatus, batchesByStatus, seats, running, upcoming, assessmentCounts, ready, recentApplications, recentCertificates, applicationsByMonth, certificatesByMonth, drives] =
+    await Promise.all([
+      db
+        .select({ value: sql<number>`count(distinct ${enrolments.candidateId})`.mapWith(Number) })
+        .from(enrolments)
+        .innerJoin(batches, eq(batches.id, enrolments.batchId))
+        .where(and(scope, inArray(enrolments.status, ["confirmed", "in_progress", "completed"]))),
+      db
+        .select({ status: enrolments.status, value: count() })
+        .from(enrolments)
+        .innerJoin(batches, eq(batches.id, enrolments.batchId))
+        .where(scope)
+        .groupBy(enrolments.status),
+      db.select({ status: batches.status, value: count() }).from(batches).where(scope).groupBy(batches.status),
+      db
+        .select({
+          capacity: sql<number>`coalesce(sum(${batches.capacity}) filter (where ${batches.capacity} > 0), 0)`.mapWith(Number),
+          filled: sql<number>`coalesce(sum(least(${batches.enrolledCount}, ${batches.capacity})) filter (where ${batches.capacity} > 0), 0)`.mapWith(Number),
+          batches: sql<number>`count(*)`.mapWith(Number),
+          withoutLimit: countWhere(sql`${batches.capacity} is null or ${batches.capacity} <= 0`),
+        })
+        .from(batches)
+        .where(notStarted),
+      db
+        .select(batchColumns)
+        .from(batches)
+        .innerJoin(courses, eq(courses.id, batches.courseId))
+        .where(and(scope, eq(batches.status, "in_progress")))
+        .orderBy(sql`${batches.endsOn} asc nulls last`, asc(batches.title))
+        .limit(5),
+      db
+        .select(batchColumns)
+        .from(batches)
+        .innerJoin(courses, eq(courses.id, batches.courseId))
+        .where(notStarted)
+        .orderBy(sql`${batches.startsOn} asc nulls last`, desc(batches.createdAt))
+        .limit(5),
+      db
+        .select({ total: sql<number>`count(*)`.mapWith(Number), unpublished: countWhere(sql`${courseAssessments.resultsPublishedAt} is null`) })
+        .from(courseAssessments)
+        .innerJoin(batches, eq(batches.id, courseAssessments.batchId))
+        .where(scope),
+      db
+        .select({ value: count() })
+        .from(enrolments)
+        .innerJoin(batches, eq(batches.id, enrolments.batchId))
+        .innerJoin(courses, eq(courses.id, batches.courseId))
+        .where(
+          and(
+            eq(batches.organizationId, orgId),
+            eq(courses.organizationId, orgId),
+            eq(enrolments.status, "completed"),
+            ne(courses.certificationType, "none"),
+            sql`not exists (select 1 from certificates c where c.enrolment_id = ${enrolments.id} and c.status = 'active')`,
+          ),
+        ),
+      db
+        .select({ id: enrolments.id, candidateName: users.displayName, batchCode: batches.code, courseTitle: courses.title, status: enrolments.status, appliedAt: enrolments.appliedAt })
+        .from(enrolments)
+        .innerJoin(batches, eq(batches.id, enrolments.batchId))
+        .innerJoin(courses, eq(courses.id, batches.courseId))
+        .innerJoin(candidateProfiles, eq(candidateProfiles.id, enrolments.candidateId))
+        .innerJoin(users, eq(users.id, candidateProfiles.userId))
+        .where(scope)
+        .orderBy(desc(enrolments.appliedAt))
+        .limit(6),
+      db
+        .select({ id: certificates.id, code: certificates.code, holderName: certificates.holderName, title: certificates.title, status: certificates.status, issuedAt: certificates.issuedAt })
+        .from(certificates)
+        .where(eq(certificates.issuerOrganizationId, orgId))
+        .orderBy(desc(certificates.issuedAt))
+        .limit(5),
+      db
+        .select({ month: enrolmentMonth, value: sql<number>`count(*)`.mapWith(Number) })
+        .from(enrolments)
+        .innerJoin(batches, eq(batches.id, enrolments.batchId))
+        .where(and(scope, gte(enrolments.appliedAt, since)))
+        .groupBy(sql`1`),
+      db
+        .select({ month: certificateMonth, value: sql<number>`count(*)`.mapWith(Number) })
+        .from(certificates)
+        .where(and(eq(certificates.issuerOrganizationId, orgId), gte(certificates.issuedAt, since)))
+        .groupBy(sql`1`),
+      db
+        .select({ id: campusDrives.id, title: campusDrives.title, driveDate: campusDrives.driveDate, employerName: campusDrives.employerName })
+        .from(campusDrives)
+        .where(and(eq(campusDrives.organizationId, orgId), inArray(campusDrives.status, ["planned", "open"]), or(isNull(campusDrives.driveDate), sql`${campusDrives.driveDate} >= ${today}`)))
+        .orderBy(sql`${campusDrives.driveDate} asc nulls last`)
+        .limit(1),
+    ]);
+
+  const seatRow = seats[0];
+  return {
+    learners: learners[0]?.value ?? 0,
+    enrolmentsByStatus: Object.fromEntries(enrolmentsByStatus.map((r) => [r.status, r.value])),
+    batchesByStatus: Object.fromEntries(batchesByStatus.map((r) => [r.status, r.value])),
+    seats: { capacity: seatRow?.capacity ?? 0, filled: seatRow?.filled ?? 0, batches: seatRow?.batches ?? 0, withoutLimit: seatRow?.withoutLimit ?? 0 },
+    runningBatches: running,
+    upcomingBatches: upcoming,
+    assessments: { total: assessmentCounts[0]?.total ?? 0, unpublished: assessmentCounts[0]?.unpublished ?? 0 },
+    readyForCertificate: ready[0]?.value ?? 0,
+    recentApplications,
+    recentCertificates,
+    applicationsByMonth,
+    certificatesByMonth,
+    nextDrive: drives[0] ?? null,
+  };
 }

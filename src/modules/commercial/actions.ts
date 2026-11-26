@@ -40,6 +40,7 @@ import {
   settlementLineSchema,
   settlementPaidSchema,
   settlementUpdateSchema,
+  staffStartSubscriptionSchema,
   startSubscriptionSchema,
   subscriptionExceptionSchema,
   subscriptionIdSchema,
@@ -329,7 +330,7 @@ export const startSubscriptionAction = createFormAction(startSubscriptionSchema.
   );
 });
 
-export const startSubscriptionForStaffAction = createFormAction(startSubscriptionSchema, async (input) => {
+export const startSubscriptionForStaffAction = createFormAction(staffStartSubscriptionSchema, async (input) => {
   const ctx = await requireStaff("commercial.invoices");
   const result = await service.startSubscription(ctx, input);
   revalidateBilling(null, result.invoice?.id);

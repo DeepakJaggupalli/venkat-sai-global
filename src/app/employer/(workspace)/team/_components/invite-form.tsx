@@ -23,14 +23,16 @@ export function InviteForm({ roleOptions, seatsNote }: { roleOptions: SelectOpti
   return (
     <form key={formKey} onSubmit={onSubmit} noValidate className="space-y-4" aria-label="Invite a team member">
       <FormErrorAlert state={state} fieldLabels={{ email: "Email address", roleId: "Role" }} />
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+      {/* Top-aligned so the hint or an error under one field never pushes the inputs out of line. The button's top
+          margin is one label line (text-sm, leading-snug) plus the field's gap-1.5. */}
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-start">
         <FormField label="Email address" name="email" required state={state} hint="They must sign in with this address to accept.">
           <Input type="email" autoComplete="off" maxLength={254} placeholder="name@company.com" />
         </FormField>
         <FormField label="Role" name="roleId" required state={state}>
           <SimpleSelect options={roleOptions} defaultValue={roleOptions.find((r) => r.label === "Recruiter")?.value} placeholder="Choose a role" />
         </FormField>
-        <SubmitButton pending={pending} pendingLabel="Sending…" className="sm:mb-[1.6rem]">
+        <SubmitButton pending={pending} pendingLabel="Sending…" className="sm:mt-[calc(0.875rem*1.375+0.375rem)]">
           Send invitation
         </SubmitButton>
       </div>

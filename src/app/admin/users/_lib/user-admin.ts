@@ -174,10 +174,10 @@ export async function resetUserTwoFactor(ctx: StaffContext, userId: string, reas
  * remove Super Admin, and the last Super Admin cannot lose the role; others may only grant roles whose
  * permissions they hold themselves. A person with no platform role stops being staff.
  */
-export async function setStaffRoles(ctx: StaffContext, userId: string, roleIds: string[]): Promise<void> {
+export async function setStaffRoles(ctx: StaffContext, userId: string, roleIds: string[]): Promise<{ changed: boolean }> {
   if (!staffCan(ctx, "users.roles")) throw new ActionError("Not allowed.", { code: "forbidden" });
   assertNotSelf(ctx, userId, "change the roles of");
-  await db.transaction(async (tx) => {
+  const changed = await db.transaction(async (tx) => {
     const [user] = await tx.select({ id: users.id, status: users.status }).from(users).where(eq(users.id, userId)).limit(1);
     if (!user) throw new ActionError("User not found.");
     const platform = await tx.select({ id: roles.id, key: roles.key, permissions: roles.permissions }).from(roles).where(eq(roles.scope, "platform"));
@@ -188,6 +188,8 @@ export async function setStaffRoles(ctx: StaffContext, userId: string, roleIds: 
     const currentIds = new Set(current.map((c) => c.roleId));
     const added = unique.filter((id) => !currentIds.has(id));
     const removed = [...currentIds].filter((id) => !unique.includes(id));
+    // Saving the same roles again changes nothing: no audit entry, no security warning, nobody signed out.
+    if (!added.length && !removed.length) return false;
     const touchesSuper = [...added, ...removed].some((id) => byId.get(id)?.key === SUPER_ADMIN_ROLE_KEY);
     if (touchesSuper && !ctx.isSuperAdmin) throw new ActionError("Only a Super Admin can grant or remove the Super Admin role.");
     if (!ctx.isSuperAdmin) {
@@ -219,8 +221,10 @@ export async function setStaffRoles(ctx: StaffContext, userId: string, roleIds: 
       actorType: "staff",
       tx,
     });
+    return true;
   });
-  await logSecurityEvent({ userId, type: "staff_roles_changed", severity: "warning", metadata: { by: ctx.user.id } });
+  if (changed) await logSecurityEvent({ userId, type: "staff_roles_changed", severity: "warning", metadata: { by: ctx.user.id } });
+  return { changed };
 }
 
 /**

@@ -100,7 +100,8 @@ export function SearchInput({
           enterKeyHint="search"
           value={value}
           maxLength={maxLength}
-          placeholder={placeholder}
+          // With the label hidden, an empty box gives sighted users no hint of what it searches: show the label instead.
+          placeholder={placeholder ?? (showLabel ? undefined : label)}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Escape" && value) {

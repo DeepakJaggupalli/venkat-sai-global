@@ -111,6 +111,8 @@ export function RequirementForm({
   const started = useRef(false);
   const [uploading, setUploading] = useState(false);
   const [assessment, setAssessment] = useState(Boolean(defaults.assessmentRequired));
+  // Which button sent the form: only that one shows "Saving…" or "Submitting…" (both ignore clicks while busy).
+  const [clicked, setClicked] = useState<"draft" | "submit">("draft");
   useActionToast(state);
 
   useEffect(() => {
@@ -298,10 +300,27 @@ export function RequirementForm({
       ) : null}
 
       <div className="sticky bottom-0 z-10 -mx-4 flex flex-col-reverse gap-3 border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:mx-0 sm:flex-row sm:justify-end sm:rounded-xl sm:border">
-        <SubmitButton variant="outline" name="asDraft" value="true" pending={pending} disabled={uploading} pendingLabel="Saving…">
+        <SubmitButton
+          variant="outline"
+          name="asDraft"
+          value="true"
+          pending={pending}
+          indicator={clicked === "draft"}
+          onClick={() => setClicked("draft")}
+          disabled={uploading}
+          pendingLabel="Saving…"
+        >
           Save draft
         </SubmitButton>
-        <SubmitButton name="asDraft" value="false" pending={pending} disabled={uploading || Boolean(submitBlockedReason)} pendingLabel="Submitting…">
+        <SubmitButton
+          name="asDraft"
+          value="false"
+          pending={pending}
+          indicator={clicked === "submit"}
+          onClick={() => setClicked("submit")}
+          disabled={uploading || Boolean(submitBlockedReason)}
+          pendingLabel="Submitting…"
+        >
           Submit to Venkat Sai
         </SubmitButton>
       </div>
