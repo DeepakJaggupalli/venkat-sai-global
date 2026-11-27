@@ -56,6 +56,7 @@ export function PageHero({
   visual,
   meta,
   after,
+  photoBadge,
   className,
 }: {
   title: ReactNode;
@@ -72,6 +73,8 @@ export function PageHero({
   meta?: ReactNode;
   /** Small extra row under the actions (e.g. a language switch). */
   after?: ReactNode;
+  /** Small floating card over the bottom corner of the photo. */
+  photoBadge?: ReactNode;
   className?: string;
 }) {
   const image = media && media.kind === "image" ? media : null;
@@ -82,6 +85,7 @@ export function PageHero({
   ) : photo ? (
     <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-border bg-surface-subtle shadow-card">
       <StockImage photo={photo} priority sizes="(min-width: 1024px) 40vw, 100vw" />
+      {photoBadge ? <div className="absolute bottom-4 start-4">{photoBadge}</div> : null}
     </div>
   ) : (
     (visual ?? null)

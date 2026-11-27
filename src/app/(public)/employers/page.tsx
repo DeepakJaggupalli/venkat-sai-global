@@ -24,6 +24,7 @@ const COPY: LandingCopy = {
     "Share the roles, numbers and timelines. Venkat Sai sources, screens and trade-tests candidates for projects in India and overseas, and you follow every stage in the Employer Portal.",
   primary: { label: "Submit your workforce requirement", href: "/employers/request", id: "submit_workforce_requirement" },
   secondary: { label: "Create an employer account", href: "/sign-up?intent=employer", id: "employer_signup" },
+  highlights: ["No account needed to start", "Reference number straight away", "Follow every stage in your portal"],
   benefits: {
     title: "Everything hiring needs, in one place",
     items: [
@@ -33,6 +34,18 @@ const COPY: LandingCopy = {
       { title: "Overseas mobilisation support", description: "Documentation tracking and PDOT (Pre-Departure Orientation Training) coordination for candidates travelling abroad." },
       { title: "Verified organisations", description: "Employers are verified before jobs go live, which protects candidates and the reputation of every employer on the platform." },
       { title: "Fair to candidates", description: "Employers pay for recruitment services. Candidates are never charged to apply, be interviewed or be trade-tested." },
+    ],
+  },
+  eligible: {
+    title: "Who hires through Venkat Sai",
+    intro: "Any organisation that needs skilled people, for one project or all year round.",
+    items: [
+      "Construction and infrastructure contractors",
+      "Oil, gas, power and shipyard projects",
+      "Factories and plants in India",
+      "Employers and project companies abroad",
+      "Facility and maintenance companies",
+      "Companies offering internships and apprenticeships",
     ],
   },
   steps: {
@@ -50,6 +63,7 @@ const COPY: LandingCopy = {
     primary: { label: "Submit your workforce requirement", href: "/employers/request", id: "submit_workforce_requirement" },
     secondary: { label: "Sign in to the Employer Portal", href: "/sign-in?returnTo=%2Femployer", id: "employer_sign_in" },
   },
+  labels: { tourTitle: "Take a quick tour of the Company Portal", fitHint: "Tap everything that describes your organisation", fitYes: "Great, we can help you hire. Tell us what you need!" },
 };
 
 const MODELS = (Object.keys(REQUIREMENT_KIND_LABELS) as (keyof typeof REQUIREMENT_KIND_LABELS)[]).map((key) => REQUIREMENT_KIND_LABELS[key]);
@@ -57,7 +71,7 @@ const MODELS = (Object.keys(REQUIREMENT_KIND_LABELS) as (keyof typeof REQUIREMEN
 export default function EmployersPage() {
   return (
     <LandingPage copy={COPY}>
-      <Section labelledBy="employers-models-title">
+      <Section tone="subtle" labelledBy="employers-models-title">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
           <div>
             <SectionHeading
@@ -87,7 +101,7 @@ export default function EmployersPage() {
           </ul>
         </div>
       </Section>
-      <Section tone="subtle" labelledBy="employers-enquiry-title">
+      <Section tone="white" labelledBy="employers-enquiry-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <SectionHeading
             id="employers-enquiry-title"

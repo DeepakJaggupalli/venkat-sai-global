@@ -21,6 +21,7 @@ const COPY: LandingCopy = {
     "Colleges, ITIs, polytechnics and training institutes can publish courses, run campus drives and internship programmes, and help learners move into work through the Institution & Training Portal.",
   primary: { label: "Partner as an institution", href: "/sign-up?intent=institution", id: "institution_signup" },
   secondary: { label: "Institution sign in", href: "/sign-in?returnTo=%2Finstitution", id: "institution_sign_in" },
+  highlights: ["Courses reviewed before publishing", "Certificates anyone can verify", "Campus drives with verified employers"],
   benefits: {
     title: "What the Institution & Training Portal offers",
     items: [
@@ -58,12 +59,13 @@ const COPY: LandingCopy = {
     primary: { label: "Partner as an institution", href: "/sign-up?intent=institution", id: "institution_signup" },
     secondary: { label: "Browse the training catalogue", href: "/training", id: "training_catalogue" },
   },
+  labels: { tourTitle: "Take a quick tour of the Institution Portal", fitHint: "Tap everything that describes your institution" },
 };
 
 export default function InstitutionsPage() {
   return (
     <LandingPage copy={COPY}>
-      <Section labelledBy="institutions-enquiry-title">
+      <Section tone="subtle" labelledBy="institutions-enquiry-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <SectionHeading
             id="institutions-enquiry-title"

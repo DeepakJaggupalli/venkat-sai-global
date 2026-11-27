@@ -23,6 +23,7 @@ const COPY: LandingCopy = {
     "Verified recruitment agencies and sourcing partners work on Venkat Sai requirements through their own portal — with terms agreed up front, candidate submissions and status tracking in one place.",
   primary: { label: "Become a recruitment partner", href: "/sign-up?intent=partner", id: "become_recruitment_partner" },
   secondary: { label: "Partner sign in", href: "/sign-in?returnTo=%2Frecruiter", id: "partner_sign_in" },
+  highlights: ["Terms agreed up front", "Candidates attributed to your agency", "Status of every submission"],
   benefits: {
     title: "Why partner with Venkat Sai",
     items: [
@@ -61,12 +62,13 @@ const COPY: LandingCopy = {
     primary: { label: "Become a recruitment partner", href: "/sign-up?intent=partner", id: "become_recruitment_partner" },
     secondary: { label: "Talk to our partnerships team", href: "#partner-enquiry", id: "partner_enquiry" },
   },
+  labels: { tourTitle: "Take a quick tour of the Recruitment Partner Portal", fitHint: "Tap everything that describes your organisation" },
 };
 
 export default function PartnersPage() {
   return (
     <LandingPage copy={COPY}>
-      <Section labelledBy="partners-compliance-title">
+      <Section tone="subtle" labelledBy="partners-compliance-title">
         <SectionHeading
           id="partners-compliance-title"
           eyebrow="Verification and compliance"
@@ -87,7 +89,7 @@ export default function PartnersPage() {
           ]}
         />
       </Section>
-      <Section tone="subtle" labelledBy="partners-terms-title">
+      <Section tone="white" labelledBy="partners-terms-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
             <SectionHeading

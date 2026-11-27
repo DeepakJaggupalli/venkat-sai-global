@@ -35,6 +35,7 @@ function candidatesCopy(t: MarketingT): LandingCopy {
     intro: t("candidates.intro"),
     primary,
     secondary,
+    highlights: [t("candidates.highlights.free"), t("candidates.highlights.phone"), t("candidates.highlights.track")],
     benefits: {
       title: t("candidates.benefits.title"),
       items: BENEFITS.map((key) => ({ title: t(`candidates.benefits.${key}.title`), description: t(`candidates.benefits.${key}.description`) })),
@@ -56,6 +57,27 @@ function candidatesCopy(t: MarketingT): LandingCopy {
       questions: t("common.questions"),
       faqTitle: t("landing.faqTitle"),
       step: t("common.step"),
+      stepOf: t("landing.walk.stepOf"),
+      next: t("landing.walk.next"),
+      back: t("landing.walk.back"),
+      pause: t("landing.walk.pause"),
+      play: t("landing.walk.play"),
+      ready: t("landing.walk.ready"),
+      walkHint: t("landing.walk.hint"),
+      tourEyebrow: t("landing.tour.eyebrow"),
+      tourTitle: t("landing.tour.title"),
+      tourIntro: t("landing.tour.intro"),
+      tourExplored: t("landing.tour.explored"),
+      tourHowTo: t("landing.tour.howTo"),
+      tourAllDone: t("landing.tour.allDone"),
+      tourClickHint: t("landing.tour.clickHint"),
+      tourPreview: t("landing.tour.preview"),
+      tourLinks: t("landing.tour.links"),
+      fitHint: t("landing.fit.hint"),
+      fitNone: t("landing.fit.none"),
+      fitYes: t("landing.fit.yes"),
+      readyPrompt: t("landing.readyPrompt"),
+      stepsBadge: t("landing.stepsBadge"),
     },
   };
 }
@@ -67,7 +89,7 @@ export default async function CandidatesPage({ searchParams }: Props) {
     <div {...publicLocaleProps(t.locale)}>
       <LandingPage
         copy={candidatesCopy(t)}
-        afterSteps={<p className="mt-10 max-w-3xl text-sm leading-relaxed text-white/75">{t("candidates.age")}</p>}
+        afterSteps={<p className="mt-8 max-w-3xl text-sm leading-relaxed text-muted-foreground">{t("candidates.age")}</p>}
       >
         <Section labelledBy="candidates-safety-title" className="py-12 sm:py-14 lg:py-16">
           <div className="flex flex-col gap-6 rounded-2xl border border-teal/40 bg-teal-soft p-6 sm:flex-row sm:items-center sm:p-8" data-testid="never-charge-notice">

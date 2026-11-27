@@ -16,6 +16,7 @@ import { ManpowerSection } from "@/components/public/home/manpower";
 import { DestinationMarquees } from "@/components/public/home/marquees";
 import { MetricsSection } from "@/components/public/home/metrics";
 import { OpportunitiesSection } from "@/components/public/home/opportunities";
+import { PathFinderSection } from "@/components/public/home/path-finder-section";
 import { resolveHomepageSections, type ResolvedSection } from "@/components/public/home/sections";
 import { JsonLd } from "@/components/public/json-ld";
 import { buildLocalBusinessJsonLd } from "@/components/public/local-business";
@@ -146,6 +147,8 @@ export default async function HomePage({ searchParams }: Props) {
 
   type Block = { key: string; render: (tone: SectionTone) => ReactNode };
   const blocks: Block[] = [];
+  // "Who are you?" comes first so every visitor sees, in plain words, where to start.
+  blocks.push({ key: "path_finder", render: (tone) => <PathFinderSection key="path_finder" tone={tone} t={t} /> });
   if (servicesSection) blocks.push({ key: "services", render: (tone) => <FeaturedServicesSection key="services" tone={tone} services={serviceList} assets={assets} heading={servicesSection.heading} intro={servicesSection.intro} t={t} /> });
   blocks.push({ key: "manpower", render: (tone) => <ManpowerSection key="manpower" tone={tone} t={t} /> });
   if (candidatesSection) blocks.push({ key: "candidates", render: (tone) => <HowItWorksSection key="candidates" tone={tone} heading={candidatesSection.heading} intro={candidatesSection.intro} t={t} /> });
