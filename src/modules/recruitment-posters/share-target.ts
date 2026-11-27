@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { FileValidationError } from "@/modules/files";
 import { getStaffContext, staffCan, type StaffContext } from "@/modules/identity/authz";
+import { staffTwoFactorMissing } from "@/modules/identity/staff-route";
 
 import { POSTER_PERMISSIONS, storeSharedPoster } from "./service";
 
@@ -19,7 +20,9 @@ export const POSTER_SHARE_MAX_BYTES = 20 * 1024 * 1024;
 /** The signed-in staff context when it may post requirement posters, else null. */
 export async function getPosterStaff(): Promise<StaffContext | null> {
   const ctx = await getStaffContext();
-  return ctx && staffCan(ctx, [...POSTER_PERMISSIONS]) ? ctx : null;
+  if (!ctx || !staffCan(ctx, [...POSTER_PERMISSIONS])) return null;
+  // Same rule as every other staff route: no upload until required two-factor authentication is set up.
+  return (await staffTwoFactorMissing(ctx)) ? null : ctx;
 }
 
 /** Store the shared image for the staff poster flow; returns the page to continue on. */
