@@ -213,3 +213,11 @@ export const approveProgrammeDocumentsAction = createAction(z.object({ programme
   refresh(`${INTERNSHIPS_ADMIN_PATH}/${programmeId}`);
   return ok(undefined, skipped ? `${approved} approved, ${skipped} need checking first.` : `${approved} approved. Everyone can now download theirs.`);
 });
+
+/** Take applications on the public Internships page, or stop taking them. */
+export const setProgrammeOpenAction = createAction(z.object({ programmeId: z.uuid(), open: z.boolean() }), async ({ programmeId, open }) => {
+  const ctx = await requireStaff(["training.manage", PERMISSION]);
+  await setInternshipStatus(ctx, programmeId, open ? "open" : "closed");
+  refresh(`${INTERNSHIPS_ADMIN_PATH}/${programmeId}`, INTERNSHIPS_ADMIN_PATH, "/internships");
+  return ok(undefined, open ? "It is on the Internships page again and takes applications." : "Applications stopped. It no longer shows on the Internships page.");
+});

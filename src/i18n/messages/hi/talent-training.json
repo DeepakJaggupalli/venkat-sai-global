@@ -403,5 +403,6 @@
   "documents.requestKind": "दस्तावेज़",
   "documents.requestNote": "हमारे लिए नोट (वैकल्पिक)",
   "documents.requestSubmit": "अनुरोध भेजें",
-  "documents.requested": "अनुरोध भेज दिया गया। तैयार होने पर हम आपको बताएँगे।"
+  "documents.requested": "अनुरोध भेज दिया गया। तैयार होने पर हम आपको बताएँगे।",
+  "public.internshipsLink": "इंटर्नशिप चाहिए? खुली इंटर्नशिप देखें"
 }

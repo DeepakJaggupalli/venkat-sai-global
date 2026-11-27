@@ -47,6 +47,11 @@ export default async function PublicTrainingPage({ searchParams }: PageProps) {
               </Link>
             </span>
           </p>
+          <p className="mt-3">
+            <Link href="/internships" className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-strong underline-offset-4 hover:underline" data-testid="internships-link">
+              {t("public.internshipsLink")}
+            </Link>
+          </p>
         </div>
       </section>
       <div className="container-page py-8 sm:py-10">

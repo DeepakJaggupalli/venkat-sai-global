@@ -10,6 +10,7 @@ import { absoluteUrl } from "@/lib/env";
 import { currencyMinorUnits, fromMinorUnits } from "@/lib/format";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { logger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 import { audit } from "@/modules/audit";
 import { getFile, openFileContent } from "@/modules/files";
 import { staffCan, type StaffContext } from "@/modules/identity/authz";
@@ -718,7 +719,7 @@ export async function requestDocument(
 // Interns (Venkat Sai's own internship programmes)
 // ---------------------------------------------------------------------------
 
-export type ProgrammeSummary = InternshipProgrammeRow & { interns: number; active: number; completed: number };
+export type ProgrammeSummary = InternshipProgrammeRow & { interns: number; applied: number; active: number; completed: number };
 
 export async function listVenkatSaiProgrammes(ctx: StaffContext): Promise<ProgrammeSummary[]> {
   staffOnly(ctx);
@@ -726,6 +727,7 @@ export async function listVenkatSaiProgrammes(ctx: StaffContext): Promise<Progra
     .select({
       programme: internshipProgrammes,
       interns: sql<number>`count(${internshipParticipants.id})::int`,
+      applied: sql<number>`count(${internshipParticipants.id}) filter (where ${internshipParticipants.status} = 'applied')::int`,
       active: sql<number>`count(${internshipParticipants.id}) filter (where ${internshipParticipants.status} = 'active')::int`,
       completed: sql<number>`count(${internshipParticipants.id}) filter (where ${internshipParticipants.status} = 'completed')::int`,
     })
@@ -734,7 +736,7 @@ export async function listVenkatSaiProgrammes(ctx: StaffContext): Promise<Progra
     .where(isNull(internshipProgrammes.organizationId))
     .groupBy(internshipProgrammes.id)
     .orderBy(desc(internshipProgrammes.createdAt));
-  return rows.map((r) => ({ ...r.programme, interns: r.interns, active: r.active, completed: r.completed }));
+  return rows.map((r) => ({ ...r.programme, interns: r.interns, applied: r.applied, active: r.active, completed: r.completed }));
 }
 
 export async function getVenkatSaiProgramme(ctx: StaffContext, id: string): Promise<{ programme: InternshipProgrammeRow; interns: (InternRow & { documents: Pick<IssuedDocumentRow, "id" | "kind" | "status">[] })[] } | null> {
@@ -895,4 +897,120 @@ export async function pendingDocumentIdsForProgramme(ctx: StaffContext, programm
     .innerJoin(internshipParticipants, eq(internshipParticipants.id, issuedDocuments.internshipParticipantId))
     .where(and(eq(internshipParticipants.programmeId, programmeId), eq(issuedDocuments.status, "pending")));
   return rows.map((r) => r.id);
+}
+
+// ---------------------------------------------------------------------------
+// Public internships (/internships): open Venkat Sai programmes and applications
+// ---------------------------------------------------------------------------
+
+export type PublicProgramme = Pick<
+  InternshipProgrammeRow,
+  "id" | "title" | "description" | "eligibility" | "durationWeeks" | "startsOn" | "applicationDeadline" | "workMode" | "city" | "stipendType" | "stipendMinor" | "stipendCurrency" | "stipendPeriod"
+> & { stipendText: string | null };
+
+function toPublicProgramme(p: InternshipProgrammeRow): PublicProgramme {
+  const sentence = stipendSentence(p);
+  return {
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    eligibility: p.eligibility,
+    durationWeeks: p.durationWeeks,
+    startsOn: p.startsOn,
+    applicationDeadline: p.applicationDeadline,
+    workMode: p.workMode,
+    city: p.city,
+    stipendType: p.stipendType,
+    stipendMinor: p.stipendMinor,
+    stipendCurrency: p.stipendCurrency,
+    stipendPeriod: p.stipendPeriod,
+    stipendText: p.stipendType === "unpaid" ? "Unpaid" : sentence ? sentence.replace("You will receive a stipend of ", "Stipend: ").replace(/\.$/, "") : null,
+  };
+}
+
+/** Venkat Sai's own programmes that take applications (status open, deadline not passed). */
+export async function listOpenProgrammes(now: Date = new Date()): Promise<PublicProgramme[]> {
+  const today = todayIso(now);
+  const rows = await db
+    .select()
+    .from(internshipProgrammes)
+    .where(
+      and(
+        isNull(internshipProgrammes.organizationId),
+        eq(internshipProgrammes.status, "open"),
+        or(isNull(internshipProgrammes.applicationDeadline), sql`${internshipProgrammes.applicationDeadline} >= ${today}::date`),
+      ),
+    )
+    .orderBy(desc(internshipProgrammes.createdAt))
+    .limit(50);
+  return rows.map(toPublicProgramme);
+}
+
+export async function getOpenProgramme(id: string, now: Date = new Date()): Promise<PublicProgramme | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return (await listOpenProgrammes(now)).find((p) => p.id === id) ?? null;
+}
+
+export type InternshipApplication = {
+  programmeId: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  institutionName?: string;
+  consentToContact: boolean;
+  website?: string;
+};
+
+/**
+ * Public application to an open programme. Honeypot hits are dropped silently; rate limited per network and phone.
+ * Applying twice with the same number to the same programme keeps the first application. Signed-in people (or a
+ * People account with the same email / phone) are linked, so their documents later appear in their account.
+ */
+export async function applyForInternship(input: InternshipApplication, meta: { ipHash: string | null; userId: string | null }): Promise<{ programmeTitle: string }> {
+  if (input.website?.trim()) return { programmeTitle: "" };
+  if (!input.consentToContact) throw new ActionError("Please check the highlighted fields.", { fieldErrors: { consentToContact: ["Please agree that we may call or WhatsApp you"] } });
+  const programme = await getOpenProgramme(input.programmeId);
+  if (!programme) throw new ActionError("This internship is not taking applications any more.", { code: "invalid_state" });
+  const limits = [
+    ...(meta.ipHash ? [{ key: `internship-apply:ip:${meta.ipHash}`, limit: 6, windowSeconds: 3600 }] : []),
+    { key: `internship-apply:phone:${input.phone}`, limit: 4, windowSeconds: 24 * 3600 },
+  ];
+  for (const l of limits) {
+    if (!(await rateLimit(l.key, l.limit, l.windowSeconds)).allowed) throw new ActionError("You have sent several applications in a short time. Please wait, or message us on WhatsApp.", { code: "rate_limited" });
+  }
+  await db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: internshipParticipants.id })
+      .from(internshipParticipants)
+      .where(and(eq(internshipParticipants.programmeId, programme.id), eq(internshipParticipants.phone, input.phone)))
+      .limit(1);
+    if (existing) return;
+    const own = meta.userId ? (await tx.select({ id: candidateProfiles.id }).from(candidateProfiles).where(eq(candidateProfiles.userId, meta.userId)).limit(1))[0]?.id : undefined;
+    const candidateId = own ?? (await matchCandidate(tx, input.email, input.phone));
+    if (candidateId) {
+      const [dup] = await tx.select({ id: internshipParticipants.id }).from(internshipParticipants).where(and(eq(internshipParticipants.programmeId, programme.id), eq(internshipParticipants.candidateId, candidateId))).limit(1);
+      if (dup) return;
+    }
+    const [row] = await tx
+      .insert(internshipParticipants)
+      .values({
+        programmeId: programme.id,
+        candidateId: candidateId ?? null,
+        fullName: input.fullName,
+        email: input.email?.toLowerCase() || null,
+        phone: input.phone,
+        institutionName: input.institutionName || null,
+        status: "applied",
+        startsOn: programme.startsOn ?? null,
+      })
+      .returning({ id: internshipParticipants.id });
+    await audit({ action: "internship.applied", entityType: "internship_participant", entityId: row.id, actorType: meta.userId ? undefined : "anonymous", metadata: { programmeId: programme.id }, tx });
+  });
+  return { programmeTitle: programme.title };
+}
+
+/** How many people applied and wait for an answer (Command Centre home). */
+export async function countInternshipApplications(): Promise<number> {
+  const [r] = await db.select({ n: count() }).from(internshipParticipants).where(eq(internshipParticipants.status, "applied"));
+  return r?.n ?? 0;
 }

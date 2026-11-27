@@ -403,5 +403,6 @@
   "documents.requestKind": "Document",
   "documents.requestNote": "Note for us (optional)",
   "documents.requestSubmit": "Send request",
-  "documents.requested": "Request sent. We will tell you when it is ready."
+  "documents.requested": "Request sent. We will tell you when it is ready.",
+  "public.internshipsLink": "Looking for an internship? See open internships"
 }

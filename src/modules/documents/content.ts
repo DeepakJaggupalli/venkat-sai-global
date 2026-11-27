@@ -23,7 +23,7 @@ const parity: [
 void parity;
 
 export const INTERN_STATUS_LABELS: Record<InternStatus, string> = {
-  applied: "Applied",
+  applied: "Applied (waiting for you)",
   active: "Doing the internship",
   completed: "Completed",
   dropped: "Left early",
@@ -31,6 +31,10 @@ export const INTERN_STATUS_LABELS: Record<InternStatus, string> = {
 };
 
 export const DOCUMENTS_ADMIN_PATH = "/admin/documents";
+export const INTERNSHIPS_PUBLIC_PATH = "/internships";
+
+/** Where the internship happens, in plain words (programme workMode). */
+export const WORK_MODE_LABELS = { remote: "Online", on_site: "At our workshop", hybrid: "Online and at the workshop" } as const;
 export const INTERNSHIPS_ADMIN_PATH = "/admin/documents/internships";
 
 export const DOCUMENT_KIND_LABELS: Record<IssuedDocumentKind, string> = {

@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { DOCUMENTS_ADMIN_PATH, INTERNSHIPS_ADMIN_PATH } from "@/modules/documents/content";
+import { DOCUMENTS_ADMIN_PATH, INTERNSHIPS_ADMIN_PATH, INTERNSHIPS_PUBLIC_PATH, WORK_MODE_LABELS } from "@/modules/documents/content";
 import { listVenkatSaiProgrammes } from "@/modules/documents/service";
 import { requireStaff, staffCan } from "@/modules/identity/authz";
 import { currencyOptions } from "@/modules/taxonomy/queries";
@@ -16,7 +16,6 @@ import { createProgrammeAction } from "../actions";
 
 export const metadata: Metadata = { title: "Interns" };
 
-const WORK_MODE_LABELS = { remote: "Online", on_site: "At our workshop", hybrid: "Online and at the workshop" } as const;
 
 /** Venkat Sai's own internship programmes (online or on site) and how many interns each has. */
 export default async function InternshipsPage() {
@@ -28,7 +27,8 @@ export default async function InternshipsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Interns"
-        description="Make a programme once (for example “Online welding inspection internship, December batch”), add the interns, and mark them finished. Offer letters, certificates and LORs are made for you and wait for your approval."
+        description="Make a programme once (for example “Online welding inspection internship, December batch”). It appears on the website’s Internships page, where people apply. Accept them, or add interns yourself, and mark them finished. Offer letters, certificates and LORs are made for you and wait for your approval."
+        actions={[{ label: "Open the public Internships page", href: INTERNSHIPS_PUBLIC_PATH }]}
         breadcrumbs={[{ label: "Command Centre", href: "/admin" }, { label: "Certificates and letters", href: DOCUMENTS_ADMIN_PATH }, { label: "Interns" }]}
       />
 
@@ -40,9 +40,14 @@ export default async function InternshipsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="font-heading text-base font-semibold text-navy">{p.title}</h2>
                   <StatusBadge size="sm" tone={p.status === "open" ? "success" : "neutral"}>
-                    {p.status === "open" ? "Running" : p.status}
+                    {p.status === "open" ? "Taking applications" : p.status === "closed" ? "Applications closed" : p.status}
                   </StatusBadge>
                 </div>
+                {p.applied ? (
+                  <p className="mt-2 inline-flex rounded-full bg-warning-soft px-2.5 py-0.5 text-xs font-semibold text-warning-strong" data-testid="new-applications">
+                    {p.applied} new application{p.applied === 1 ? "" : "s"}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-sm text-muted-foreground">
                   {[p.workMode ? WORK_MODE_LABELS[p.workMode] : null, p.durationWeeks ? `${p.durationWeeks} weeks` : null, p.startsOn ? `starts ${p.startsOn}` : null].filter(Boolean).join(" · ") || "No details yet"}
                 </p>
@@ -94,7 +99,9 @@ export default async function InternshipsPage() {
                   { value: "project", label: "Once, for the whole internship" },
                 ],
               },
-              { name: "description", label: "What interns do (optional, for your records)", kind: "textarea", optional: true, rows: 3, wide: true },
+              { name: "applicationDeadline", label: "Last date to apply", kind: "date", optional: true },
+              { name: "description", label: "What interns do (shown on the website)", kind: "textarea", optional: true, rows: 3, wide: true },
+              { name: "eligibility", label: "Who can apply (shown on the website)", kind: "textarea", optional: true, rows: 2, wide: true, placeholder: "e.g. Diploma or B.Tech mechanical students, final year" },
             ]}
           />
         </SectionCard>

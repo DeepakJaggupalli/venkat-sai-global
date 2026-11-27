@@ -5,16 +5,18 @@ import { notFound } from "next/navigation";
 
 import { ActionButton } from "@/components/admin/action-button";
 import { ActionForm } from "@/components/admin/action-form";
+import { CopyButton } from "@/components/shared/copy-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { DOCUMENT_KIND_LABELS, DOCUMENT_STATUS_LABELS, DOCUMENT_STATUS_TONE, DOCUMENTS_ADMIN_PATH, INTERN_STATUS_LABELS, INTERNSHIPS_ADMIN_PATH } from "@/modules/documents/content";
+import { absoluteUrl } from "@/lib/env";
+import { DOCUMENT_KIND_LABELS, DOCUMENT_STATUS_LABELS, DOCUMENT_STATUS_TONE, DOCUMENTS_ADMIN_PATH, INTERN_STATUS_LABELS, INTERNSHIPS_ADMIN_PATH, INTERNSHIPS_PUBLIC_PATH } from "@/modules/documents/content";
 import { getVenkatSaiProgramme } from "@/modules/documents/service";
 import { requireStaff } from "@/modules/identity/authz";
 
 import { BulkSelect } from "../../_components/bulk-select";
-import { addInternAction, addInternsBulkAction, approveProgrammeDocumentsAction, setInternStatusAction, updateInternAction } from "../../actions";
+import { addInternAction, addInternsBulkAction, approveProgrammeDocumentsAction, setInternStatusAction, setProgrammeOpenAction, updateInternAction } from "../../actions";
 
 export const metadata: Metadata = { title: "Internship programme" };
 
@@ -29,6 +31,8 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
   const data = await getVenkatSaiProgramme(ctx, id);
   if (!data) notFound();
   const { programme, interns } = data;
+  const open = programme.status === "open";
+  const publicUrl = absoluteUrl(`${INTERNSHIPS_PUBLIC_PATH}/${programme.id}`);
   const waiting = interns.reduce((n, i) => n + i.documents.filter((d) => d.status === "pending").length, 0);
 
   const rows = interns.map((i) => ({
@@ -99,19 +103,39 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
         }
       />
 
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4" data-testid="programme-public">
+        <StatusBadge tone={open ? "success" : "neutral"}>{open ? "Taking applications on the website" : "Not taking applications"}</StatusBadge>
+        {open ? (
+          <>
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground" title={publicUrl}>
+              {publicUrl}
+            </span>
+            <CopyButton value={publicUrl} label="apply link (share it in WhatsApp groups)" showLabel size="sm" variant="outline" />
+            <ActionButton action={setProgrammeOpenAction.bind(null, { programmeId: programme.id, open: false })} confirm={{ title: "Stop taking applications?", description: "The internship disappears from the website. Interns already added are not affected.", confirmLabel: "Stop" }}>
+              Stop applications
+            </ActionButton>
+          </>
+        ) : programme.status === "closed" ? (
+          <ActionButton action={setProgrammeOpenAction.bind(null, { programmeId: programme.id, open: true })} variant="default">
+            Take applications again
+          </ActionButton>
+        ) : null}
+      </div>
+
       {rows.length ? (
         <BulkSelect
           label="interns"
           testId="intern-list"
           rows={rows}
           actions={[
+            { label: "Accept (send offer letter)", action: setInternStatusAction, extra: { status: "active", programmeId: programme.id }, testId: "accept-interns" },
             { label: "Mark finished", action: setInternStatusAction, extra: { status: "completed", programmeId: programme.id }, confirm: "Mark {n} intern(s) as finished? Their certificate and LOR will be made for your approval.", testId: "mark-finished" },
-            { label: "Doing it now", action: setInternStatusAction, extra: { status: "active", programmeId: programme.id }, variant: "outline" },
+            { label: "Not selected", action: setInternStatusAction, extra: { status: "rejected", programmeId: programme.id }, variant: "outline", confirm: "Mark {n} applicant(s) as not selected?" },
             { label: "Left early", action: setInternStatusAction, extra: { status: "dropped", programmeId: programme.id }, variant: "outline", confirm: "Mark {n} intern(s) as left early?" },
           ]}
         />
       ) : (
-        <EmptyState icon={<UserPlus />} title="No interns yet" description="Add them below, one by one or many at once." />
+        <EmptyState icon={<UserPlus />} title="No interns yet" description={open ? "Share the apply link above, or add them below, one by one or many at once." : "Add them below, one by one or many at once."} />
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">

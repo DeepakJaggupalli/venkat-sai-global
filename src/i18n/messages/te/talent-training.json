@@ -403,5 +403,6 @@
   "documents.requestKind": "పత్రం",
   "documents.requestNote": "మాకు గమనిక (ఐచ్ఛికం)",
   "documents.requestSubmit": "అభ్యర్థన పంపండి",
-  "documents.requested": "అభ్యర్థన పంపబడింది. సిద్ధమైనప్పుడు మేము మీకు తెలియజేస్తాము."
+  "documents.requested": "అభ్యర్థన పంపబడింది. సిద్ధమైనప్పుడు మేము మీకు తెలియజేస్తాము.",
+  "public.internshipsLink": "ఇంటర్న్‌షిప్ కోసం చూస్తున్నారా? అందుబాటులో ఉన్న ఇంటర్న్‌షిప్‌లు చూడండి"
 }

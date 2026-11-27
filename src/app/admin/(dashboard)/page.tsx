@@ -8,6 +8,7 @@ import {
   FileUser,
   FileWarning,
   Gift,
+  GraduationCap,
   Handshake,
   HardHat,
   Headset,
@@ -61,7 +62,7 @@ import { cn } from "@/lib/utils";
 import { getAnalyticsRange } from "@/modules/analytics/access";
 import { getAnalyticsOverview } from "@/modules/analytics/queries";
 import type { AnalyticsOverview } from "@/modules/analytics/types";
-import { countDocumentsByStatus, ensureAutoDocumentsQuietly } from "@/modules/documents/service";
+import { countDocumentsByStatus, countInternshipApplications, ensureAutoDocumentsQuietly } from "@/modules/documents/service";
 import { requireStaff, staffCan, type StaffContext } from "@/modules/identity/authz";
 
 export const metadata: Metadata = { title: "Executive dashboard" };
@@ -103,6 +104,8 @@ export default async function CommandCentreHomePage() {
       .then((c) => c.pending)
       .catch(() => null);
     attention.push({ key: "documents", label: "Certificates and letters to approve", value: docsWaiting, href: "/admin/documents", icon: Award, tone: "attention", hint: "For trainees and interns" });
+    const applications = await countInternshipApplications().catch(() => null);
+    attention.push({ key: "internship-applications", label: "Internship applications", value: applications, href: "/admin/documents/internships", icon: GraduationCap, tone: "attention", hint: "From the website’s Internships page" });
   }
   const glance = glanceTiles(s, traffic);
   const waiting = attention.filter((t) => t.tone === "attention" && typeof t.value === "number" && t.value > 0).length;

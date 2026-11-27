@@ -587,7 +587,7 @@ const TALENT: PortalGuide = {
       steps: [
         "Open Training to browse courses and apply for a batch.",
         "Assessments shows your test results.",
-        "Certificates keeps every certificate you earned. Employers can check them online.",
+        "Certificates keeps every certificate you earned, plus internship letters and letters of recommendation once we approve them. Download them there; employers can check them online.",
       ],
       links: [
         { label: "Training", href: "/talent/training" },
