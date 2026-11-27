@@ -320,5 +320,9 @@
   "path.institution.step1": "سجّل معهدك",
   "path.institution.step2": "انشر الدورات والدفعات",
   "path.institution.step3": "اربط المتدربين بالوظائف",
-  "path.institution.cta": "كن شريكًا معنا"
+  "path.institution.cta": "كن شريكًا معنا",
+  "heroPosters.prev": "الطلب السابق",
+  "heroPosters.next": "الطلب التالي",
+  "heroPosters.goTo": "اعرض الطلب {n}",
+  "heroPosters.slide": "{n} من {total}"
 }

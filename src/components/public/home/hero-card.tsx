@@ -1,8 +1,14 @@
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 
+import { absoluteUrl } from "@/lib/env";
+
+import { CmsImage } from "../cms-media";
 import { Flag } from "../flag";
 import { EN_MARKETING, intlLocale, type MarketingT } from "../marketing-i18n";
+import { requirementApplyHref, requirementWhatsAppHref } from "../requirements/card-helpers";
+import type { PosterCard } from "../requirements/data";
+import { HeroPosterSlider, type HeroPosterSlide } from "./hero-posters";
 import { RouteRotator } from "./route-rotator";
 
 /**
@@ -11,7 +17,7 @@ import { RouteRotator } from "./route-rotator";
  * on the employer. The latest requirements are listed right below the hero, so this card does not repeat them.
  */
 
-const CARD = "relative w-full rounded-3xl border border-border bg-white p-6 shadow-[0_1px_2px_rgb(10_10_11/0.04),0_24px_60px_-12px_rgb(10_10_11/0.12)] sm:p-7";
+export const HERO_CARD = "relative w-full rounded-3xl border border-border bg-white p-6 shadow-[0_1px_2px_rgb(10_10_11/0.04),0_24px_60px_-12px_rgb(10_10_11/0.12)] sm:p-7";
 
 const ROUTE_ITEMS = ["route.visa", "route.food", "route.medical", "route.documents", "route.transport", "route.ticket"] as const;
 
@@ -42,7 +48,7 @@ export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
   const cities = new Intl.ListFormat(intlLocale(t.locale), { type: "conjunction" }).format(destinations.map((d) => d.city));
   return (
     <RouteRotator
-      className={CARD}
+      className={HERO_CARD}
       destinations={destinations}
       srText={`${t("route.destinationsLabel")}: ${cities}`}
       header={
@@ -83,6 +89,57 @@ export function RouteCard({ t = EN_MARKETING }: { t?: MarketingT }) {
           </div>
         </>
       }
+    />
+  );
+}
+
+/** Most posters the hero slideshow cycles through (the newest first). */
+export const HERO_POSTER_LIMIT = 8;
+
+/**
+ * The hero card: a slideshow of the latest requirement posters that have a poster image (uploaded by staff, e.g. from
+ * the phone gallery), else the route card. Posters without an image stay in the requirements list below the hero.
+ */
+export function HeroCard({ posters = [], t = EN_MARKETING }: { posters?: readonly PosterCard[]; t?: MarketingT }) {
+  const slides: HeroPosterSlide[] = posters
+    .filter((p) => p.poster)
+    .slice(0, HERO_POSTER_LIMIT)
+    .map((p, i) => ({
+      id: p.id,
+      href: p.href,
+      applyHref: requirementApplyHref(p.slug),
+      whatsappHref: requirementWhatsAppHref({ title: p.title, countryName: p.countryName, url: absoluteUrl(p.href) }, t),
+      title: p.title,
+      countryName: p.countryName,
+      flag: <Flag code={p.countryCode} />,
+      image: <CmsImage asset={{ ...p.poster!, alt: p.alt }} size="md" priority={i === 0} className="absolute inset-0 object-contain p-3" sizes="(min-width: 1024px) 40vw, 100vw" />,
+      trades:
+        p.trades
+          .slice(0, 2)
+          .map((tr) => (tr.pay ? `${tr.trade} (${tr.pay})` : tr.trade))
+          .join(" · ") || null,
+      applyLabel: t("card.applyLabel", { title: p.title }),
+      whatsappLabel: t("card.whatsappLabel", { title: p.title }),
+    }));
+  if (!slides.length) return <RouteCard t={t} />;
+  return (
+    <HeroPosterSlider
+      className={HERO_CARD}
+      slides={slides}
+      labels={{
+        eyebrow: t("reqs.title"),
+        nowHiring: t("card.nowHiring"),
+        apply: t("card.apply"),
+        whatsapp: t("card.whatsapp"),
+        all: t("reqs.all"),
+        noFee: t("route.noFee"),
+        prev: t("heroPosters.prev"),
+        next: t("heroPosters.next"),
+        pause: t("landing.walk.pause"),
+        play: t("landing.walk.play"),
+        goTo: t("heroPosters.goTo"),
+        slide: t("heroPosters.slide"),
+      }}
     />
   );
 }

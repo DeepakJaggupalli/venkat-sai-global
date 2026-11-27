@@ -9,12 +9,11 @@ import { WhatsAppIcon } from "../contact-links";
 import { Flag } from "../flag";
 import { EN_MARKETING, splitAround, type MarketingT } from "../marketing-i18n";
 import { relativeTime, requirementApplyHref, requirementWhatsAppHref } from "./card-helpers";
+import { POSTER_BUTTON_STYLES } from "./button-styles";
 import type { PosterCard as PosterCardData } from "./data";
 
-const BUTTON =
-  "inline-flex min-h-11 flex-1 basis-28 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:size-4 [&_svg]:shrink-0";
-const APPLY = `${BUTTON} group/apply bg-foreground text-white hover:bg-[#26262b]`;
-const WHATSAPP = `${BUTTON} border border-border bg-white text-foreground hover:border-[#c9cdd5] hover:bg-surface-subtle`;
+const APPLY = POSTER_BUTTON_STYLES.apply;
+const WHATSAPP = POSTER_BUTTON_STYLES.whatsapp;
 
 const DEFAULT_SIZES = "(min-width: 1280px) 25vw, (min-width: 768px) 33vw, (min-width: 480px) 50vw, 100vw";
 

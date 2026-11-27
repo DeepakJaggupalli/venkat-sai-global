@@ -233,7 +233,7 @@ export default async function HomePage({ searchParams }: Props) {
       {detail?.preview ? null : <JsonLd data={organization} />}
       <PreviewRibbon show={Boolean(detail?.preview)} />
       <RevealScope>
-        <HomeHero hero={home?.hero} openRequirements={posters.total} t={t} />
+        <HomeHero hero={home?.hero} openRequirements={posters.total} posters={posters.items} t={t} />
         <RequirementsSection
           posters={posters.items}
           showRefer

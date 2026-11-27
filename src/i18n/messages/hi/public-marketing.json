@@ -320,5 +320,9 @@
   "path.institution.step1": "अपना संस्थान रजिस्टर करें",
   "path.institution.step2": "कोर्स और बैच प्रकाशित करें",
   "path.institution.step3": "विद्यार्थियों को नौकरियों से जोड़ें",
-  "path.institution.cta": "हमारे साथ जुड़ें"
+  "path.institution.cta": "हमारे साथ जुड़ें",
+  "heroPosters.prev": "पिछली रिक्ति",
+  "heroPosters.next": "अगली रिक्ति",
+  "heroPosters.goTo": "रिक्ति {n} दिखाएँ",
+  "heroPosters.slide": "{total} में से {n}"
 }

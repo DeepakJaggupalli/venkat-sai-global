@@ -320,5 +320,9 @@
   "path.institution.step1": "ଆପଣଙ୍କ ସଂସ୍ଥା ପଞ୍ଜୀକରଣ କରନ୍ତୁ",
   "path.institution.step2": "କୋର୍ସ ଓ ବ୍ୟାଚ ପ୍ରକାଶ କରନ୍ତୁ",
   "path.institution.step3": "ଶିକ୍ଷାର୍ଥୀଙ୍କୁ ଚାକିରି ସହ ଯୋଡ଼ନ୍ତୁ",
-  "path.institution.cta": "ଆମ ସହ ଯୋଡ଼ି ହୁଅନ୍ତୁ"
+  "path.institution.cta": "ଆମ ସହ ଯୋଡ଼ି ହୁଅନ୍ତୁ",
+  "heroPosters.prev": "ପୂର୍ବ ଆବଶ୍ୟକତା",
+  "heroPosters.next": "ପରବର୍ତ୍ତୀ ଆବଶ୍ୟକତା",
+  "heroPosters.goTo": "ଆବଶ୍ୟକତା {n} ଦେଖାନ୍ତୁ",
+  "heroPosters.slide": "{total} ମଧ୍ୟରୁ {n}"
 }

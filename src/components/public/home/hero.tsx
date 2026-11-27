@@ -6,7 +6,8 @@ import { type CtaSpec } from "../blocks";
 import { CtaLink } from "../cta-link";
 import { EN_MARKETING, type MarketingT } from "../marketing-i18n";
 import { MANPOWER_PORTAL_HREF } from "./manpower";
-import { RouteCard } from "./hero-card";
+import type { PosterCard } from "../requirements/data";
+import { HeroCard } from "./hero-card";
 
 /**
  * Seeded headings (the original specification copy and earlier seeds). When the CMS still holds exactly one of
@@ -99,11 +100,14 @@ const AUDIENCE_PILL =
 export function HomeHero({
   hero,
   openRequirements = 0,
+  posters = [],
   t = EN_MARKETING,
 }: {
   hero: HomepageData["hero"] | null | undefined;
   /** Number of published requirement posters; any at all makes the main pill "Apply for open jobs". */
   openRequirements?: number;
+  /** Latest requirement posters; those with a poster image play as a slideshow in the hero card (else the route card). */
+  posters?: readonly PosterCard[];
   whatsappE164?: string;
   t?: MarketingT;
 }) {
@@ -167,7 +171,7 @@ export function HomeHero({
         <div className="relative min-w-0 motion-safe:animate-[vsg-enter_0.9s_cubic-bezier(0.22,1,0.36,1)_200ms_both] lg:ps-4">
           <div aria-hidden="true" className="absolute -inset-x-6 -inset-y-8 -z-0 rounded-[2.5rem] bg-gradient-to-br from-[#f0f9ff] via-white to-[#ecfeff] lg:-inset-x-10" />
           <div className="relative">
-            <RouteCard t={t} />
+            <HeroCard posters={posters} t={t} />
           </div>
         </div>
       </div>

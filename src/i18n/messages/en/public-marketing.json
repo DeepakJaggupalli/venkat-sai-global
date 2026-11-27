@@ -320,5 +320,9 @@
   "path.institution.step1": "Register your institution",
   "path.institution.step2": "Publish courses and batches",
   "path.institution.step3": "Connect learners to jobs",
-  "path.institution.cta": "Partner with us"
+  "path.institution.cta": "Partner with us",
+  "heroPosters.prev": "Previous requirement",
+  "heroPosters.next": "Next requirement",
+  "heroPosters.goTo": "Show requirement {n}",
+  "heroPosters.slide": "{n} of {total}"
 }

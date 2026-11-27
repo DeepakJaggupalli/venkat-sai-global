@@ -320,5 +320,9 @@
   "path.institution.step1": "మీ సంస్థను నమోదు చేయండి",
   "path.institution.step2": "కోర్సులు, బ్యాచ్‌లు ప్రచురించండి",
   "path.institution.step3": "విద్యార్థులను ఉద్యోగాలతో కలపండి",
-  "path.institution.cta": "మాతో భాగస్వామి అవ్వండి"
+  "path.institution.cta": "మాతో భాగస్వామి అవ్వండి",
+  "heroPosters.prev": "మునుపటి రిక్వైర్‌మెంట్",
+  "heroPosters.next": "తదుపరి రిక్వైర్‌మెంట్",
+  "heroPosters.goTo": "రిక్వైర్‌మెంట్ {n} చూపించు",
+  "heroPosters.slide": "{total} లో {n}"
 }
