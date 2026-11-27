@@ -188,7 +188,10 @@ describe.skipIf(!enabled)("Command Centre home figures (PostgreSQL)", async () =
     expect(now.bookings!.upcoming - before.bookings!.upcoming).toBe(1);
     expect(now.bookings!.bookedSeats - before.bookings!.bookedSeats).toBe(3);
     expect(now.bookings!.freeSeats - before.bookings!.freeSeats).toBe(7);
-    expect(now.bookings!.next.find((x) => x.id === slotId)).toMatchObject({ capacity: 10, bookedSeats: 3, startTime: "09:30", status: "open" });
+    // "Next dates" is a short list ordered by date: other test files' sooner dates may fill it in a shared database.
+    const listed = now.bookings!.next.find((x) => x.id === slotId);
+    if (listed) expect(listed).toMatchObject({ capacity: 10, bookedSeats: 3, startTime: "09:30", status: "open" });
+    else expect(now.bookings!.next.every((x) => `${x.date} ${x.startTime}` <= `${istDate(new Date(), -5)} 09:30`)).toBe(true);
     expect(now.bookings!.next.some((x) => x.title.startsWith("Past") || x.title.startsWith("Cancelled"))).toBe(false);
 
     expect(now.candidateCare!.reviewsPending - before.candidateCare!.reviewsPending).toBe(1);

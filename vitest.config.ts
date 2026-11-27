@@ -17,10 +17,18 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
     exclude: ["node_modules", ".next", "e2e"],
     testTimeout: 30_000,
     hookTimeout: 60_000,
     pool: "forks",
+    // Integration tests share one test database per run, so their files run one at a time (no two files writing at
+    // once). Unit tests stay fully parallel. `include` lives in each project: with `extends`, arrays are merged.
+    projects: [
+      {
+        extends: true,
+        test: { name: "unit", include: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"], exclude: ["src/**/*.integration.test.ts"] },
+      },
+      { extends: true, test: { name: "integration", include: ["src/**/*.integration.test.ts"], fileParallelism: false } },
+    ],
   },
 });

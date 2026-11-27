@@ -351,7 +351,11 @@ describe.skipIf(!enabled)("demo accounts", async () => {
     await setMarker(false);
     const counted = await counts();
     await setMarker(true);
-    expect(counted).toEqual({
+    // The demo agency's job is in AE: it adds a country only when no real live job is in AE (a shared test database
+    // may hold real AE jobs from other test files).
+    expect(counted.countries - hidden.countries).toBeGreaterThanOrEqual(0);
+    expect(counted.countries - hidden.countries).toBeLessThanOrEqual(1);
+    expect({ ...counted, countries: 0 }).toEqual({
       employers: hidden.employers + 2,
       partners: hidden.partners + 1,
       institutions: hidden.institutions + 1,
@@ -362,7 +366,7 @@ describe.skipIf(!enabled)("demo accounts", async () => {
       verifiedCandidates: hidden.verifiedCandidates + (personLevel!.level === "none" ? 0 : 1),
       placements: hidden.placements,
       internships: hidden.internships,
-      countries: hidden.countries + 1, // the demo agency's job is the only one in AE
+      countries: 0,
       careerJobs: hidden.careerJobs + demoJobs!.value,
     });
     expect(hidden.countries).toBeGreaterThan(0);
