@@ -351,6 +351,24 @@ const ADMIN: PortalGuide = {
       ],
     },
     {
+      id: "certificates-letters",
+      topic: "Certificates and letters for interns and trainees",
+      summary: "Offer letters, internship certificates, LORs and course certificates, made automatically and approved by you.",
+      icon: Award,
+      permission: "training.certificates",
+      steps: [
+        "Open Interns, create a programme (for example an online internship batch) and add the interns, one by one or by pasting many lines.",
+        "Each intern gets an offer letter. When you tick interns and press Mark finished, their internship certificate and LOR are made too.",
+        "Everything waits in Certificates and letters. Open one to read and edit every line, or tick many and press Approve selected.",
+        "After approval, send it on WhatsApp or email from the document page, or download the PDF. People with an account also see it under Certificates.",
+        "Set who signs (name, title and a signature image) once at the bottom of the Certificates and letters page.",
+      ],
+      links: [
+        { label: "Certificates and letters", href: "/admin/documents" },
+        { label: "Interns", href: "/admin/documents/internships" },
+      ],
+    },
+    {
       id: "referrals-reviews-resumes",
       topic: "Referrals, worker reviews and resume requests",
       summary: "Rewards for referrals, reviews from placed workers, and the paid resume service.",

@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomInt } from "node:crypto";
 
-import { and, count, desc, eq, isNotNull, lte, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, lte, type SQL } from "drizzle-orm";
 
 import { BRAND } from "@/config/site";
 import { db, type DbOrTx } from "@/db";
@@ -15,6 +15,7 @@ import {
   courses,
   enrolments,
   institutionProfiles,
+  issuedDocuments,
   organizations,
   skillAssessments,
 } from "@/db/schema";
@@ -22,6 +23,7 @@ import type { CandidateCredentialIssuerType } from "@/db/schema/candidates";
 import type { CertificateIssuerType, CertificateSnapshot } from "@/db/schema/training";
 import { ActionError } from "@/lib/actions";
 import { nextCode } from "@/lib/codes";
+import { parseDocumentContent } from "@/modules/documents/content";
 import { paginated, type PageQuery, type Paginated } from "@/lib/http";
 import { audit } from "@/modules/audit";
 import { grantFileAccess, requireUploadedFile } from "@/modules/files";
@@ -66,6 +68,8 @@ export type PublicCertificateVerification =
       /** Printed expiry date (valid through that day), if any. */
       expiresOn: string | null;
       details: Pick<CertificateSnapshot, "courseTitle" | "trade" | "process" | "position">;
+      /** PDF download (approved certificates and letters for trainees and interns, see src/modules/documents). */
+      downloadHref?: string;
     };
 
 export type CandidateCertificateItem = CertificateRow & { verificationCodeDisplay: string; issuerTypeLabel: string };
@@ -428,7 +432,8 @@ export async function verifyCertificateByCode(rawCode: string, now: Date = new D
   const code = normalizeVerificationCode(rawCode);
   if (!code) return { found: false };
   const [cert] = await db.select().from(certificates).where(eq(certificates.verificationCode, code)).limit(1);
-  if (!cert || !cert.publicVerificationEnabled) return { found: false };
+  if (!cert) return verifyIssuedDocument(code).catch(() => ({ found: false }) as const);
+  if (!cert.publicVerificationEnabled) return { found: false };
   return {
     found: true,
     status: certificateState(cert, now),
@@ -442,6 +447,33 @@ export async function verifyCertificateByCode(rawCode: string, now: Date = new D
     issuedOn: toIsoDate(cert.issuedAt),
     expiresOn: cert.expiresAt ? toIsoDate(cert.expiresAt) : null,
     details: { courseTitle: cert.snapshot.courseTitle, trade: cert.snapshot.trade, process: cert.snapshot.process, position: cert.snapshot.position },
+  };
+}
+
+/** Certificates and letters for trainees and interns share the same check page; only approved or revoked ones are found. */
+async function verifyIssuedDocument(code: string): Promise<PublicCertificateVerification> {
+  const [doc] = await db
+    .select()
+    .from(issuedDocuments)
+    .where(and(eq(issuedDocuments.verificationCode, code), inArray(issuedDocuments.status, ["approved", "revoked"])))
+    .limit(1);
+  if (!doc || !doc.approvedAt) return { found: false };
+  const content = parseDocumentContent(doc.content, { holderName: doc.holderName, kind: doc.kind });
+  const valid = doc.status === "approved";
+  return {
+    found: true,
+    status: valid ? "valid" : "revoked",
+    code: doc.code,
+    holderName: content.holderName,
+    title: content.title,
+    issuerName: content.organisation,
+    issuerType: "venkat_sai",
+    issuerTypeLabel: CERTIFICATE_ISSUER_TYPE_LABELS.venkat_sai,
+    accreditationBody: null,
+    issuedOn: content.issueDate ?? toIsoDate(doc.approvedAt),
+    expiresOn: null,
+    details: { courseTitle: [content.programme, content.role].filter(Boolean).join(", ") },
+    downloadHref: valid ? `/verify-certificate/${formatVerificationCode(doc.verificationCode)}/pdf` : undefined,
   };
 }
 

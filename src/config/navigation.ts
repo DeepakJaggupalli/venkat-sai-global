@@ -288,6 +288,7 @@ export const NAVIGATION: Record<PortalKey, NavSection[]> = {
         { title: "Institutions", href: "/admin/organizations?type=institution", icon: GraduationCap, permission: "orgs.view", matchNested: false },
         { title: "Partner assignments", href: "/admin/partners", icon: Target, permission: "partners.view" },
         { title: "Training", href: "/admin/training", icon: BookOpen, permission: "training.view" },
+        { title: "Certificates & letters", href: "/admin/documents", icon: Award, permission: "training.certificates" },
         { title: "Users", href: "/admin/users", icon: UserCog, permission: "users.view" },
       ],
     },

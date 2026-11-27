@@ -71,6 +71,13 @@
       "when": 1795487477412,
       "tag": "0009_bookings_referrals_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795787288460,
+      "tag": "0010_issued_documents",
+      "breakpoints": true
     }
   ]
 }

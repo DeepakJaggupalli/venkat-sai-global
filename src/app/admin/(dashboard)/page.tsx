@@ -1,5 +1,6 @@
 import {
   Activity,
+  Award,
   Briefcase,
   Building2,
   CalendarCheck2,
@@ -60,6 +61,7 @@ import { cn } from "@/lib/utils";
 import { getAnalyticsRange } from "@/modules/analytics/access";
 import { getAnalyticsOverview } from "@/modules/analytics/queries";
 import type { AnalyticsOverview } from "@/modules/analytics/types";
+import { countDocumentsByStatus, ensureAutoDocumentsQuietly } from "@/modules/documents/service";
 import { requireStaff, staffCan, type StaffContext } from "@/modules/identity/authz";
 
 export const metadata: Metadata = { title: "Executive dashboard" };
@@ -94,6 +96,14 @@ export default async function CommandCentreHomePage() {
   const actions = filterAllowed(COMMAND_CENTRE_ACTIONS, staff.permissions);
   const badges = badgeCounts(s);
   const attention = attentionTiles(s);
+  // Certificates and letters waiting for approval (made automatically when courses and internships finish).
+  if (staffCan(staff, "training.certificates")) {
+    const docsWaiting = await ensureAutoDocumentsQuietly()
+      .then(() => countDocumentsByStatus())
+      .then((c) => c.pending)
+      .catch(() => null);
+    attention.push({ key: "documents", label: "Certificates and letters to approve", value: docsWaiting, href: "/admin/documents", icon: Award, tone: "attention", hint: "For trainees and interns" });
+  }
   const glance = glanceTiles(s, traffic);
   const waiting = attention.filter((t) => t.tone === "attention" && typeof t.value === "number" && t.value > 0).length;
   const role = roleLabel(staff.roleKeys, ROLE_NAMES);

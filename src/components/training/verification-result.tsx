@@ -1,4 +1,4 @@
-import { BadgeCheck, CircleSlash, Clock3, SearchX } from "lucide-react";
+import { BadgeCheck, CircleSlash, Clock3, Download, SearchX } from "lucide-react";
 
 import { DateText } from "@/components/shared/date-text";
 import { KeyValueList } from "@/components/shared/key-value-list";
@@ -65,6 +65,18 @@ export function VerificationResult({ t, result, fmtLocale }: { t: Translate; res
           <span className="font-medium text-navy">{t("verify.issuerType")}: </span>
           {t(`issuerType.${result.issuerType}`)}
         </p>
+        {result.downloadHref ? (
+          <a
+            href={result.downloadHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="verification-download"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-navy px-4 text-sm font-semibold text-white hover:bg-navy-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+          >
+            <Download aria-hidden="true" className="size-4" />
+            {t("verify.download")}
+          </a>
+        ) : null}
       </div>
     </section>
   );

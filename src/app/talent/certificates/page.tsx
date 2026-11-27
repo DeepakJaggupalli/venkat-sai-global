@@ -1,4 +1,4 @@
-import { Award, ExternalLink } from "lucide-react";
+import { Award, Download, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -12,10 +12,12 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { certificateTone, intlLocale, verificationPath, type CertificateDisplayState } from "@/components/training/training-rules";
 import { getLocale, getT } from "@/i18n/server";
 import { absoluteUrl } from "@/lib/env";
+import { documentPdfPath, listCandidateDocuments } from "@/modules/documents/service";
 import { getFiles, toFileSummary } from "@/modules/files";
 import { certificateLapsesAt, listCandidateCertificates } from "@/modules/training/certificates";
 import type { CandidateCertificateItem } from "@/modules/training/types";
 
+import { RequestDocumentForm } from "./request-document-form";
 import { VisibilityToggle } from "./visibility-toggle";
 import { requireOnboardedCandidate } from "../_lib/guard";
 
@@ -33,11 +35,14 @@ function displayState(cert: CandidateCertificateItem, now: Date): CertificateDis
 /** The candidate's certificates: issuer type, status, verification code and share link, public check switch, download. */
 export default async function CertificatesPage() {
   const { user, candidate } = await requireOnboardedCandidate();
-  const [t, locale, certificates] = await Promise.all([
+  const [t, locale, certificates, letters] = await Promise.all([
     getT("talent-training"),
     getLocale(),
     listCandidateCertificates({ userId: user.id, candidateId: candidate.id, displayName: user.displayName }),
+    // Never let the letters section break the certificates page.
+    listCandidateDocuments(candidate.id).catch(() => ({ documents: [], requestOptions: [] })),
   ]);
+  const hasLetters = letters.documents.length > 0 || letters.requestOptions.length > 0;
   const fmt = intlLocale(locale);
   const now = new Date();
   const fileIds = certificates.map((c) => c.fileId).filter((id): id is string => !!id);
@@ -48,7 +53,75 @@ export default async function CertificatesPage() {
       <PageHeader title={t("certificates.title")} description={t("certificates.description")} />
       <p className="max-w-3xl text-sm text-muted-foreground">{t("certificates.honesty")}</p>
 
-      {certificates.length === 0 ? (
+      {hasLetters ? (
+        <section aria-labelledby="letters-title" className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-6" data-testid="my-documents">
+          <div>
+            <h2 id="letters-title" className="font-heading text-lg font-semibold text-navy">
+              {t("documents.title")}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t("documents.description")}</p>
+          </div>
+          {letters.documents.length ? (
+            <ul className="divide-y divide-border rounded-xl border border-border">
+              {letters.documents.map((d) => {
+                const pdf = documentPdfPath(d.verificationCode);
+                return (
+                  <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 p-4" data-testid="my-document">
+                    <div className="min-w-0">
+                      <p className="font-medium text-navy">{t(`documents.kind.${d.kind}`)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {d.programme} · {t("documents.reference")} <span className="font-mono">{d.code}</span>
+                      </p>
+                      {d.status === "pending" ? <p className="text-xs text-muted-foreground">{t("documents.pendingHint")}</p> : null}
+                      {d.status === "rejected" && d.rejectedReason ? (
+                        <p className="text-xs text-danger-strong">
+                          {t("documents.reason")}: {d.rejectedReason}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge size="sm" tone={d.status === "approved" ? "success" : d.status === "pending" ? "warning" : "neutral"}>
+                        {t(`documents.status.${d.status}`)}
+                      </StatusBadge>
+                      {d.status === "approved" ? (
+                        <>
+                          <a
+                            href={`${pdf}?download=1`}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-navy px-3 text-sm font-semibold text-white hover:bg-navy-deep"
+                            data-testid="my-document-download"
+                          >
+                            <Download aria-hidden="true" className="size-4" />
+                            {t("documents.download")}
+                          </a>
+                          <CopyButton value={absoluteUrl(pdf)} label={t("documents.copyLink")} showLabel size="sm" variant="outline" />
+                        </>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          {letters.requestOptions.length ? (
+            <div className="space-y-3 rounded-xl bg-surface-subtle p-4">
+              <div>
+                <h3 className="font-semibold text-navy">{t("documents.requestTitle")}</h3>
+                <p className="text-sm text-muted-foreground">{t("documents.requestIntro")}</p>
+              </div>
+              <RequestDocumentForm
+                choices={letters.requestOptions.map((o) => ({
+                  value: `${o.source}:${o.sourceId}`,
+                  label: o.programme,
+                  kinds: o.kinds.map((k) => ({ value: k, label: t(`documents.kind.${k}`) })),
+                }))}
+                labels={{ forLabel: t("documents.requestFor"), kind: t("documents.requestKind"), note: t("documents.requestNote"), submit: t("documents.requestSubmit"), done: t("documents.requested") }}
+              />
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {certificates.length === 0 && hasLetters ? null : certificates.length === 0 ? (
         <EmptyState
           icon={<Award />}
           title={t("certificates.emptyTitle")}

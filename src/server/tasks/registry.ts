@@ -5,6 +5,7 @@ import { tasks as backupTasks } from "@/modules/backup/tasks";
 import { tasks as candidatesTasks } from "@/modules/candidates/tasks";
 import { tasks as commercialTasks } from "@/modules/commercial/tasks";
 import { tasks as contentTasks } from "@/modules/content/tasks";
+import { tasks as documentsTasks } from "@/modules/documents/tasks";
 import { tasks as filesTasks } from "@/modules/files/tasks";
 import { tasks as identityTasks } from "@/modules/identity/tasks";
 import { tasks as jobsTasks } from "@/modules/jobs/tasks";
@@ -28,6 +29,7 @@ export const taskHandlers: TaskHandlers = {
   ...jobsTasks,
   ...recruitmentTasks,
   ...trainingTasks,
+  ...documentsTasks,
   ...operationsTasks,
   ...commercialTasks,
   ...notificationsTasks,

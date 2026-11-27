@@ -25,4 +25,5 @@ export const RECURRING_TASKS: RecurringTask[] = [
   { type: "documents.expiry_alerts", everyMinutes: 1440, description: "Daily digest of passports and documents expiring soon; remind the candidates" },
   { type: "backup.daily_email", everyMinutes: 1440, description: "Email the daily Excel backup of the business data (to the business inbox unless another address is set)" },
   { type: "training.batch_reminders", everyMinutes: 1440, description: "Remind enrolled candidates about upcoming batches and assessments" },
+  { type: "documents.auto_create", everyMinutes: 1440, description: "Create missing certificates and letters for finished courses and interns (they wait for approval)" },
 ];

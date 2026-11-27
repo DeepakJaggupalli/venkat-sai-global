@@ -28,6 +28,8 @@ export type SellerDetailsSetting = {
 
 /** Price of the "Prepare my resume" service. amountMinor 0 = price on request (staff quote it on WhatsApp). */
 export type ResumeServicePriceSetting = { amountMinor: number; currency: string };
+/** Who signs generated certificates and letters (edited on /admin/documents). Blank name = only the title is printed. */
+export type DocumentSignatorySetting = { name: string; title: string; place: string };
 
 export const SETTINGS = {
   // Security
@@ -106,6 +108,11 @@ export const SETTINGS = {
   // Resume service ("Prepare my resume", edited on /admin/resume-requests)
   /** Price of the paid resume-writing service: amount in minor units + ISO currency. 0 = "Price on request". */
   "resume_service.price": { default: { amountMinor: 0, currency: "" } as ResumeServicePriceSetting, label: "Resume service price", group: "Resume service" },
+
+  // Certificates and letters for trainees and interns (edited on /admin/documents)
+  "documents.signatory": { default: { name: "", title: "Authorised Signatory", place: "Visakhapatnam" } as DocumentSignatorySetting, label: "Signatory printed on certificates and letters", group: "Certificates and letters" },
+  /** Private file (PNG or JPG) with the signature printed above the signatory line. Blank = no image (sign by hand). */
+  "documents.signature_file_id": { default: "", label: "Signature image on certificates and letters (file ID)", group: "Certificates and letters" },
 
   // Support
   "support.sla_hours_urgent": { default: 4, label: "Urgent ticket first-response SLA (hours)", group: "Support" },

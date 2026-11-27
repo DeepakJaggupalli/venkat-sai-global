@@ -25,3 +25,4 @@ export * from "./push"; // 19
 export * from "./referrals"; // 20 (refer-a-friend rewards)
 export * from "./bookings"; // 21 (trade test and training seat bookings)
 export * from "./worker-reviews"; // 22 (reviews from placed workers)
+export * from "./issued-documents"; // 23 (interns, certificates and letters for interns and trainees)
